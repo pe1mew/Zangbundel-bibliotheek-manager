@@ -1,6 +1,6 @@
 ---
 stack: Not chosen — web app (local or hosted) or native app for Windows, Linux or Android (FDS 1.4, D-01); Markdown design specification; ZIP, JSON, SHA-256, Ed25519; ChordPro
-status: Design — FDS draft 0.1, no code yet
+status: Design — FDS draft 0.2, no code yet
 repo: github.com/pe1mew/Zangbundel-bibliotheek-manager
 framework: agent-ready-projects v1.49.2
 ---
@@ -10,7 +10,7 @@ framework: agent-ready-projects v1.49.2
 <!-- Canonical project file for Claude Code. No AGENTS.md exists; if one is
      added later, this file stays canonical and AGENTS.md should say so. -->
 
-The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.1; the implementation technology is not chosen and no code exists.
+The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.2; the implementation technology is not chosen and no code exists.
 
 ## Before You Start
 

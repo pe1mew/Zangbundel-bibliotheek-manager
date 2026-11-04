@@ -12,10 +12,10 @@ The process it supports:
 
 ## Status (4 November 2026)
 
-**Design phase.** The functional design specification, [design/FDS.md](design/FDS.md), is at draft 0.1. No code exists yet.
+**Design phase.** The functional design specification, [design/FDS.md](design/FDS.md), is at draft 0.2. No code exists yet.
 
 - The implementation technology is open. The manager may be a web app (run locally or hosted) or a native app for Windows, Linux or Android; every implementation must behave identically (FDS 1.4, D-01).
-- The FDS has six open items (section 11), among them the ChordPro directives the app supports (O-01), a shared set of test libraries (O-04), and the migration of existing libraries in the current format (O-05).
+- The FDS has eight open items (section 11), among them the ChordPro directives the app supports (O-01), a shared set of test libraries (O-04), and the migration of existing libraries in the current format (O-05).
 - The import side of the specification (FDS section 8) is built in the Zangbundel app, not here.
 
 The [changelog](changelog.md) lists what changed and when.

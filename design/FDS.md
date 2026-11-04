@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Functional Design Specification (FDS) |
-| **Status** | Draft 0.1 |
+| **Status** | Draft 0.2 |
 | **Date** | 2026-11-04 |
 | **Scope** | Library package format, Editor, Songbook app import |
 
@@ -50,6 +50,7 @@ Out of scope:
 | **ChordPro file** | A text file with lyrics, chords and directives (`.cho`). |
 | **Attachment** | A non-ChordPro file in a song folder (audio, PDF, image). |
 | **Manifest** | `manifest.json`: library ID, version, metadata and a hash of every file. |
+| **Library ID** | A random identifier assigned once to a library (§4.1). It, not the title or the author, identifies a library: a later version of the same library has the same ID. |
 | **Signature** | `manifest.sig`: an Ed25519 signature over the manifest. |
 | **Key file** | A file holding an author's private and public key. |
 | **Fingerprint** | A short, human-readable code derived from a public key. |
@@ -142,6 +143,8 @@ Default limits; implementations may make them configurable but must not exceed t
 | Number of entries | 5,000 |
 | Compression ratio of any entry | 100 : 1 |
 | ChordPro file size | 256 KB |
+
+Sharing threshold: the Editor warns when the saved ZIP is larger than **20 MB** (PKG-09). This is not a limit; it reflects what common messaging apps and e-mail can send (D-21).
 
 ### 3.6 Ignored system files
 
@@ -286,6 +289,7 @@ Both applications must apply the rules in this chapter identically. Implementati
 | PKG-06 | Names follow PF-20, PF-21, PF-22. | Error | M-06 |
 | PKG-07 | No two names in one folder differ only in case (PF-23). | Error | M-07 |
 | PKG-08 | Ignored system files are present (§3.6). | Info | M-40 |
+| PKG-09 | The ZIP is not larger than the sharing threshold (§3.5). Editor only: checked on the opened ZIP and on save. | Warning | M-08 |
 
 ### 6.3 Structure rules (STR)
 
@@ -396,8 +400,9 @@ Both applications must apply the rules in this chapter identically. Implementati
 | EDT-51 | If the content differs from what was opened, the Editor raises `version` by 1 (or sets it to 1 for a new library) and sets `modified`. If nothing changed, the library is saved unchanged, including its signature. |
 | EDT-52 | The Editor writes the manifest (§4) for the current content. |
 | EDT-53 | If the library is signed, the Editor signs the new manifest with the loaded key (§5). |
-| EDT-54 | The proposed file name is `<title>-v<version>.zip`, adjusted to comply with §3.3. |
+| EDT-54 | The proposed file name is `<title>-v<version>.zip`, adjusted to comply with §3.3. The extension is open item O-07. |
 | EDT-55 | The ZIP contains one top-level folder named after the title, adjusted to comply with §3.3. |
+| EDT-56 | After saving, the Editor shows the size of the ZIP and, above the sharing threshold, the warning M-08 (PKG-09). |
 
 ### 7.7 Signing and keys
 
@@ -419,6 +424,15 @@ Both applications must apply the rules in this chapter identically. Implementati
 | EDT-72 | The copy may then be signed with any key (EDT-60). This is the only way to change the author key of a library. |
 | EDT-73 | The Save rules of §7.6 apply. |
 
+### 7.9 Language
+
+| ID | Requirement |
+|---|---|
+| EDT-80 | The Editor's interface and messages are available in at least the languages of the Songbook app: Dutch, English and German (D-20). |
+| EDT-81 | The Editor starts in the language of the operating system or browser, or in English when that language is not available. The user can change it at any time. |
+| EDT-82 | The language choice is not tied to a library and may be remembered between sessions (EDT-02). |
+| EDT-83 | Fixed terms (library, set, song, signed, unsigned, fingerprint) follow the Songbook app's glossary, so the user sees the same word in both applications. |
+
 ---
 
 ## 8. Songbook app — import
@@ -428,9 +442,10 @@ Both applications must apply the rules in this chapter identically. Implementati
 | ID | Requirement |
 |---|---|
 | APP-01 | The app applies all rules of §6. On any Fatal or Error rule the import is rejected with the matching message. Warnings and Info are not shown. |
-| APP-02 | A ZIP without a manifest is rejected (M-20): it must be opened and saved in the Editor first. |
+| APP-02 | A ZIP without a manifest is rejected (M-20): it must be opened and saved in the Editor first. See open item O-05. |
 | APP-03 | A library with a higher `formatVersion` than supported is rejected (M-22). |
-| APP-04 | After validation, the app compares the library with its device memory (§8.2) and acts according to §8.3. |
+| APP-04 | After validation, the app compares the library with its device memory (§8.2) and its installed libraries, and acts according to §8.3. |
+| APP-05 | The app asks at most one question per import. |
 
 ### 8.2 Device memory
 
@@ -442,18 +457,28 @@ Both applications must apply the rules in this chapter identically. Implementati
 
 ### 8.3 Decision table
 
+The app first identifies the library by its `libraryId`, then checks the signing key, then the version. The first row that matches decides.
+
 | Device memory | Incoming library | Behaviour | Message |
 |---|---|---|---|
-| Unknown library ID | Signed | Import. Remember the key. | — |
-| Unknown library ID | Unsigned | Import. | — |
-| Key X | Signed with X, higher version | Update silently. | — |
+| Unknown library ID; no installed library has the same title | Signed or unsigned | Import. Remember the key, or "unsigned". | — |
+| Unknown library ID; an installed library has the same title (case-insensitive) | Signed or unsigned | Ask: add as a separate library, replace the installed one, or cancel. On replace: remove the installed library and import the new one. | M-73 |
 | Key X | Signed with Y | Ask. On accept: import and remember Y. | M-70 |
 | Key X | Unsigned | Ask. On accept: import and remember "unsigned". | M-71 |
-| Unsigned | Signed | Import. Remember the key. | — |
-| Unsigned | Unsigned, higher version | Update silently. | — |
-| Known library ID | Same or lower version | Ask. On accept: replace. | M-72 |
+| Key X | Signed with X | Compare versions (table below). | see below |
+| Unsigned | Signed or unsigned | Compare versions (table below). On import of a signed library, remember its key. | see below |
 
-Version comparison only applies when the signing status and key are unchanged; rows M-70 and M-71 take precedence.
+| Incoming version | Behaviour | Message |
+|---|---|---|
+| Higher | Update silently. | — |
+| Same | Ask. On accept: replace. | M-72 |
+| Lower | Warn and ask. On accept: replace. | M-74 |
+
+When M-70 or M-71 is asked and the incoming version is not higher, the version sentence `{versionNote}` (§9) is part of that question, so a change of key never hides a downgrade and the user is asked only once (APP-05).
+
+Replacing a library with an older version is always possible; the app warns but never refuses (D-19). The same holds for a change of key (D-17).
+
+When the device memory knows the library ID but the library is no longer installed (APP-12), the comparison with the remembered key and version still applies; "replace" then means "import".
 
 ### 8.4 Display
 
@@ -467,7 +492,9 @@ Version comparison only applies when the signing status and key are unchanged; r
 
 ## 9. Messages
 
-Texts are in English; translation is outside the scope of this document. `{…}` marks a placeholder.
+The texts are given in English and are the reference for their translations; both applications show them in the user's language (EDT-80). `{…}` marks a placeholder.
+
+`{versionNote}` (M-70, M-71) is empty when the incoming version is higher than the installed one, and otherwise the sentence: "This is version {new}; you have version {current}."
 
 | ID | Text |
 |---|---|
@@ -478,6 +505,7 @@ Texts are in English; translation is outside the scope of this document. `{…}`
 | M-05 | The ZIP file must contain exactly one library folder. |
 | M-06 | The name "{name}" is not allowed. Avoid special characters and keep names short. |
 | M-07 | "{name1}" and "{name2}" differ only in capital letters. Rename one of them. |
+| M-08 | This library is {size} MB. Some messaging apps and e-mail cannot send files larger than about 20 MB. Use fewer or smaller attachments if it does not arrive. |
 | M-10 | The file "{name}" does not belong in the library folder. Move it into a song folder or remove it. |
 | M-11 | This library has no songs yet. |
 | M-12 | The file "{name}" in set "{set}" must be inside a song folder. |
@@ -514,9 +542,11 @@ Texts are in English; translation is outside the scope of this document. `{…}`
 | M-62 | Delete "{name}"? This cannot be undone in this session. |
 | M-63 | Fix the errors before saving. |
 | M-64 | Keep this key file safe. It cannot be recovered, and without it you cannot change or sign this library again. Anyone who has this file can sign as you. |
-| M-70 | This update is signed by a different author than the version you have. Current: {name} ({fingerprint}). New: {name} ({fingerprint}). Import anyway? |
-| M-71 | The version you have is signed by {name} ({fingerprint}), but this update is not signed. Import anyway? |
-| M-72 | You already have version {current} of this library. Replace it with version {new}? |
+| M-70 | This update is signed by a different author than the version you have. Current: {name} ({fingerprint}). New: {name} ({fingerprint}). {versionNote} Import anyway? |
+| M-71 | The version you have is signed by {name} ({fingerprint}), but this update is not signed. {versionNote} Import anyway? |
+| M-72 | You already have version {current} of this library. Replace it with this copy? |
+| M-73 | You already have a library called "{title}", but this is a different library. Add it as a separate library, or replace the one you have? |
+| M-74 | This is an older version of the library than the one you have: version {new} instead of {current}. Replace it anyway? |
 
 ---
 
@@ -529,7 +559,8 @@ These limitations are accepted and must be stated in the user documentation.
 3. **A new device trusts what it sees first.** After a reinstall or on a new device, the first import of a library is accepted without comparison.
 4. **Lost or leaked keys cannot be recovered or revoked.** A lost key means the library can no longer be changed; use Save as copy to continue under a new library ID. Anyone with a leaked key file can sign as that author.
 5. **One editor at a time.** Two people editing the same version produce two libraries with the same version number. The Songbook app cannot tell them apart and asks before replacing (M-72).
-6. **Hand-made changes are detected, not prevented.** Anyone can change a ZIP by hand. The hashes and signature make such changes visible.
+6. **Hand-made changes are detected, not prevented.** Anyone can change a ZIP by hand. The hashes and signature make such changes visible. A manifest shows that the content has not changed since the manifest was written, not that the Editor wrote it or that the library was validated; the Songbook app therefore always validates again (APP-01).
+7. **A library is identified by its library ID, not by its title or author.** Starting a new library instead of opening the last saved ZIP creates a different library, which the app adds next to the old one unless the user chooses to replace it (M-73). Keep the last saved ZIP to make the next version.
 
 ---
 
@@ -539,10 +570,12 @@ These limitations are accepted and must be stated in the user documentation.
 |---|---|
 | O-01 | Confirm which ChordPro directives and metadata the Songbook app supports and which are required (SNG-07, SNG-11, EDT-34). |
 | O-02 | Confirm the allowed attachment types (§3.4) and whether library-level or set-level files (cover image, description) are needed. |
-| O-03 | Define the display order of sets and songs (alphabetical, or an explicit order in the manifest). |
+| O-03 | Define what a set is in the Songbook app and in which order sets and songs are shown. Is a set a group of songs for browsing, or a setlist to be sung in order at a campfire? If a setlist: a song used in two sets is copied into both song folders (PF-12), whereas the app's current setlists (`.zbs`) refer to songs instead of copying them. Order: alphabetical, or an explicit order in the manifest. |
 | O-04 | Create a shared set of test libraries (valid and invalid) that every Editor implementation and the Songbook app must pass. |
-| O-05 | Decide how existing libraries in the current format are migrated. |
-| O-06 | Confirm the limits in §3.5. |
+| O-05 | Decide how existing libraries in the current format (the `.zbl` release archive with `zangbundel.json`) are migrated. Decide also whether the app keeps a route without the Editor: today a hand-zipped library is accepted and invalid songs are skipped while the rest is imported, whereas this specification rejects a ZIP without a manifest (APP-02) and a library with any Error (APP-01). |
+| O-06 | Confirm the limits and the sharing threshold in §3.5. |
+| O-07 | Choose the file extension of a saved library: `.zip` (EDT-54) opens in any archive tool, a dedicated extension such as `.zbl` lets the Songbook app open the file directly when it is tapped in a messaging app or e-mail. |
+| O-08 | Decide whether a library can carry a short description of what changed in a version, shown by the app on update. |
 
 ---
 
@@ -566,3 +599,19 @@ These limitations are accepted and must be stated in the user documentation.
 | D-14 | The limitation of parallel editing is accepted. |
 | D-15 | The Editor shows a notice when a key is generated. |
 | D-16 | No Editor implementation stores keys or libraries between sessions. |
+| D-17 | A change of author key, or a signed library followed by an unsigned one, is never refused by the app: it warns and the user decides (M-70, M-71). This confirms D-12. |
+| D-18 | A library is identified by its library ID. When an incoming library has an unknown ID but the title of an installed library, the app asks whether to add it separately or replace the installed one (M-73). |
+| D-19 | A newer version replaces the installed one silently; the same or an older version is replaced only after a question, and an older version is named as such (M-72, M-74), also when the key changes. The app warns but never refuses. |
+| D-20 | The Editor's interface and messages are in at least Dutch, English and German, the languages of the Songbook app. |
+| D-21 | Libraries are shared through messaging apps, e-mail, file sharing and websites. The Editor warns above 20 MB, the size such channels commonly accept (PKG-09). |
+
+Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangbundel-bibliotheek#1 (2026-11-04).
+
+---
+
+## 13. Change history
+
+| Version | Date | Change |
+|---|---|---|
+| Draft 0.1 | 2026-11-04 | First draft, from issue pe1mew/Zangbundel-bibliotheek#1. |
+| Draft 0.2 | 2026-11-04 | After the requester's answers on the issue. Term *Library ID*. Sharing threshold (§3.5), PKG-09, M-08, EDT-56. Language of the Editor (§7.9, EDT-80 to EDT-83); messages are translated. Import (§8.3): same-title check (M-73), version compared in every case with a downgrade warning (M-74, `{versionNote}` in M-70 and M-71), at most one question (APP-05); M-72 reworded. Limitation 6 extended, limitation 7 added. Open items O-03 and O-05 extended, O-06 reworded, O-07 and O-08 added. Decisions D-17 to D-21. |
