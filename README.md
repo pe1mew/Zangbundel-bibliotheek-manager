@@ -12,10 +12,10 @@ The process it supports:
 
 ## Status (4 November 2026)
 
-**Design phase.** The functional design specification, [design/FDS.md](design/FDS.md), is at draft 0.2. No code exists yet.
+**Design phase.** The functional design specification, [design/FDS.md](design/FDS.md), is at draft 0.4. No code exists yet.
 
 - The implementation technology is open. The manager may be a web app (run locally or hosted) or a native app for Windows, Linux or Android; every implementation must behave identically (FDS 1.4, D-01).
-- The FDS has eight open items (section 11), among them the ChordPro directives the app supports (O-01), a shared set of test libraries (O-04), and the migration of existing libraries in the current format (O-05).
+- One item is still open (FDS section 11): a shared set of test libraries (O-04). The app repository has agreed how the app refers to songs of a library in this format and how it registers `.zbl` (D-29, D-30).
 - The import side of the specification (FDS section 8) is built in the Zangbundel app, not here.
 
 The [changelog](changelog.md) lists what changed and when.
@@ -24,10 +24,10 @@ The [changelog](changelog.md) lists what changed and when.
 
 As specified in the FDS:
 
-- **New or open.** Start a new library with a title, or open a library ZIP. A ZIP without a manifest is taken in as a new library.
+- **New or open.** Start a new library with a title, or open a library (`.zbl`). A ZIP of folders and song files, or a release archive of a git library, is taken in as a new library; a folder per set becomes a set.
 - **Check.** Every rule of FDS section 6 (package, structure, manifest, signature, song) is applied while the user works. Messages are grouped by severity and lead to their location; errors block saving.
-- **Edit.** Sets and songs: add, rename, move, delete. Songs as ChordPro text with live validation, or through form fields that stay in step with the text. Attachments (audio, PDF, images).
-- **Save.** The manager raises the version, writes the manifest with a SHA-256 hash of every file, and proposes the file name.
+- **Edit.** Songs: add, edit, delete, as ChordPro text with live validation or through form fields that stay in step with the text. Sets: ordered setlists of the library's songs; a song can be in several sets.
+- **Save.** The manager raises the version, asks for an optional note on what changed, writes the manifest with a SHA-256 hash of every file, and proposes the file name.
 - **Sign.** Optional Ed25519 signing with a key file (`.zbkey`). The manager shows a key's fingerprint wherever it shows the key. A signed library opens read-only until its key is loaded; *Save as copy* starts a new library under a new key.
 - **Nothing stored.** The manager keeps nothing between sessions: no libraries, no keys (FDS principle 5, EDT-02, EDT-64).
 

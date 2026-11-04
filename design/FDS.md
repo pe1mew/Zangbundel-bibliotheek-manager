@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Functional Design Specification (FDS) |
-| **Status** | Draft 0.2 |
+| **Status** | Draft 0.4 |
 | **Date** | 2026-11-04 |
 | **Scope** | Library package format, Editor, Songbook app import |
 
@@ -44,11 +44,14 @@ Out of scope:
 
 | Term | Meaning |
 |---|---|
-| **Library** | A collection of sets, distributed as one ZIP file. |
-| **Set** | A named group of songs inside a library. |
-| **Song** | One song folder containing exactly one ChordPro file and optional attachments. |
+| **Library** | A collection of songs and sets, distributed as one ZIP file (`.zbl`). |
+| **Set** | A named, ordered list of songs of the library, used as a setlist in the Songbook app. A song is stored once and can be in any number of sets (D-22). |
+| **Song** | One song folder containing exactly one ChordPro file. |
+| **Song ID** | The name of a song folder, also the name of its ChordPro file and the value of its `{meta: id}` directive. Assigned once by the Editor. |
 | **ChordPro file** | A text file with lyrics, chords and directives (`.cho`). |
-| **Attachment** | A non-ChordPro file in a song folder (audio, PDF, image). |
+| **ChordPro profile** | The song file format of the Songbook app: Zangbundel `design/song-format.md`, sections 5 to 8 (github.com/pe1mew/Zangbundel). The song rules of this specification are those of the profile (D-26). |
+| **Release archive** | The library format the Songbook app read before this specification: a `.zbl` file with `zangbundel-archive.json`, built from a git library repository (song format §12). The app keeps reading it (D-23). |
+| **Attachment** | A non-ChordPro file in a song folder (audio, PDF, image). Not allowed in format version 1 (D-24). |
 | **Manifest** | `manifest.json`: library ID, version, metadata and a hash of every file. |
 | **Library ID** | A random identifier assigned once to a library (§4.1). It, not the title or the author, identifies a library: a later version of the same library has the same ID. |
 | **Signature** | `manifest.sig`: an Ed25519 signature over the manifest. |
@@ -89,29 +92,27 @@ The Editor may be implemented as a web app (local or hosted), a native Windows o
 | PF-01 | A library is a standard ZIP file (deflate or stored). Encrypted entries are not allowed. |
 | PF-02 | The ZIP contains exactly one top-level folder, the **library folder**. Its name is not significant; the library title is in the manifest. |
 | PF-03 | All paths in this specification are relative to the library folder, use `/` as separator, and are encoded in UTF-8, normalised to Unicode NFC. |
+| PF-04 | A saved library has the extension `.zbl` and the MIME type `application/vnd.zangbundel.library+zip`, as the release archive (song format §12.2; D-25, D-30). |
 
 ### 3.2 Folder structure
 
 ```
 <library folder>/
-├── manifest.json            required
+├── manifest.json            required; also holds the sets (§4.1)
 ├── manifest.sig             only when signed
-├── <set folder>/
-│   ├── <song folder>/
-│   │   ├── <name>.cho       exactly one
-│   │   └── <attachments>    optional
-│   └── <song folder>/
-│       └── …
-└── <set folder>/
-    └── …
+├── <song id>/
+│   └── <song id>.cho        exactly one, nothing else
+└── <song id>/
+    └── <song id>.cho
 ```
 
 | ID | Requirement |
 |---|---|
-| PF-10 | The library folder contains only `manifest.json`, optionally `manifest.sig`, and set folders. |
-| PF-11 | A set folder contains only song folders. |
-| PF-12 | A song folder contains exactly one `.cho` file and zero or more attachments. It contains no subfolders. |
-| PF-13 | The set folder name is the set's display name. The song is displayed by its `{title}` directive. |
+| PF-10 | The library folder contains only `manifest.json`, optionally `manifest.sig`, and song folders. |
+| PF-11 | *Withdrawn in draft 0.3.* Sets are no longer folders; they are lists in the manifest (D-22). |
+| PF-12 | A song folder is named after its song ID and contains exactly one file, `<song id>.cho`. It contains no subfolders. The folder level is kept so that a later format version can add attachments (D-24). |
+| PF-13 | A set is displayed by its `name` in the manifest. A song is displayed by its `{title}` directive. |
+| PF-14 | A song ID follows the song ID syntax of the ChordPro profile (song format §3.2): `^[a-z0-9]+(-[a-z0-9]+)*$`, at most 64 characters. The `{meta: id}` directive of the song equals the song ID. |
 
 ### 3.3 Names
 
@@ -122,29 +123,24 @@ The Editor may be implemented as a web app (local or hosted), a native Windows o
 | PF-22 | Each name is at most 100 characters; each full path at most 255 characters. |
 | PF-23 | No two names in the same folder may differ only in letter case. |
 
-### 3.4 Allowed attachment types
+### 3.4 Attachments
 
-| Kind | Extensions |
-|---|---|
-| Audio | `.mp3`, `.m4a`, `.ogg` |
-| Document | `.pdf` |
-| Image | `.png`, `.jpg`, `.jpeg`, `.webp` |
-
-See open item O-02.
+Format version 1 has no attachments: a song folder holds only its ChordPro file (PF-12, STR-08). Attachments such as notation for the Songbook app's phase 3 come with a later format version (D-24).
 
 ### 3.5 Limits
 
-Default limits; implementations may make them configurable but must not exceed them by default.
+The limits are those of the Songbook app's release archive (song format §12.2 and §5.5), so that both formats are bounded alike (D-26). Implementations may make them stricter, never looser.
 
-| Limit | Default |
+| Limit | Value |
 |---|---|
-| ZIP file size | 100 MB |
-| Total uncompressed size | 500 MB |
-| Number of entries | 5,000 |
-| Compression ratio of any entry | 100 : 1 |
-| ChordPro file size | 256 KB |
+| ZIP file size | 64 MiB |
+| Total uncompressed size | 256 MiB, and at most 20 × the ZIP file size |
+| Number of entries | 10,000 |
+| ChordPro file size | 64 KiB (SNG-18); 8 KiB recommended (SNG-17) |
 
-Sharing threshold: the Editor warns when the saved ZIP is larger than **20 MB** (PKG-09). This is not a limit; it reflects what common messaging apps and e-mail can send (D-21).
+The size and ratio limits are checked from the ZIP's central directory before any entry is decompressed, and enforced again while decompressing.
+
+Sharing threshold: the Editor warns when the saved ZIP is larger than **16 MiB** (PKG-09), the size above which the Songbook app already warns for a release archive (song format A101). This is not a limit; it reflects what common messaging apps and e-mail can send (D-21, D-28).
 
 ### 3.6 Ignored system files
 
@@ -172,13 +168,26 @@ The following entries are created by operating systems and are not part of the l
   "description": "Songs for camps and campfires.",
   "created": "2026-03-14T18:22:05Z",
   "modified": "2026-11-04T09:41:30Z",
+  "changes": "Three songs added for the summer camp.",
+  "license": {
+    "id": "CC-BY-NC-4.0",
+    "summary": "Free to share and adapt for non-commercial use, with credit to Troop 12."
+  },
+  "maintainer": {
+    "name": "Troop 12 leaders",
+    "url": "https://troop12.example.org/songs"
+  },
   "author": {
     "name": "Remko",
     "publicKey": "MCowBQYDK2VwAyEA…"
   },
+  "sets": [
+    { "name": "Campfire", "songs": ["kumbaya", "vader-jacob"] },
+    { "name": "Summer camp 2026", "songs": ["vader-jacob"] }
+  ],
   "files": [
-    { "path": "Campfire/Kumbaya/kumbaya.cho", "size": 1532, "sha256": "9b1f…e07a" },
-    { "path": "Campfire/Kumbaya/kumbaya.mp3", "size": 2840112, "sha256": "41cc…9d02" }
+    { "path": "kumbaya/kumbaya.cho", "size": 1532, "sha256": "9b1f…e07a" },
+    { "path": "vader-jacob/vader-jacob.cho", "size": 611, "sha256": "41cc…9d02" }
   ]
 }
 ```
@@ -186,12 +195,23 @@ The following entries are created by operating systems and are not part of the l
 | Field | Type | Required | Rules |
 |---|---|---|---|
 | `formatVersion` | integer | yes | Format version of this specification. Currently `1`. |
-| `libraryId` | string | yes | UUID version 4, lowercase. Assigned once; never changes except via Save as copy. |
+| `libraryId` | string | yes | UUID version 4 in exactly this form: `^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`. No upper case, no braces, no other UUID version; anything else fails MAN-02. Assigned once; never changes except via Save as copy. The Songbook app uses it unchanged as the library id in setlists, BLE song references and memories (D-29). |
 | `version` | integer | yes | ≥ 1. Raised by the Editor (§7.6). |
 | `title` | string | yes | 1–100 characters. |
 | `description` | string | no | Up to 1,000 characters. |
 | `created` | string | yes | UTC, ISO 8601, `YYYY-MM-DDThh:mm:ssZ`. Set when the library ID is assigned. |
 | `modified` | string | yes | Same format. Set on every save that raises the version. |
+| `changes` | string | no | Up to 500 characters: what changed in this version, written by the author (EDT-58, D-27). Belongs to one version: the Editor does not carry it over to the next. |
+| `license` | object | yes | The licence of the collection, shown by the Songbook app on first import and on request (FR-LIB-21; D-31). It applies to every song that does not state its own `{meta: license}`. |
+| `license.id` | string | yes | An SPDX identifier (`CC-BY-NC-4.0`, `CC-BY-SA-4.0`, `CC0-1.0`, …), `proprietary`, or `mixed` when the songs carry their own licences; as `license.id` in `zangbundel.json` (song format §4.2). |
+| `license.summary` | string | yes | One sentence, 1–200 characters, shown before the full text. |
+| `license.text` | string | no | The full licence text, up to 32,000 characters. Kept in the manifest, so the library folder holds no other files (PF-10). |
+| `maintainer` | object | no | Who looks after the library, for rights holders and users with a correction (D-32). Copied into every copy of the library and shown by the Songbook app. |
+| `maintainer.name` | string | if `maintainer` | 1–100 characters. |
+| `maintainer.email`, `maintainer.url` | string | at least one, if `maintainer` | An e-mail address; an `https:` URL. |
+| `sets` | array | yes | The sets, in display order. May be empty. |
+| `sets[].name` | string | yes | 1–60 characters, as a setlist title (song format §13). Unique in the library, case-insensitive. |
+| `sets[].songs` | array | yes | Song IDs (PF-14), in the order they are sung. |
 | `author` | object | no | Present **only** when the library is signed. |
 | `author.name` | string | if `author` | 1–100 characters. Chosen by the author; not verified. |
 | `author.publicKey` | string | if `author` | Ed25519 public key, 32 bytes, base64 (standard alphabet, with padding). |
@@ -291,30 +311,34 @@ Both applications must apply the rules in this chapter identically. Implementati
 | PKG-08 | Ignored system files are present (§3.6). | Info | M-40 |
 | PKG-09 | The ZIP is not larger than the sharing threshold (§3.5). Editor only: checked on the opened ZIP and on save. | Warning | M-08 |
 
+PKG-02 covers the ZIP size, uncompressed size, ratio and entry count of §3.5; the ChordPro file size is the song rule SNG-18, so that one oversized song does not stop the Editor from opening the library.
+
 ### 6.3 Structure rules (STR)
 
 | Code | Rule | Severity | Message |
 |---|---|---|---|
 | STR-01 | The library folder contains no files other than `manifest.json` and `manifest.sig`. | Error | M-10 |
 | STR-02 | The library contains at least one song. | Warning | M-11 |
-| STR-03 | A set folder contains no files. | Error | M-12 |
-| STR-04 | A set folder contains at least one song folder. | Warning | M-13 |
-| STR-05 | A song folder contains a `.cho` file. | Error | M-14 |
+| STR-03 | *Withdrawn in draft 0.3* (set folders no longer exist, D-22). | — | — |
+| STR-04 | *Withdrawn in draft 0.3*; replaced by SET-03. | — | — |
+| STR-05 | A song folder contains `<song id>.cho` (PF-12). | Error | M-14 |
 | STR-06 | A song folder contains no more than one `.cho` file. | Error | M-15 |
 | STR-07 | A song folder contains no subfolders. | Error | M-16 |
-| STR-08 | Attachments have an allowed extension (§3.4). | Error | M-17 |
-| STR-09 | Attachments are not empty. | Warning | M-18 |
+| STR-08 | A song folder contains no file other than its `.cho` file (§3.4). | Error | M-17 |
+| STR-09 | *Withdrawn in draft 0.3* (no attachments, D-24). | — | — |
+| STR-10 | A song folder name is a valid song ID (PF-14). | Error | M-09 |
 
 ### 6.4 Manifest rules (MAN)
 
 | Code | Rule | Severity | Message |
 |---|---|---|---|
-| MAN-01 | `manifest.json` is present. | Editor: Info (manifest is created on save). App: Error. | M-20 |
+| MAN-01 | `manifest.json` is present. | Editor: Info (the ZIP is converted, EDT-25; the manifest is created on save). App: not this format, see APP-02. | M-20 |
 | MAN-02 | The manifest is valid JSON and matches §4.1. | Error | M-21 |
 | MAN-03 | `formatVersion` is supported by this application. | Fatal | M-22 |
 | MAN-04 | Every listed file exists (MF-02). | Error | M-23 |
 | MAN-05 | Every file is listed (MF-01). | Error | M-24 |
 | MAN-06 | Size and hash of every file match (MF-02). | Error | M-25 |
+| MAN-07 | The library has a licence (`license.id` and `license.summary`). In the Editor checked before every save; in the app part of MAN-02. | Error | M-29 |
 
 ### 6.5 Signature rules (SIG)
 
@@ -326,19 +350,40 @@ Both applications must apply the rules in this chapter identically. Implementati
 
 ### 6.6 Song rules (SNG)
 
+A song file is valid when it is valid under the ChordPro profile (song format sections 5 to 7). The rules below restate the profile's checks with this specification's severities and messages; the column *Profile* names the profile's code. Where this table and the profile disagree, the profile is right and this table is to be corrected (D-26).
+
+The profile's song-level errors (S-codes) make the Songbook app skip the song in a release archive; in this format they reject the import (APP-01), because the Editor does not save a library with an Error.
+
+| Code | Rule | Severity | Message | Profile |
+|---|---|---|---|---|
+| SNG-01 | The `.cho` file is valid UTF-8 without control characters other than LF, CR and tab. A BOM, CRLF line ends, trailing whitespace and NFD are allowed; the Editor writes the canonical form on save (EDT-57). | Error | M-50 | S001, W001 |
+| SNG-02 | The song has a `{title:}` (or `{t:}`) directive with a non-empty value. | Error | M-51 | S003 |
+| SNG-03 | A single-valued directive (title, language, subtitle, sorttitle, copyright, license, source, melody, variant-group, redistribute, key, capo, tempo, time, duration, year; song format §6.2) occurs at most once. | Error | M-52 | S006 |
+| SNG-04 | No line starts with `{` without ending with `}`, or the reverse. | Error | M-53 | S011 |
+| SNG-05 | Every chord has matching `[` and `]` on the same line. Editor only: the profile treats chords as opaque in phase 1. | Warning | M-54 | — |
+| SNG-06 | Environments (`start_of_…`/`end_of_…` and their short forms, also unknown ones) are not nested, every start has an end and every end a start. | Error | M-55 | S007 |
+| SNG-07 | Directives and meta names are known to the profile. Unknown ones are ignored by the app. | Info | M-56 | I001 |
+| SNG-08 | Chord names are recognisable (root `A`–`G`, optional `#`/`b`, optional suffix, optional `/bass`). Editor only. | Warning | M-57 | — |
+| SNG-09 | The song contains at least one lyric line. | Error | M-58 | S010 |
+| SNG-10 | No two songs in the library have the same title (case-insensitive). | Warning | M-59 | — |
+| SNG-11 | The song has a `{meta: language}` directive with a well-formed BCP 47 tag (song format §6.2). | Error | M-49 | S003 |
+| SNG-12 | The `{meta: id}` directive is present and equals the song ID (PF-14). | Editor: Info (corrected on save, EDT-36). App: Error. | M-48 | S003, S004 |
+| SNG-13 | `{chorus}` does not occur before any chorus is defined. | Error | M-47 | S008 |
+| SNG-14 | The file contains no `{new_song}` directive. | Error | M-46 | S009 |
+| SNG-15 | Values are valid: `redistribute` is `yes` or `no`, `year` has four digits, `variant-group` and `tag` follow the song ID syntax. | Error | M-45 | S012 |
+| SNG-16 | Recommended metadata is present: lyricist or composer, copyright, license, source, tag. | Warning | M-44 | W002, W010 |
+| SNG-17 | The song stays within the recommendations of song format §5.5: title ≤ 60 characters, lyric line ≤ 120 characters, ≤ 254 lyric lines, file ≤ 8 KiB. | Warning | M-43 | W003, W004, W005, W008 |
+| SNG-18 | The `.cho` file is at most 64 KiB (§3.5). | Error | M-19 | S002 |
+
+### 6.7 Set rules (SET)
+
 | Code | Rule | Severity | Message |
 |---|---|---|---|
-| SNG-01 | The `.cho` file is valid UTF-8. A leading BOM is allowed; the Editor removes it on save. | Error | M-50 |
-| SNG-02 | The song has a `{title:}` (or `{t:}`) directive with a non-empty value. | Error | M-51 |
-| SNG-03 | The song has no more than one title directive. | Warning | M-52 |
-| SNG-04 | Every directive has matching `{` and `}` on the same line. | Error | M-53 |
-| SNG-05 | Every chord has matching `[` and `]` on the same line. | Error | M-54 |
-| SNG-06 | Every section start (`start_of_chorus`/`soc`, `start_of_verse`/`sov`, `start_of_bridge`/`sob`, `start_of_tab`/`sot`) has a matching end, without nesting, and every end has a start. | Error | M-55 |
-| SNG-07 | Directives are known to the Songbook app (open item O-01). | Warning | M-56 |
-| SNG-08 | Chord names are recognisable (root `A`–`G`, optional `#`/`b`, optional suffix, optional `/bass`). | Warning | M-57 |
-| SNG-09 | The song contains at least one line of lyrics. | Warning | M-58 |
-| SNG-10 | No two songs in the same set have the same title (case-insensitive). | Warning | M-59 |
-| SNG-11 | Metadata required by the Songbook app is present (open item O-01). | TBD | — |
+| SET-01 | Every song ID in a set is a song of the library. | Error | M-32 |
+| SET-02 | No two sets have the same name (case-insensitive). | Error | M-33 |
+| SET-03 | A set contains at least one song. | Warning | M-13 |
+| SET-04 | A set contains each song at most once. | Warning | M-34 |
+| SET-05 | A set contains at most 200 songs, as a setlist file (song format §13). | Warning | M-35 |
 
 ---
 
@@ -359,29 +404,33 @@ Both applications must apply the rules in this chapter identically. Implementati
 |---|---|
 | EDT-10 | The user enters a title and optionally a description. |
 | EDT-11 | The Editor assigns a new `libraryId` and sets `created`. The library starts unsigned. Version 1 is written on the first save. |
-| EDT-12 | The new library starts with one empty set, which the user can rename. |
+| EDT-12 | The new library starts with no songs and no sets. |
+| EDT-13 | Before the first save the user chooses the library's licence: a short list of common choices (CC BY-NC 4.0, CC BY-SA 4.0, CC0 1.0, `mixed`, `proprietary`) with their summary filled in, or another SPDX identifier with an own summary. The full text is optional (§4.1). |
+| EDT-14 | The user may enter a maintainer (§4.1). The Editor says that the contact is copied into every copy of the library and shown to everyone who imports it. |
 
 ### 7.3 Open library
 
 | ID | Requirement |
 |---|---|
 | EDT-20 | The Editor applies all rules of §6. On a Fatal rule the library is not opened. |
-| EDT-21 | A ZIP without a manifest (MAN-01) is opened as a new library: a `libraryId` is assigned and `created` is set. |
+| EDT-21 | A ZIP without a manifest (MAN-01) is opened as a new library: a `libraryId` is assigned and `created` is set. Its content is taken over as described in EDT-25 and EDT-26. |
 | EDT-22 | An **unsigned** library with manifest errors (MAN-04 to MAN-06) is opened; the differences are listed. Saving writes a new manifest for the current content (after confirmation, M-61). |
 | EDT-23 | A **signed** library opens **read-only**. The user can view, validate, load the key file, or use Save as copy. |
 | EDT-24 | After a matching key file is loaded (§7.7), the signed library becomes editable, including one with manifest or signature errors. |
+| EDT-25 | **A ZIP of folders and song files** (for example made with the operating system's *Compress* command): when the ZIP has no single top-level folder, its root is taken as the library folder. Every `.cho` file becomes a song. When the folder two levels above a `.cho` file lies inside the library folder, as in `<set>/<song>/<song>.cho`, that folder becomes a set containing the song, in alphabetical order of the song folders. A song found in several set folders with identical text is stored once and placed in each of those sets. The Editor proposes song IDs (EDT-36), leaves out all files that are not `.cho` files (M-42), and reports what it took over (M-41). The rules of §6 then apply to the result. |
+| EDT-26 | **A release archive or a library repository snapshot** (a `.zbl` with `zangbundel-archive.json`, or a ZIP with `zangbundel.json`; song format §12): the songs are taken over with their song IDs; title, description, licence (`license.id`, `license.summary`, and the licence file as `license.text`) and maintainer come from `zangbundel.json`. Setlists (`.zbs`) whose entries are songs of this library become sets; other entries are left out and reported. The library gets a new `libraryId` (EDT-21); the original stays readable by the Songbook app (D-23). Reported with M-41 and M-42. |
 
 ### 7.4 Editing
 
 | ID | Requirement |
 |---|---|
-| EDT-30 | Library: edit title and description. |
-| EDT-31 | Sets: add, rename, delete (with confirmation, M-62). |
-| EDT-32 | Songs: add (empty template or import an existing `.cho` file), edit, rename the folder, move to another set, delete (with confirmation, M-62). |
+| EDT-30 | Library: edit title, description, licence and maintainer. |
+| EDT-31 | Sets: add, rename, reorder, delete (with confirmation, M-62). Within a set: add songs, remove songs, reorder songs. Deleting a set or removing a song from a set does not delete the song. |
+| EDT-32 | Songs: add (empty template or import an existing `.cho` file), edit, delete (with confirmation, M-62). Deleting a song removes it from every set. |
 | EDT-33 | Song text: edit the ChordPro text directly, with validation while typing. |
-| EDT-34 | Song metadata: edit through form fields that read and write the corresponding directives in the ChordPro text. Text and form stay in sync. |
-| EDT-35 | Attachments: add, replace, remove. Only allowed types (§3.4) can be added. |
-| EDT-36 | Folder names for new sets and songs are proposed from the set name or song title and adjusted to comply with §3.3. |
+| EDT-34 | Song metadata: edit through form fields that read and write the corresponding directives in the ChordPro text: at least the fields of song format §6.1 marked MUST or SHOULD. Text and form stay in sync. The song ID is shown but not edited. |
+| EDT-35 | *Withdrawn in draft 0.3* (no attachments, D-24). |
+| EDT-36 | The song ID of a new song is proposed from its title as song format §3.2 recommends (lower case, accents removed, everything that is not a letter or digit becomes a hyphen, hyphens collapsed), made unique with a number (PF-14). A song taken over with a valid `{meta: id}` keeps it. The Editor writes it as folder name, file name and `{meta: id}`. Once the library has been saved with a song, its song ID does not change, also when the title changes, because the Songbook app's setlists refer to it. |
 | EDT-37 | System files found on opening are removed (PF-30). |
 
 ### 7.5 Validation panel
@@ -400,9 +449,12 @@ Both applications must apply the rules in this chapter identically. Implementati
 | EDT-51 | If the content differs from what was opened, the Editor raises `version` by 1 (or sets it to 1 for a new library) and sets `modified`. If nothing changed, the library is saved unchanged, including its signature. |
 | EDT-52 | The Editor writes the manifest (§4) for the current content. |
 | EDT-53 | If the library is signed, the Editor signs the new manifest with the loaded key (§5). |
-| EDT-54 | The proposed file name is `<title>-v<version>.zip`, adjusted to comply with §3.3. The extension is open item O-07. |
+| EDT-54 | The proposed file name is `<title>-v<version>.zbl`, adjusted to comply with §3.3 (D-25). |
 | EDT-55 | The ZIP contains one top-level folder named after the title, adjusted to comply with §3.3. |
 | EDT-56 | After saving, the Editor shows the size of the ZIP and, above the sharing threshold, the warning M-08 (PKG-09). |
+| EDT-57 | Every song file is written in the canonical form of the ChordPro profile (song format §8.1), so that the file hash in the manifest and the Songbook app's content hash are taken over the same bytes. |
+| EDT-58 | When a save raises the version, the Editor asks for an optional note on what changed (`changes`, at most 500 characters), with an empty field. Without a note the field is left out. |
+| EDT-59 | A web implementation offers the saved library as a download with the MIME type of PF-04. |
 
 ### 7.7 Signing and keys
 
@@ -441,8 +493,8 @@ Both applications must apply the rules in this chapter identically. Implementati
 
 | ID | Requirement |
 |---|---|
-| APP-01 | The app applies all rules of §6. On any Fatal or Error rule the import is rejected with the matching message. Warnings and Info are not shown. |
-| APP-02 | A ZIP without a manifest is rejected (M-20): it must be opened and saved in the Editor first. See open item O-05. |
+| APP-01 | The app applies all rules of §6. On any Fatal or Error rule the import is rejected with the matching message. Warnings and Info are not shown. A library in this format is accepted whole or not at all, because the Editor never saves one with an Error; an Error therefore means damage or a change outside the Editor (D-33). |
+| APP-02 | The app recognises the format by content, not by file name (D-25): `manifest.json` in the single top-level folder is this format; `zangbundel-archive.json` at the root is a release archive; `zangbundel.json` without it is a repository snapshot. A release archive or a snapshot is imported as before, under song format §12, song by song (D-23). A ZIP that is none of these is rejected (M-20). |
 | APP-03 | A library with a higher `formatVersion` than supported is rejected (M-22). |
 | APP-04 | After validation, the app compares the library with its device memory (§8.2) and its installed libraries, and acts according to §8.3. |
 | APP-05 | The app asks at most one question per import. |
@@ -462,7 +514,7 @@ The app first identifies the library by its `libraryId`, then checks the signing
 | Device memory | Incoming library | Behaviour | Message |
 |---|---|---|---|
 | Unknown library ID; no installed library has the same title | Signed or unsigned | Import. Remember the key, or "unsigned". | — |
-| Unknown library ID; an installed library has the same title (case-insensitive) | Signed or unsigned | Ask: add as a separate library, replace the installed one, or cancel. On replace: remove the installed library and import the new one. | M-73 |
+| Unknown library ID; an installed library has the same title (case-insensitive). Installed libraries include release archives and snapshots, compared by the `name` in their `zangbundel.json`. | Signed or unsigned | Ask: add as a separate library, replace the installed one, or cancel. On replace: remove the installed library and import the new one. | M-73 |
 | Key X | Signed with Y | Ask. On accept: import and remember Y. | M-70 |
 | Key X | Unsigned | Ask. On accept: import and remember "unsigned". | M-71 |
 | Key X | Signed with X | Compare versions (table below). | see below |
@@ -487,6 +539,10 @@ When the device memory knows the library ID but the library is no longer install
 | APP-20 | The library screen shows title, version, `modified` date and signing status. |
 | APP-21 | A signed library shows the author name and fingerprint (SG-20). |
 | APP-22 | An unsigned library shows the label **Unsigned**. |
+| APP-23 | The sets of a library are offered as setlists of that library, in the order of `sets`; the songs of a set in the order of `sets[].songs`. Songs outside any set are in the library's songbook only. |
+| APP-24 | When an update carries `changes`, the app shows the note once after the update and keeps it on the library screen until the next version. |
+| APP-25 | The app shows the licence (`license.summary`, and `license.text` when present) when a library is first imported and on request afterwards (FR-LIB-21). |
+| APP-26 | When `maintainer` is present, the library screen shows its name and contact. |
 
 ---
 
@@ -505,17 +561,19 @@ The texts are given in English and are the reference for their translations; bot
 | M-05 | The ZIP file must contain exactly one library folder. |
 | M-06 | The name "{name}" is not allowed. Avoid special characters and keep names short. |
 | M-07 | "{name1}" and "{name2}" differ only in capital letters. Rename one of them. |
-| M-08 | This library is {size} MB. Some messaging apps and e-mail cannot send files larger than about 20 MB. Use fewer or smaller attachments if it does not arrive. |
+| M-08 | This library is {size} MB. Some messaging apps and e-mail cannot send files larger than about 16 MB. Share it another way if it does not arrive. |
+| M-09 | The folder name "{name}" is not a valid song ID. Use lower-case letters, digits and hyphens. |
 | M-10 | The file "{name}" does not belong in the library folder. Move it into a song folder or remove it. |
 | M-11 | This library has no songs yet. |
-| M-12 | The file "{name}" in set "{set}" must be inside a song folder. |
+| M-12 | *Withdrawn in draft 0.3* (STR-03). |
 | M-13 | The set "{set}" is empty. |
-| M-14 | The song folder "{folder}" has no song file (.cho). |
+| M-14 | The song folder "{folder}" has no song file "{folder}.cho". |
 | M-15 | The song folder "{folder}" has more than one song file. Keep one song per folder. |
 | M-16 | The song folder "{folder}" contains a subfolder. Song folders cannot contain folders. |
-| M-17 | The file type of "{name}" is not supported. |
-| M-18 | The file "{name}" is empty. |
-| M-20 | This library has no manifest. Open and save it in the Editor first. |
+| M-17 | The file "{name}" in "{folder}" is not a song file. Other files cannot be added to a library yet. |
+| M-18 | *Withdrawn in draft 0.3* (STR-09). |
+| M-19 | The song file "{song}" is larger than 64 KB and cannot be used. |
+| M-20 | This file is not a song library. Open and save it in the bibliotheek-manager first. |
 | M-21 | The library's manifest is damaged. |
 | M-22 | This library was made with a newer version. Update the app to open it. |
 | M-23 | The file "{path}" is missing. The library may be damaged or incomplete. |
@@ -524,19 +582,33 @@ The texts are given in English and are the reference for their translations; bot
 | M-26 | The library's signature is incomplete. |
 | M-27 | The library's signature is damaged. |
 | M-28 | The library's signature is not valid. The library was changed after signing. |
+| M-29 | Choose a licence for this library before saving. |
 | M-30 | This key does not belong to this library. |
 | M-31 | This key file is damaged. |
+| M-32 | The set "{set}" contains "{song}", which is not a song of this library. |
+| M-33 | There are two sets called "{set}". Rename one of them. |
+| M-34 | The set "{set}" contains "{song}" more than once. |
+| M-35 | The set "{set}" has {count} songs. A setlist of more than 200 songs is hard to use at a campfire. |
 | M-40 | System files ({count}) were removed. They are not part of the library. |
+| M-41 | {songs} songs and {sets} sets were taken from this file. Check them before saving. |
+| M-42 | {count} files that are not songs were left out: {names}. |
+| M-43 | "{song}" is longer than recommended: {what}. It may be hard to read on a phone. |
+| M-44 | The song "{song}" has no {field}. Add it so singers can see who wrote it and under which licence. |
+| M-45 | Line {line} of "{song}": "{value}" is not a valid value for {directive}. |
+| M-46 | The song file "{song}" contains more than one song. Keep one song per file. |
+| M-47 | Line {line} of "{song}": the chorus is repeated before it has been written. |
+| M-48 | The song ID in "{folder}" is missing or differs from the folder name. The Editor corrects it when you save. |
+| M-49 | The song "{song}" has no language. Choose the language of its first verse. |
 | M-50 | The song "{song}" is not saved as UTF-8 text. |
 | M-51 | The song in "{folder}" has no title. Add a title line. |
-| M-52 | The song "{song}" has more than one title. |
+| M-52 | Line {line} of "{song}": "{directive}" appears more than once. Keep one. |
 | M-53 | Line {line} of "{song}": a `{` or `}` is missing. |
 | M-54 | Line {line} of "{song}": a `[` or `]` is missing. |
 | M-55 | "{song}": the section starting at line {line} is not closed correctly. |
-| M-56 | Line {line} of "{song}": "{directive}" is not known and will be ignored. |
+| M-56 | Line {line} of "{song}": "{directive}" is not known and will be ignored. Check the spelling. |
 | M-57 | Line {line} of "{song}": "{chord}" does not look like a chord. |
 | M-58 | The song "{song}" has no lyrics. |
-| M-59 | Set "{set}" contains more than one song titled "{title}". |
+| M-59 | The library contains more than one song titled "{title}". |
 | M-60 | You have unsaved changes. Close anyway? |
 | M-61 | Some files do not match the manifest. Saving will record the current content. Continue? |
 | M-62 | Delete "{name}"? This cannot be undone in this session. |
@@ -561,6 +633,7 @@ These limitations are accepted and must be stated in the user documentation.
 5. **One editor at a time.** Two people editing the same version produce two libraries with the same version number. The Songbook app cannot tell them apart and asks before replacing (M-72).
 6. **Hand-made changes are detected, not prevented.** Anyone can change a ZIP by hand. The hashes and signature make such changes visible. A manifest shows that the content has not changed since the manifest was written, not that the Editor wrote it or that the library was validated; the Songbook app therefore always validates again (APP-01).
 7. **A library is identified by its library ID, not by its title or author.** Starting a new library instead of opening the last saved ZIP creates a different library, which the app adds next to the old one unless the user chooses to replace it (M-73). Keep the last saved ZIP to make the next version.
+8. **A converted library is a new library.** A release archive or snapshot opened in the Editor gets a new library ID (EDT-26). Setlist files and memories that name the old library do not find its songs in the converted one. Keeping the old ID in the manifest would bridge this; it is not part of format version 1.
 
 ---
 
@@ -568,14 +641,16 @@ These limitations are accepted and must be stated in the user documentation.
 
 | ID | Item |
 |---|---|
-| O-01 | Confirm which ChordPro directives and metadata the Songbook app supports and which are required (SNG-07, SNG-11, EDT-34). |
-| O-02 | Confirm the allowed attachment types (§3.4) and whether library-level or set-level files (cover image, description) are needed. |
-| O-03 | Define what a set is in the Songbook app and in which order sets and songs are shown. Is a set a group of songs for browsing, or a setlist to be sung in order at a campfire? If a setlist: a song used in two sets is copied into both song folders (PF-12), whereas the app's current setlists (`.zbs`) refer to songs instead of copying them. Order: alphabetical, or an explicit order in the manifest. |
-| O-04 | Create a shared set of test libraries (valid and invalid) that every Editor implementation and the Songbook app must pass. |
-| O-05 | Decide how existing libraries in the current format (the `.zbl` release archive with `zangbundel.json`) are migrated. Decide also whether the app keeps a route without the Editor: today a hand-zipped library is accepted and invalid songs are skipped while the rest is imported, whereas this specification rejects a ZIP without a manifest (APP-02) and a library with any Error (APP-01). |
-| O-06 | Confirm the limits and the sharing threshold in §3.5. |
-| O-07 | Choose the file extension of a saved library: `.zip` (EDT-54) opens in any archive tool, a dedicated extension such as `.zbl` lets the Songbook app open the file directly when it is tapped in a messaging app or e-mail. |
-| O-08 | Decide whether a library can carry a short description of what changed in a version, shown by the app on update. |
+| O-01 | *Resolved in draft 0.3* (D-26): the directives and metadata are those of the ChordPro profile; required are title, language and song ID (SNG-02, SNG-11, SNG-12). |
+| O-02 | *Resolved in draft 0.3* (D-24): no attachments in format version 1. Library-level files (cover image) come, if wanted, with a later format version. |
+| O-03 | *Resolved in draft 0.3* (D-22): a set is a setlist, kept in the manifest; a song is stored once; sets and their songs are shown in manifest order. |
+| O-04 | Create the shared set of test libraries (valid and invalid) that every Editor implementation and the Songbook app must pass. Layout as the app's conformance vectors (`android/core/testing/src/main/resources/conformance/` in the app repository): per case a `<case>.zbl` and a `<case>.expected.json` listing the expected rule codes and severities, under `test-libraries/` in this repository. At least one invalid case per rule of §6, and one valid library with sets. The cases still have to be written. |
+| O-05 | *Resolved in draft 0.3* (D-23): the app keeps reading release archives and repository snapshots; the Editor converts them (EDT-26). |
+| O-06 | *Resolved in draft 0.3* (D-26, D-28): the limits are the app's (§3.5); sharing threshold 16 MiB. |
+| O-07 | *Resolved in draft 0.3* (D-25): `.zbl`, recognised by content. |
+| O-08 | *Resolved in draft 0.3* (D-27): an optional `changes` note per version. |
+| O-09 | *Resolved in draft 0.4* (D-29): the app uses `libraryId` unchanged. |
+| O-10 | *Resolved in draft 0.4* (D-30): the app registers for Share and Open; whether a tap in a messaging app opens it is measured on phones, not promised. |
 
 ---
 
@@ -605,7 +680,21 @@ These limitations are accepted and must be stated in the user documentation.
 | D-20 | The Editor's interface and messages are in at least Dutch, English and German, the languages of the Songbook app. |
 | D-21 | Libraries are shared through messaging apps, e-mail, file sharing and websites. The Editor warns above 20 MB, the size such channels commonly accept (PKG-09). |
 
-Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangbundel-bibliotheek#1 (2026-11-04).
+| D-22 | A set is a setlist: an ordered list of song IDs in the manifest. Each song is stored once, in its own folder at library level, and can be in any number of sets. The Editor takes over a ZIP with one folder per set (EDT-25). Resolves O-03. |
+| D-23 | The Songbook app keeps importing release archives (`.zbl` with `zangbundel-archive.json`) and repository snapshots as before, tolerant song by song. This format is strict: any Error rejects the import. The Editor opens a release archive or snapshot and saves it in this format (EDT-26). Resolves O-05. |
+| D-24 | Format version 1 has no attachments; a song folder holds only its ChordPro file. The folder level is kept for attachments in a later format version. Resolves O-02. |
+| D-25 | A saved library has the extension `.zbl`, as the release archive. Both applications recognise the format by its content (APP-02). Resolves O-07. |
+| D-26 | Song files follow the ChordPro profile of the Songbook app (song format sections 5 to 8). The song ID is the folder name, the file name and `{meta: id}`, managed by the Editor. The limits are those of the release archive. Resolves O-01 and, with D-28, O-06. |
+| D-27 | A library version can carry an optional note of at most 500 characters on what changed (`changes`); the Editor asks for it when the version is raised, the app shows it after the update. Resolves O-08. |
+| D-28 | The sharing threshold is 16 MiB, the size above which the Songbook app warns for a release archive (song format A101). Supersedes the 20 MB of D-21. |
+
+| D-29 | The Songbook app uses `libraryId` unchanged as the library id: songs are referred to as `<libraryId>/<song id>` in setlists, BLE song references, the resume record and memories; no short form is derived. A UUID fits every BLE limit (the worst-case state body is 377 of 440 bytes). The UUID form is reserved for this format: the app refuses a `zangbundel.json` library whose id has that form, so the two formats never share an id. A library in this format is never refused because of its id; §8.3 decides. Manifest sets become read-only setlists shipped with their library. The optional `rev` of a BLE song reference is the `version` as a decimal string. Resolves O-09. |
+| D-30 | The Songbook app registers for Share (SEND) with `application/vnd.zangbundel.library+zip`, `application/zip` and `application/octet-stream`, and for Open (VIEW) with the library MIME type and `content:` addresses whose path ends in `.zbl`. Whether a tap in a messaging app opens the app depends on what that app passes on; it is measured on phones before anything is promised. The Editor names the MIME type (PF-04, EDT-59). Resolves O-10. |
+| D-31 | The licence of the collection is in the manifest: required `license.id` and `license.summary`, optional full `license.text`. No licence file, so the library folder keeps only the manifest, the signature and song folders. |
+| D-32 | The maintainer contact is optional: a troop may not want an address in every copy. The minimum app version is covered by `formatVersion` (MAN-03). Both depart from FR-LIB-05 of the app's FRD, which is to be amended for this format. |
+| D-33 | A library in this format is accepted whole or not at all (APP-01). FR-LIB-07 of the app's FRD (report bad songs, import the rest) is to be amended to apply to release archives and snapshots only. |
+
+Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangbundel-bibliotheek#1 (2026-11-04). Decisions D-22 to D-28 are the owner's (2026-11-04). Decisions D-29 and D-30 come from the app repository's proposal `design/proposals/2026-11-04-library-package-id-and-file-type.md`, approved by the owner; D-31 to D-33 are the owner's answers to the differences that proposal found between this specification and the app's FRD (2026-11-04).
 
 ---
 
@@ -615,3 +704,5 @@ Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangb
 |---|---|---|
 | Draft 0.1 | 2026-11-04 | First draft, from issue pe1mew/Zangbundel-bibliotheek#1. |
 | Draft 0.2 | 2026-11-04 | After the requester's answers on the issue. Term *Library ID*. Sharing threshold (§3.5), PKG-09, M-08, EDT-56. Language of the Editor (§7.9, EDT-80 to EDT-83); messages are translated. Import (§8.3): same-title check (M-73), version compared in every case with a downgrade warning (M-74, `{versionNote}` in M-70 and M-71), at most one question (APP-05); M-72 reworded. Limitation 6 extended, limitation 7 added. Open items O-03 and O-05 extended, O-06 reworded, O-07 and O-08 added. Decisions D-17 to D-21. |
+| Draft 0.3 | 2026-11-04 | Open items O-01 to O-03 and O-05 to O-08 resolved (D-22 to D-28); O-04 given a layout; O-09 and O-10 added for the app repository. Sets move from folders into the manifest (`sets`), songs sit in song-ID folders at library level (§3.2, PF-11 withdrawn, PF-14). No attachments (§3.4; STR-09, EDT-35 withdrawn). Limits from the app's release archive (§3.5); sharing threshold 16 MiB. Song rules follow the ChordPro profile (§6.6: SNG-03, SNG-07, SNG-09 changed severity, SNG-05 Warning, SNG-10 library-wide, SNG-11 to SNG-18 added). Set rules SET-01 to SET-04 (§6.7). STR-03, STR-04 withdrawn, STR-10 added. Editor: conversion of plain ZIPs and release archives (EDT-25, EDT-26), sets as ordered lists (EDT-31), stable song IDs (EDT-36), canonical form (EDT-57), change note (EDT-58), `.zbl` (EDT-54). App: format recognised by content (APP-02), sets as setlists (APP-23), change note (APP-24). Messages M-09, M-19, M-32 to M-34, M-41 to M-49 added; M-12, M-18 withdrawn; M-08, M-14, M-17, M-20, M-52, M-56, M-59 reworded. |
+| Draft 0.4 | 2026-11-04 | The app repository's proposal on O-09 and O-10, approved by the owner, and the owner's answers to the differences it found with the app's FRD. `libraryId` pattern exact (§4.1). MIME type (PF-04, EDT-59). Same-title check covers release archives and snapshots (§8.3). Set names at most 60 characters; SET-05, M-35. Manifest fields `license` (required) and `maintainer` (optional); EDT-13, EDT-14, MAN-07, M-29, APP-25, APP-26; EDT-26 and EDT-30 extended. APP-01: a library is accepted whole or not at all. Limitation 8. O-09 and O-10 resolved. Decisions D-29 to D-33. |
