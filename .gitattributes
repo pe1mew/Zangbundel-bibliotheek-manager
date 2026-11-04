@@ -1,0 +1,10 @@
+*       text=auto eol=lf
+*.sh    text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+*.cho   text eol=lf
+# Test libraries (FDS O-04) are byte-exact input: BOMs, invalid UTF-8, broken ZIPs. Never convert them.
+test-libraries/**    -text
+*.zip   binary
+*.zbkey -text
+raw/*   binary

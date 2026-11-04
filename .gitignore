@@ -1,0 +1,32 @@
+# Signing keys — never commit (FDS 5.3, EDT-64). A key file holds an unencrypted
+# private key: whoever has it can sign as that author. Test keys for the shared
+# test libraries are the one exception and are force-added by name.
+*.zbkey
+
+# Libraries built or saved while testing; the shared test libraries live under
+# test-libraries/ and are committed on purpose.
+dist/
+/*.zip
+
+# Owner's scratch material, never committed
+raw/
+
+# Dependencies and build output (whichever implementation is chosen)
+node_modules/
+build/
+out/
+target/
+__pycache__/
+*.pyc
+.venv/
+
+# Local environment and secrets
+.env
+.env.*
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Note: .claude/ is deliberately NOT ignored; .claude/review-profile.md is tracked on purpose.
