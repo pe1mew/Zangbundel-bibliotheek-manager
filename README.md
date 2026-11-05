@@ -34,19 +34,22 @@ As specified in the FDS:
 ## Repository structure
 
 ```
-design/                       the specification: FDS.md, the functional design specification
+design/                       the specification: FDS.md (what the manager does), webappGUI.md and webappTDS.md (the web app)
+webapp/                       the web app (planned)
 memory/                       working memory for AI coding agents (index, gotcha log, to-do)
 .claude/                      review profile for AI coding agents
 CLAUDE.md                     orientation file for AI coding agents
 ```
 
-Code and test libraries are added once the implementation technology is chosen.
+The manager is built as a web app that runs on nginx or Apache with PHP. Each screen is checked in a mock first, then deployed to a test server. Code and test libraries follow.
 
 ## The documents
 
 | Document | Read it when |
 |---|---|
 | [design/FDS.md](design/FDS.md) | You want to know what the manager must do: the library package format, the manifest, signing, the validation rules, the Editor's behaviour, the app's import, and every user message. Requirements are numbered (`PF-nn`, `EDT-nn`, `APP-nn`, …) and rules carry codes (`PKG-nn`, `SNG-nn`, …). |
+| [design/webappGUI.md](design/webappGUI.md) | You design or review a screen of the web app: what it shows, what happens on each action, and its colours, buttons and icons, which come from the Zangbundel app. |
+| [design/webappTDS.md](design/webappTDS.md) | You build, serve or deploy the web app: server (nginx or Apache with PHP), the mock, the test server. |
 
 The library format and the import rules in the FDS are shared with the [Zangbundel app](https://github.com/pe1mew/Zangbundel); the app and the manager must apply the same validation rules.
 

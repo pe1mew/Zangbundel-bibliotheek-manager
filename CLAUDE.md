@@ -1,6 +1,6 @@
 ---
-stack: Not chosen — web app (local or hosted) or native app for Windows, Linux or Android (FDS 1.4, D-01); Markdown design specification; ZIP, JSON, SHA-256, Ed25519; ChordPro
-status: Design — FDS draft 0.4, no code yet
+stack: Web app in webapp/ on nginx or Apache with PHP (webappTDS TD-01 to TD-03); Markdown design specifications; ZIP, JSON, SHA-256, Ed25519; ChordPro
+status: Design — FDS draft 0.4, web app GUI and TDS draft 0.1, no code yet
 repo: github.com/pe1mew/Zangbundel-bibliotheek-manager
 framework: agent-ready-projects v1.49.2
 ---
@@ -10,7 +10,7 @@ framework: agent-ready-projects v1.49.2
 <!-- Canonical project file for Claude Code. No AGENTS.md exists; if one is
      added later, this file stays canonical and AGENTS.md should say so. -->
 
-The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.4; the implementation technology is not chosen and no code exists.
+The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.4. The Editor is built as a web app in `webapp/` (nginx or Apache with PHP); its GUI and technical design are being written, and no code exists.
 
 ## Before You Start
 
@@ -19,8 +19,9 @@ The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in 
 | Picking up where the last session left off | `memory/MEMORY.md` — **the index itself, not the topic files it lists**; those stay on demand. Nothing loads this file on its own, so if this row is missing it is simply never read. Keep it near the top — an open handoff is worthless one session late. |
 | Starting any session (framework drift) | Compare the `framework: agent-ready-projects vX.Y.Z` line in this file's header against https://github.com/ducroq/agent-ready-projects/blob/master/CHANGELOG.md (or local clone if present). If the project is behind the latest released version, briefly surface the drift to the user before starting work. `/update-drift` does this triage. Don't auto-update — adopting changes is the engineer's call. |
 | Changing what the manager must do, the package format, a validation rule or a message | `design/FDS.md` — requirements `PF/MF/SG/EDT/APP-nn`, rules `PKG/STR/MAN/SIG/SNG-nn` with severity, messages `M-nn`, open items `O-nn` (section 11), decisions `D-nn` (section 12). |
-| Touching how the Zangbundel app reads songs or libraries today | The app repository `../Zangbundel` (github.com/pe1mew/Zangbundel): `design/song-format.md` defines the current `.zbl` release archive and the ChordPro profile. The FDS package format is a different, new format; migration is open item O-05. |
-| Choosing the implementation technology, or writing the first code | Open item: FDS 1.4 and D-01 leave it open. Ask the owner; record the choice as a decision in a design document before code lands. |
+| Touching how the Zangbundel app reads songs or libraries today | The app repository `../Zangbundel` (github.com/pe1mew/Zangbundel): `design/song-format.md` defines the current `.zbl` release archive and the ChordPro profile. The FDS package format is a different, new format; the app reads both (FDS D-23). |
+| Designing a screen, a control, a colour, an icon, or what happens when the user does something | `design/webappGUI.md` — decisions `GD-nn` and open questions `GQ-nn`; screens **and behaviour**. Colours, buttons and icons come from the app (GD-01). Every design is checked in the mock before it is built. |
+| Choosing how the web app is built, served, tested or deployed, or adding a library or server dependency | `design/webappTDS.md` — decisions `TD-nn` and open questions `TQ-nn`. Libraries and keys are processed in the browser only; the server never receives them (TD-06 to TD-08). |
 | Stuck or debugging something weird | `memory/gotcha-log.md` — problem-fix archive |
 | **Before committing** | Diff-driven review, lenses chosen by what changed — `/review-changes`. It needs the per-repo **review profile** at `.claude/review-profile.md`; without one it STOPS rather than reviewing at LOW. |
 | Ending a session | `memory/gotcha-log.md` — review, promote patterns, retire stale entries. Then `/curate`. |
@@ -33,6 +34,7 @@ The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in 
 - **The FDS is the specification.** IDs (`EDT-nn`, `SNG-nn`, `M-nn`, `D-nn`, …) are never reused or renumbered; a withdrawn requirement is marked *Withdrawn* and kept. A change bumps the FDS status (`Draft 0.2`, …) and date. Every ID cited must be defined in the FDS.
 - **One set of rules, all implementations identical.** The manager and the Zangbundel app apply the validation rules of FDS section 6 identically (principle 2), and every Editor implementation behaves the same (FDS 1.4). A rule changed here is a change to the app too: say so in the Zangbundel repository.
 - **Nothing is stored between sessions; the private key never touches disk.** No library content, no keys, no library-bound settings survive a session (EDT-02). The private key lives in memory only: never in a file, browser storage, the OS keychain or a log (EDT-64). A hosted web version deletes session data at session end or after 2 hours idle and uses HTTPS (EDT-04, EDT-65).
+- **Library content and keys never leave the browser.** The web app processes them in JavaScript; PHP and the server only deliver the app's files and receive no library data (webappTDS TD-06 to TD-08).
 - **Every library is untrusted input.** Apply the fatal package rules (PKG-01 to PKG-04: limits, path traversal, symlinks, encryption) before reading any entry; enforce the limits of FDS 3.5 against zip bombs.
 - **Signing is byte-exact.** The Ed25519 signature covers the exact bytes of `manifest.json` as stored (SG-02); never reformat a signed manifest. `.zbkey` files are in `.gitignore`; never weaken that rule, and never commit a real key.
 - **English prose, Dutch UI terms in parentheses.** Requirement key words follow RFC 2119. User messages are the texts of FDS section 9.
@@ -59,7 +61,10 @@ The repository, today:
 Zangbundel-bibliotheek-manager/
 ├── CLAUDE.md                     ← this file (Layer 1)
 ├── design/
-│   └── FDS.md                    ← functional design specification (canonical)
+│   ├── FDS.md                    ← functional design specification (canonical)
+│   ├── webappGUI.md              ← web app screens, behaviour and look (GD-nn, GQ-nn)
+│   └── webappTDS.md              ← web app technical design: server, mock, deployment (TD-nn, TQ-nn)
+├── webapp/                       ← the web app (planned; mock first, then a test server)
 ├── memory/                       ← MEMORY.md index, gotcha-log.md, todo.md (committed, shared)
 ├── .claude/                      ← review-profile.md
 ├── README.md, changelog.md, contributing.md, code_of_conduct.md, license.md, LICENSE, NOTICE
