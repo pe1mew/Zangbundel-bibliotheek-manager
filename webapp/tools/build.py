@@ -6,10 +6,12 @@
     build.py pack  dist/placeholder-0.1.0
 
 build: copies the source tree to dist/<name>-<version>/, renames every file under assets/ to
-       <stem>.<hash>.<ext> (SR-61), rewrites the references in HTML and CSS, adds SRI
-       (sha384) to stylesheets and scripts (SR-12), refuses inline script, inline style and
-       event-handler attributes (SR-24, SR-32), and writes release-manifest.json: the path,
-       size and SHA-256 of every file (SR-11). Same input, same output: no timestamps.
+       <stem>.<hash>.<ext> (SR-61), bundles every module script of the pages and every worker it
+       starts into assets/<entry>.<hash>.js (bundle.py, webappTDS TD-22), rewrites the references
+       in HTML and CSS, adds SRI (sha384) to stylesheets and scripts (SR-12, SR-13), refuses
+       inline script, inline style and event-handler attributes (SR-24, SR-32), and writes
+       release-manifest.json: the path, size and SHA-256 of every file (SR-11). Same input, same
+       output: no timestamps. JavaScript sources are never copied; only bundles are released.
 pack:  after the manifest is signed (sign-release.sh), writes dist/<name>-<version>.tar with
        fixed owners, modes and times, in sorted order.
 
@@ -29,9 +31,13 @@ import sys
 import tarfile
 from html.parser import HTMLParser
 
-# .js and .webmanifest come with M1.1, which rewrites the references inside them; until then the
-# build refuses them rather than ship references to files it renamed.
-ALLOWED_EXT = {'.html', '.css', '.svg', '.png', '.webp', '.ico', '.txt', '.json'}
+sys.dont_write_bytecode = True                           # no __pycache__ in the tree whose cleanliness we check
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import bundle as bundler  # noqa: E402  (this folder's bundle.py)
+
+# .js files are module sources: they are bundled (TD-22), never copied. A web manifest would need
+# its references rewritten; the build refuses one until that is written.
+ALLOWED_EXT = {'.html', '.css', '.js', '.svg', '.png', '.webp', '.ico', '.txt', '.json'}
 TEXT_EXT = {'.html', '.css', '.js', '.svg', '.txt', '.json', '.webmanifest'}
 MANIFEST = 'release-manifest.json'
 SIGNATURE = MANIFEST + '.sig'
@@ -108,11 +114,13 @@ def resolve(base_dir, url):
     return None if joined.startswith('..') else joined
 
 
-def renamed_url(url, new_path):
-    """Keep the reference's own directory form and its query or fragment; replace the file name."""
+def renamed_url(url, new_path, base_dir):
+    """The reference to new_path from a file in base_dir, absolute if the original was, with the
+    original's query or fragment kept."""
     m = re.match(r'^([^?#]*)(.*)$', url, re.S)
-    head, _, _ = m.group(1).rpartition('/')
-    return (head + '/' if head or url.startswith('/') else '') + posixpath.basename(new_path) + m.group(2)
+    if m.group(1).startswith('/'):
+        return '/' + new_path + m.group(2)
+    return posixpath.relpath(new_path, base_dir or '.') + m.group(2)
 
 
 class Tags(HTMLParser):
@@ -162,6 +170,8 @@ def check_html(path, text):
             problems.add('a <style> element')
         if tag == 'script' and not dict(attrs).get('src'):
             problems.add('a <script> without src')
+        if tag == 'script' and dict(attrs).get('type') != 'module':
+            problems.add('a <script> without type="module" (TD-22)')
         for name, value in attrs:
             if name == 'style':
                 problems.add('a style attribute')
@@ -179,7 +189,7 @@ def check_html(path, text):
         fail(f'{path} contains ' + ', '.join(sorted(problems)) + ' (SR-24, SR-32)')
 
 
-def check_output(out_data):
+def check_output(out_data, renamed_sources=()):
     """After rewriting: every local reference resolves to a released file, and every stylesheet
     and script carries the right SRI (SR-12, SR-13). Catches what the regexes did not rewrite."""
     for p, body in out_data.items():
@@ -217,6 +227,11 @@ def check_output(out_data):
                     fail(f'{p}: url({url}) is not a file of this site (SR-12)')
                 if target not in out_data:
                     fail(f'{p}: url({url}) does not resolve to a file of the release')
+        elif p.endswith('.js'):
+            text = body.decode('utf-8')
+            for old in renamed_sources:
+                if old in text or posixpath.basename(old) in text:
+                    fail(f'{p}: names {old}, which the build renames; refer to it from HTML or CSS instead')
         elif p.endswith('.svg'):
             text = body.decode('utf-8')
             if re.search(r'<script|\son[a-z]+\s*=|javascript:|<foreignObject', text, re.I):
@@ -227,14 +242,18 @@ def git(src, *args):
     return subprocess.run(['git', *args], cwd=src, capture_output=True, text=True, check=True).stdout
 
 
-def git_state(src, files):
+def git_state(src, files, extra=()):
     """(commit, dirty, tag, on_main). Dirty when the source or this build tool has uncommitted
     changes, or a file to be released is not tracked by git, for example an ignored file (SR-10).
     tag: a tag on HEAD whose signature git verifies (SR-90). on_main: HEAD is on main (SR-10)."""
     try:
         commit = git(src, 'rev-parse', 'HEAD').strip()
         tools = os.path.dirname(os.path.abspath(__file__))
-        dirty = git(src, 'status', '--porcelain', '--', '.', tools).strip() != ''
+        dirty = git(src, 'status', '--porcelain', '--', '.', tools, *extra).strip() != ''
+        for path in extra:                               # modules outside the source, e.g. vendor/
+            if subprocess.run(['git', 'ls-files', '--error-unmatch', '--', path], cwd=src,
+                              capture_output=True).returncode != 0:
+                dirty = True
         tracked = set(git(src, '-c', 'core.quotePath=false', 'ls-files', '--', '.').splitlines())
         if set(files) - tracked:
             dirty = True
@@ -260,7 +279,67 @@ def build(args):
     if not VERSION_RE.match(args.version):
         fail('version: X.Y.Z')
     files = walk(src)
-    commit, dirty, tag, on_main = git_state(src, files)
+    src_files = list(files)
+    if 'app/version.js' in files:                        # the version shown must be the version released
+        vm = re.search(r"export const VERSION = '([^']*)';", open(os.path.join(src, 'app', 'version.js'), encoding='utf-8').read())
+        if not vm or vm.group(1) != args.version:
+            fail(f"app/version.js says {vm.group(1) if vm else 'nothing'}, --version is {args.version}")
+    data = {p: open(os.path.join(src, p.replace('/', os.sep)), 'rb').read() for p in files}
+    for p in files:
+        if posixpath.splitext(p)[1].lower() in TEXT_EXT:
+            try:
+                data[p].decode('utf-8')
+            except UnicodeDecodeError:
+                fail(f'{p} is not UTF-8')
+        if p.endswith('.html'):
+            check_html(p, data[p].decode('utf-8'))
+
+    # 0. Bundle every module script of the pages, and every worker those start (TD-22).
+    root = os.path.dirname(src)                          # modules may come from webapp/, e.g. vendor/
+    bundles, rename, sources = {}, {}, set()
+
+    def make_bundle(entry):
+        if entry in bundles:
+            return bundles[entry]
+        try:
+            code, workers, mods = bundler.bundle(entry, root)
+        except bundler.BundleError as e:
+            fail(str(e))
+        bundles[entry] = None                            # a worker that starts its own page: refused below
+        names = {}
+        for w in workers:
+            if bundles.get(w, '') is None:
+                fail(f'worker cycle at {os.path.relpath(w, root)}')
+            names[w] = posixpath.basename(make_bundle(w))
+        body = bundler.place_workers(code, names).encode('utf-8')
+        name = f'assets/{posixpath.splitext(os.path.basename(entry))[0]}.{sha256(body)[:12]}.js'
+        if name in data or any(b == name for b in bundles.values()):
+            fail(f'two bundles or files named {name}')
+        bundles[entry] = name
+        data[name] = body
+        sources.update(mods)
+        return name
+
+    for p in files:
+        if not p.endswith('.html'):
+            continue
+        for tag_, attrs in parse(data[p].decode('utf-8')).tags:
+            a = dict(attrs)
+            if tag_ == 'script':
+                target = resolve(posixpath.dirname(p), a.get('src') or '')
+                if target is None or target not in data or not target.endswith('.js'):
+                    fail(f'{p}: <script src="{a.get("src")}"> must name a .js module of this site')
+                rename[target] = make_bundle(os.path.join(src, target.replace('/', os.sep)))
+    js_sources = [p for p in files if p.endswith('.js')]
+    unused = [p for p in js_sources if os.path.join(src, p.replace('/', os.sep)) not in sources]
+    if unused:
+        print('build: not in any bundle, not released: ' + ', '.join(unused))
+    for p in js_sources:                                 # sources are never released as such
+        del data[p]
+    files = [p for p in files if not p.endswith('.js')] + sorted(set(bundles.values()))
+    outside = sorted(os.path.relpath(m, src) for m in sources if os.path.commonpath([src, m]) != src)
+
+    commit, dirty, tag, on_main = git_state(src, src_files, outside)
     if not args.allow_dirty:
         if commit is None:
             fail('cannot read the git state of the source and of this build tool; both must be in the same '
@@ -281,19 +360,8 @@ def build(args):
             fail(f'{out} exists; pass --force to replace it')
         shutil.rmtree(out)
 
-    data = {p: open(os.path.join(src, p.replace('/', os.sep)), 'rb').read() for p in files}
-    for p in files:
-        if posixpath.splitext(p)[1].lower() in TEXT_EXT:
-            try:
-                data[p].decode('utf-8')
-            except UnicodeDecodeError:
-                fail(f'{p} is not UTF-8')
-        if p.endswith('.html'):
-            check_html(p, data[p].decode('utf-8'))
-
-    # 1. Hash-rename assets. Non-CSS first, so CSS can refer to them; CSS after its own rewrite.
-    rename = {}
-    assets = [p for p in files if p.startswith('assets/')]
+    # 1. Hash-rename assets (bundles are named already). Non-CSS first, so CSS can refer to them; CSS after its own rewrite.
+    assets = [p for p in files if p.startswith('assets/') and p not in bundles.values()]
     for p in [a for a in assets if not a.endswith('.css')] + [a for a in assets if a.endswith('.css')]:
         if p.endswith('.css'):
             text = data[p].decode('utf-8')
@@ -302,7 +370,7 @@ def build(args):
             def css_sub(m):
                 target = resolve(base, m.group('url'))
                 if target in rename:
-                    return f"url({m.group('q')}{renamed_url(m.group('url'), rename[target])}{m.group('q')})"
+                    return f"url({m.group('q')}{renamed_url(m.group('url'), rename[target], base)}{m.group('q')})"
                 if target is not None and target not in data:
                     fail(f'{p} refers to a missing file: {m.group("url")}')
                 return m.group(0)
@@ -316,8 +384,10 @@ def build(args):
     for p in files:
         if p in rename:
             out_data[rename[p]] = data[p]
+        elif p in bundles.values():
+            out_data[p] = data[p]
     for p in files:
-        if p in rename:
+        if p in rename or p in bundles.values():
             continue
         if not p.endswith('.html'):
             out_data[p] = data[p]
@@ -330,7 +400,7 @@ def build(args):
             if target is None:
                 return m.group(0)
             if target in rename:
-                return f'{m.group("attr")}="{renamed_url(m.group("url"), rename[target])}"'
+                return f'{m.group("attr")}="{renamed_url(m.group("url"), rename[target], base)}"'
             if target not in data and posixpath.join(target, 'index.html') not in data \
                     and not (target in ('', '.') and 'index.html' in data):
                 fail(f'{p} refers to a missing file: {m.group("url")}')
@@ -356,7 +426,7 @@ def build(args):
             return f'<{m.group("name")}{attrs} integrity="{sri(body)}"{closing}'
         text = RE_TAG.sub(tag_sub, text)
         out_data[p] = text.encode('utf-8')
-    check_output(out_data)
+    check_output(out_data, [p for p in rename if not p.endswith('.js')])
 
     # 3. Write the tree and the manifest.
     for p in sorted(out_data):

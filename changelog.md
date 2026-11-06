@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- Milestone M1, first part (`design/webappTDS.md` draft 0.11, `design/securityAssessment.md` draft 0.8, `design/implementationPlan.md` draft 0.6):
+  - **TD-22, the owner's choice: the build bundles the JavaScript itself.** `Integrity-Policy` refuses modules imported without integrity, so `webapp/tools/bundle.py` joins each entry point (main thread, each worker) into one file with SRI. It works from a subset of ES modules, read with a lexer that skips comments, strings, templates and regexes. The bundler refuses default exports, re-exports, dynamic `import()`, bare specifiers and cycles.
+  - **Tests.** `webapp/tests/test_bundle.py` runs bundles in Node: 20 checks. fflate 0.8.3 and @noble/ed25519 3.2.0, bundled from their npm packages in a scratch test, behave as natively, including an RFC 8032 signature.
+  - **The minimal manager (M1.4)** in `webapp/src/`: the splash with the app's photograph (GD-27, GD-30) in nl/en/de, the TESTVERSIE banner on the test instance (SR-81), then a card saying what this build is. It renders through `dom.js` without `innerHTML` or style attributes, and has its own `security.txt`.
+    - In the browser pane, under the SR-20 CSP and `Integrity-Policy`, it ran with no console report.
+    - Copies with a missing or wrong script integrity were refused.
+  - **The test instance's CSP is now the SR-20 policy** (M1.5, configuration part).
+  - **The container test** builds, signs and activates the manager on the test instance: 74 of 74 checks pass.
+  - **Node.js LTS 26.13.0** is installed on the development machine (TD-21).
 - Milestone M0, the repository part (`design/implementationPlan.md` draft 0.3, `design/securityAssessment.md` draft 0.5):
   - **Placeholder for `zangbundel.nl`** in `webapp/placeholder/`: static pages in Dutch, English and German, a privacy statement in each language and `security.txt`. No script, no inline style.
   - **Holding page** for `test.zangbundel.nl` in `webapp/test-holding/`.

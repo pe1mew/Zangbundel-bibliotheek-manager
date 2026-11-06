@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Technical Design Specification (TDS) of the web app |
-| **Status** | Draft 0.10 |
+| **Status** | Draft 0.11 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7 |
 | **Companion** | `design/webappGUI.md` (screens, colours, buttons, icons) |
@@ -49,6 +49,7 @@ This document records how the bibliotheek-manager is built as a web app: where t
 | TD-19 | 2026-11-06 | **The host nginx serves the site natively.** `zangbundel.nl` and `test.zangbundel.nl` are vhosts of the host nginx on contabo6, each serving its own read-only release directory, with no container and no interpreter (securityAssessment SQ-01, SR-70, SR-83). Unlike the other sites on the host, which nginx proxies to containers; the assessment found no security gain in a container here, and native has fewer parts to patch and configure. |
 | TD-20 | 2026-11-06 | **Until going live, `zangbundel.nl` shows a static placeholder and the manager runs on `test.zangbundel.nl`.** The placeholder is HTML and CSS only, in Dutch, English and German, with the name and logo, a line that the manager is being built, the Android links of GD-15 and GD-35, the privacy statement and `security.txt`; its CSP forbids all script (`script-src 'none'`). It meets the same transport, header and logging requirements as the manager. Replacing it with the manager is a later decision (`design/implementationPlan.md` M8). |
 | TD-21 | 2026-11-06 | **Node.js LTS is a development tool, never part of the site.** It runs the unit and conformance tests with its built-in test runner (`node --test`, no test framework) and the npm checks of the vendored libraries (securityAssessment SR-12: `npm pack`, `npm view … dist.integrity`, `npm audit signatures`). The site contains no npm package except the two vendored files of TD-17. Browser checks start as a written checklist (implementationPlan IQ-03). |
+| TD-22 | 2026-11-06 | **The build bundles each entry point into one file, from a subset of ES modules.** `Integrity-Policy: blocked-destinations=(script)` (securityAssessment SR-13) refuses a script without integrity metadata, and a module loaded by `import` has none, so the app cannot be served as loose modules. `webapp/tools/build.py` joins each entry point into one file with a hashed name, offline and in Python: the main thread (`index.html`'s `<script type="module">`), the library worker and the crypto worker. The source may use only static imports from a relative path (`import { a, b as c } from './x.js'`, `import * as ns from './x.js'`), exported declarations (`export function`, `export async function`, `export class`, `export const`, `export let`, `export var`) and export lists (`export { a, b as c }`); the build refuses default exports, re-exports, dynamic `import()` and import cycles. An imported binding is a copy, not a live binding. A worker is started as `new Worker(new URL('./path.js', import.meta.url), { type: 'module' })`; the build bundles it as its own entry point and writes the bundle's hashed name into that URL. Browsers have no integrity attribute for workers, so a worker bundle is protected by its hashed name, the signed release manifest and the hourly check (SR-11, SR-73), not by SRI. Chosen by the owner over esbuild (an npm dependency in the build chain) and an inline import map (a CSP change, newest browsers only). |
 
 ---
 
@@ -109,3 +110,4 @@ These FDS requirements constrain every technical choice below; they are listed h
 | Draft 0.8 | 2026-11-06 | TD-19: the host nginx serves the site natively. |
 | Draft 0.9 | 2026-11-06 | TD-20: a static placeholder on `zangbundel.nl` while the manager runs on the test instance; the implementation plan is `design/implementationPlan.md`. |
 | Draft 0.10 | 2026-11-06 | TD-21: Node.js LTS as a development-only tool. |
+| Draft 0.11 | 2026-11-06 | TD-22: the build bundles each entry point (main thread, two workers) into one file with SRI, from a subset of ES modules, because Integrity-Policy refuses imported modules without integrity. |

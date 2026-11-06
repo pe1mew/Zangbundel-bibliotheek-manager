@@ -49,7 +49,7 @@ The mock's *Android-app* panel (`design/webappGUI.md` GD-15) shows two official 
 | `webapp/mock/img/google-play-badge-nl.png` | `play.google.com/intl/en_us/badges/static/images/badges/nl_badge_web_generic.png` | Google's badge guidelines (`play.google.com/intl/en_us/badges/`): used unaltered, linking to the app on Google Play, with the notice "Google Play and the Google Play logo are trademarks of Google LLC." |
 | `webapp/mock/img/f-droid-badge-nl.png` | `fdroid.gitlab.io/artwork/badge/get-it-on-nl.png` | CC BY-SA 3.0, as F-Droid's badge page states (`f-droid.org/docs/Badges/`, checked 2026-11-06: "The badges are licensed CC-BY-SA-3.0 and the scripts GPL-3.0-or-later"); credit "F-Droid". Used unaltered; F-Droid intends the badges to link to apps in its main repository (GD-35: no link until the app is there). |
 
-The placeholder of `zangbundel.nl` (`webapp/placeholder/assets/`) uses the same two badge files and the app icon, unchanged as files; the page shows the badges greyed with *binnenkort* and without a link (GD-35), and names the trademark and the F-Droid licence in its footer. The test holding page (`webapp/test-holding/assets/`) uses the app icon.
+The placeholder of `zangbundel.nl` (`webapp/placeholder/assets/`) uses the same two badge files and the app icon, unchanged as files; the page shows the badges greyed with *binnenkort* and without a link (GD-35), and names the trademark and the F-Droid licence in its footer. The test holding page (`webapp/test-holding/assets/`) uses the app icon. The web app (`webapp/src/assets/`) uses the app icon and the background photograph, unchanged, under CC BY-SA 4.0 as above.
 
 ## Song lyrics: not in this repository
 

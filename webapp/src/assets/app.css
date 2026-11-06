@@ -1,0 +1,50 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* The manager's styles (design/webappGUI.md). Colours: the app's night theme (GD-12).
+   All styles live here: no style attributes and no <style> elements (securityAssessment SR-24). */
+
+:root {
+  --bg: #000000;
+  --sheet: #121212;
+  --divider: #2A2A2A;
+  --white: #FFFFFF;
+  --secondary: #BFBFBF;
+  --fire-orange: #FF8A3D;
+  --night-blue-dark: #0B2545;
+  --sky-blue: #4FC3F7;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* GD-31 */
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--white); font: 16px/1.45 var(--font); }
+a { color: var(--sky-blue); }
+a:focus-visible, .splash:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
+
+.app { height: 100%; display: flex; flex-direction: column; }
+.noscript { padding: 24px; max-width: 640px; }
+
+/* The test instance's fixed banner (SR-81) */
+.testbanner {
+  flex: none; padding: 6px 16px; text-align: center; font-weight: 700;
+  background: var(--fire-orange); color: var(--night-blue-dark);
+}
+
+/* Splash with the app's photograph (GD-27, GD-30) */
+.splash {
+  flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+  padding-left: 8%; cursor: pointer; animation: fadein .3s ease-out;
+  background: linear-gradient(90deg, rgba(0, 0, 0, .85) 0%, rgba(0, 0, 0, .55) 55%, rgba(0, 0, 0, .35) 100%),
+              url(backdrop-3200x1440.webp) right center / cover no-repeat;
+}
+.splash .logo { width: 128px; height: 128px; border-radius: 28px; margin-bottom: 20px; background: url(zangbundel-icon.svg) center / contain no-repeat; }
+.splash h1 { margin: 0 0 4px; font-size: 32px; }
+.splash p { margin: 0; color: var(--secondary); }
+.splash .hint { margin-top: 24px; font-size: 14px; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+/* Until the main screen exists (M4): what this build is */
+.home { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.home .card { max-width: 560px; background: var(--sheet); border: 1px solid var(--divider); border-radius: 16px; padding: 24px; }
+.home h2 { margin: 0 0 12px; font-size: 20px; }
+.home p { margin: 0 0 12px; }
+.home p:last-child { margin-bottom: 0; color: var(--secondary); font-size: 14px; }

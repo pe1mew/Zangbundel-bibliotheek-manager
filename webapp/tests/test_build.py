@@ -26,22 +26,27 @@ bad = {
 }
 special = {'css import': ('@import url(b.css); body{}', None), 'css external url': ('body{background:url(https://t.example/x.png)}', None),
            'svg with script': ('body{}', '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'),
-           'js file': ('body{}', 'JS')}
-good_html = ('<!doctype html><!-- SPDX-License-Identifier: Apache-2.0 --><html><head><link rel="stylesheet preload" href="assets/a.css"></head><body>'
+           'module with a side-effect import': ('body{}', 'JS:import "./b.js";'),
+           'module with a default export': ('body{}', 'JS:export default 1;'),
+           'module importing outside webapp': ('body{}', 'JS:import { x } from "../../../../x.js";'),
+           'classic script': ('body{}', 'CLASSIC:export const x = 1;')}
+good_html = ('<!doctype html><!-- SPDX-License-Identifier: Apache-2.0 --><html><head><link rel="stylesheet preload" href="assets/a.css">'
+             '<script type="module" src="assets/a.js"></script></head><body>'
              '<img src="assets/i.svg#logo" alt=""><a href="./">home</a><a href=".">h2</a><a href="nl/">nl</a><a href="nl/../">up</a>'
              '<a href="#">top</a><a href="mailto:x@example.invalid">m</a><a href="?x=1">q</a><p data-src="/nope">d</p></body></html>')
 good_css = '/* @import is not used here */ body{background:url(i.svg)} p{background:url(data:image/png;base64,AAAA)}'
 results = []
 
 
-def run(name, html, css, svg='<svg xmlns="http://www.w3.org/2000/svg"/>', js=False, expect_ok=False):
+def run(name, html, css, svg='<svg xmlns="http://www.w3.org/2000/svg"/>', js=None, expect_ok=False):
     d = tempfile.mkdtemp()
     os.makedirs(os.path.join(d, 'assets')); os.makedirs(os.path.join(d, 'nl'))
     open(os.path.join(d, 'assets', 'i.svg'), 'w').write(svg)
     open(os.path.join(d, 'assets', 'b.css'), 'w').write('p{}')
     open(os.path.join(d, 'assets', 'a.css'), 'w').write(css)
     if js:
-        open(os.path.join(d, 'assets', 'a.js'), 'w').write('import "./b.js";')
+        open(os.path.join(d, 'assets', 'a.js'), 'w').write(js)
+        open(os.path.join(d, 'assets', 'b.js'), 'w').write('export const b = 1;')
     open(os.path.join(d, 'index.html'), 'w').write(html)
     open(os.path.join(d, 'nl', 'index.html'), 'w').write('<!doctype html><html><body><a href="../">up</a><a href="..">up2</a></body></html>')
     r = subprocess.run([sys.executable, BUILD, 'build', '--src', d, '--name', 'x', '--version', '1.0.0',
@@ -58,12 +63,14 @@ allok = True
 for name, snip in bad.items():
     allok &= run(name, base.replace('</body>', snip + '</body>'), 'body{}')
 for name, (css, extra) in special.items():
-    if extra == 'JS':
-        allok &= run(name, base, css, js=True)
+    if extra and extra.startswith(('JS:', 'CLASSIC:')):
+        kind, code = extra.split(':', 1)
+        tag = '<script type="module" src="assets/a.js"></script>' if kind == 'JS' else '<script src="assets/a.js"></script>'
+        allok &= run(name, base.replace('</head>', tag + '</head>'), css, js=code)
     elif extra:
         allok &= run(name, base, css, svg=extra)
     else:
         allok &= run(name, base, css)
-allok &= run('GOOD page (must build)', good_html, good_css, expect_ok=True)
+allok &= run('GOOD page (must build)', good_html, good_css, js='import { b } from "./b.js"; export const a = b + 1;', expect_ok=True)
 print('ALL OK' if allok else 'SOME FAILED')
 sys.exit(0 if allok else 1)

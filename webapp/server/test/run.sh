@@ -37,14 +37,14 @@ git config --global user.name 'Test Owner'; git config --global user.email 'owne
 git config --global gpg.format ssh; git config --global user.signingkey $W/rk/tag-key.pub
 echo "owner@example.invalid $(cut -d' ' -f1,2 $W/rk/tag-key.pub)" > $W/rk/tag-signers
 git config --global gpg.ssh.allowedSignersFile $W/rk/tag-signers
-cp /repo/webapp/tools/build.py /repo/webapp/tools/sign-release.sh $W/tools/
+cp /repo/webapp/tools/build.py /repo/webapp/tools/bundle.py /repo/webapp/tools/sign-release.sh $W/tools/
 cp $W/rk/test-release.pub $W/tools/release-key.pub
 
 check "build.py refuses unsafe pages, builds a valid one" python3 /repo/webapp/tests/test_build.py /repo/webapp/tools/build.py
 
 # --- build: placeholder from a signed tag (SR-10, SR-90), holding page as a trial build ---
 mkdir -p $W/src/webapp && cp -r /repo/webapp/placeholder /repo/webapp/test-holding /repo/webapp/tools $W/src/webapp/
-rm -f $W/src/webapp/tools/release-key.pub
+rm -rf $W/src/webapp/tools/release-key.pub $W/src/webapp/tools/__pycache__
 git -C $W/src init -q -b main && git -C $W/src add -A && git -C $W/src commit -q -m 'test source'
 refused "build without a signed tag" "no tag with a valid signature" \
   python3 $W/src/webapp/tools/build.py build --src $W/src/webapp/placeholder --name placeholder --version 0.1.0 --out $W/dist/x
@@ -54,6 +54,10 @@ check "build placeholder from signed tag" \
 check "manifest names the tag" grep -q '"source_tag": "v0.1.0"' $W/dist/placeholder-0.1.0/release-manifest.json
 check "trial build of test-holding" \
   python3 /repo/webapp/tools/build.py build --src /repo/webapp/test-holding --name test-holding --version 0.1.0 --out $W/dist/test-holding-0.1.0 --allow-dirty
+check "trial build of the manager (bundled, TD-22)" \
+  python3 /repo/webapp/tools/build.py build --src /repo/webapp/src --name manager --version "$(sed -n "s/^export const VERSION = '\\(.*\\)';/\\1/p" /repo/webapp/src/app/version.js)" --out $W/dist/manager --allow-dirty
+check "manager release holds a bundle, no JS source" sh -c "ls $W/dist/manager/assets/main.*.js && ! find $W/dist/manager -path '*/app/*' | grep -q ."
+check "sign and pack manager" bash $W/tools/sign-release.sh $W/dist/manager $W/rk/test-release
 for n in placeholder test-holding; do
   check "sign and pack $n" bash $W/tools/sign-release.sh $W/dist/$n-0.1.0 $W/rk/test-release
 done
@@ -223,9 +227,21 @@ echo; echo "=== SC-01 zangbundel.nl ==="
 check "SC-01 zangbundel.nl" python3 /repo/webapp/tools/check_headers.py zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure
 grep -E '^(PASS|FAIL)|^        -' /tmp/out | grep -v '^PASS' | head -20
 echo; echo "=== SC-01 test.zangbundel.nl ==="
-check "SC-01 test.zangbundel.nl" python3 /repo/webapp/tools/check_headers.py test.zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure --auth tester:test-only-pw --report /tmp/report/sc01.md
+check "SC-01 test.zangbundel.nl (holding page, app CSP)" python3 /repo/webapp/tools/check_headers.py test.zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure --auth tester:test-only-pw --app --report /tmp/report/sc01.md
 grep -E '^(PASS|FAIL)|^        -' /tmp/out | grep -v '^PASS' | head -20
 check "SC-01 report written" test -s /tmp/report/sc01.md
+# M1.4: the minimal manager on the test instance
+check "activate --trial the manager on test.zangbundel.nl" zbm-release activate --trial test.zangbundel.nl $W/dist/manager.tar
+check "SC-01 test.zangbundel.nl with the manager (--app)" python3 /repo/webapp/tools/check_headers.py test.zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure --auth tester:test-only-pw --app
+grep -E '^(PASS|FAIL)|^        -' /tmp/out | grep -v '^PASS' | head -20
+b=$(grep -o '<script[^>]*>' /srv/zangbundel-test/live/index.html | grep -o 'src="[^"]*"' | cut -d'"' -f2)
+curl -sk -u tester:test-only-pw --resolve test.zangbundel.nl:443:127.0.0.1 "https://test.zangbundel.nl/$b" -o /tmp/bundle.js
+check "the bundle is served with its SRI hash" python3 -c "
+import re, base64, hashlib
+html = open('/srv/zangbundel-test/live/index.html', encoding='utf-8').read()
+want = re.search(r'<script[^>]*integrity=\"([^\"]+)\"', html).group(1)
+got = 'sha384-' + base64.b64encode(hashlib.sha384(open('/tmp/bundle.js', 'rb').read()).digest()).decode()
+assert want == got and len(open('/tmp/bundle.js', 'rb').read()) > 1000, (want, got)"
 curl -skI --http2 --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/nl/ > /tmp/h2.txt
 check "HTTP/2 on the shared socket, headers intact" sh -c "grep -q '^HTTP/2 200' /tmp/h2.txt && grep -qi '^content-security-policy: default-src' /tmp/h2.txt && grep -qi '^cross-origin-embedder-policy: require-corp' /tmp/h2.txt"
 code=$(curl -sk -o /dev/null -w '%{http_code}' -u tester:wrong --resolve test.zangbundel.nl:443:127.0.0.1 https://test.zangbundel.nl/)

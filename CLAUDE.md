@@ -71,8 +71,10 @@ Zangbundel-bibliotheek-manager/
 ├── webapp/
 │   ├── mock/                     ← clickable mock of webappGUI (static HTML, CSS, JS; app icon CC BY-SA 4.0); never deployed
 │   ├── placeholder/              ← zangbundel.nl until go-live: nl/en/de pages, privacy, security.txt (no script)
+│   ├── src/                      ← the web app: index.html, app/ (ES modules, bundled by the build, TD-22), assets/
+│   ├── tests/                    ← test_build.py, test_bundle.py (needs node)
 │   ├── test-holding/             ← test.zangbundel.nl until M1.4
-│   ├── tools/                    ← build.py, sign-release.sh, check_headers.py (SC-01); release-key.pub once the owner makes it
+│   ├── tools/                    ← build.py, bundle.py, sign-release.sh, check_headers.py (SC-01); release-key.pub once the owner makes it
 │   └── server/                   ← nginx config, zbm-receive, zbm-release, zbm-verify timer; README.md = M0 runbook
 ├── memory/                       ← MEMORY.md index, gotcha-log.md, todo.md (committed, shared)
 ├── .claude/                      ← review-profile.md, launch.json (preview server webapp-mock)
@@ -93,8 +95,12 @@ python -m http.server 8771 --directory webapp/mock --bind 127.0.0.1
 # Trial build of a static site (a real release needs a clean, tagged tree: drop --allow-dirty)
 python webapp/tools/build.py build --src webapp/placeholder --name placeholder --version 0.1.0 --allow-dirty --force
 
-# Build checks: unsafe pages refused, a valid page built
+# Build checks: unsafe pages refused, a valid page built; bundler checks run in Node (C:\Program Files\nodejs)
 python webapp/tests/test_build.py
+python webapp/tests/test_bundle.py
+
+# Trial build of the web app (the version must equal webapp/src/app/version.js)
+python webapp/tools/build.py build --src webapp/src --name manager --version 0.2.0-dev.1 --allow-dirty --force
 
 # SC-01 header check against a host (see webapp/server/README.md for --connect/--insecure/--auth)
 python webapp/tools/check_headers.py zangbundel.nl

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.7 |
+| **Status** | Draft 0.8 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.11, `design/webappTDS.md` draft 0.5 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
@@ -381,9 +381,10 @@ index.html                      no inline script or style; <script type="module"
 assets/app.<hash>.js            main thread: UI only; renders with DOM APIs (createElement, textContent)
 assets/library-worker.<hash>.js worker "library": fflate, manifest, ChordPro, FDS §6 validation
 assets/crypto-worker.<hash>.js  worker "crypto": @noble/ed25519, SHA-256/512 via crypto.subtle, keys
-assets/vendor/fflate-0.8.3.<hash>.js, ed25519-3.2.0.<hash>.js   vendored, SR-12
 assets/app.<hash>.css           all styles; no style attributes anywhere
 ```
+
+**Bundles (webappTDS TD-22).** Each `.js` above is one bundle made by `webapp/tools/build.py` from a subset of ES modules. The vendored files of SR-12 (`webapp/vendor/`) are bundled into the worker that uses them, not served separately. The main bundle carries SRI, which `Integrity-Policy` enforces. The two workers cannot: browsers have no integrity attribute for `new Worker()`, and `blocked-destinations=(script)` does not cover the `worker` destination. Their hashed names, the signed release manifest (SR-11) and the hourly check (SR-73) protect them.
 
 - **Messages between threads** carry plain data only. The library worker returns, for example, `{ songs: [{ id, title, … }], findings: [{ code, severity, where, params }] }`; the main thread builds messages from the code and the translated text with `textContent`.
 - **Rendering**: a small helper builds elements (`el('li', { class: 'song' }, [text(title)])`); there is no HTML string anywhere. The Trusted Types policy `zbm-download` only wraps `URL.createObjectURL` for download links; with `require-trusted-types-for 'script'` any accidental `innerHTML` throws.
@@ -590,3 +591,4 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 | Draft 0.5 | 2026-11-06 | M0 implemented: sections 7.1 and 7.4 record the implementation in `webapp/server/` and `webapp/tools/` and its deviations from the sketch (no `http2`, per-host maps, CSP and sandbox on non-HTML responses, error-log handling, `certonly --webroot`); the release public key is at `webapp/tools/release-key.pub`; 7.5 names the error log. |
 | Draft 0.6 | 2026-11-06 | Review of the M0 implementation (7.1, 7.4, 7.5). nginx's own error pages carry a CSP, COOP and COEP. IPv6 is shortened correctly for compressed addresses. TLS and HTTP/2 are described as on contabo6. Log retention is stated as at most 15 days, and failed test logins are named. The build enforces a signed tag (SR-10, SR-90) and checks HTML with a parser. The hourly check runs as its own user and checks owner, mode and unreadable directories. `zbm-receive` takes one upload at a time. SR-74's shell deviation is recorded. |
 | Draft 0.7 | 2026-11-06 | Second review round of M0 (7.1, 7.4, 7.5). Logs move to their own folder and logrotate stanza, because Ubuntu's `notifempty` kept quiet logs indefinitely; retention is again 14 days. Byte ranges are off, because a 416 doubled the headers. The build is tied to `main` and to a clean `webapp/tools/`. It refuses parser-divergent markup, frames, `<base>`, `<meta http-equiv>`, external resources, SVG script, and (until M1.1) JavaScript and web manifests. The trial-build deviation from SR-10 is recorded. `zbm-receive` refuses root, compressed uploads and tars without an end marker, and counts the upload itself in the 200 MB. Activation no longer depends on root's umask. SR-74's protection is described precisely. |
+| Draft 0.8 | 2026-11-06 | Section 7.3: the app ships as three bundles (webappTDS TD-22); the vendored libraries are inside the worker bundles; workers are protected by hashed names, SR-11 and SR-73, since browsers have no SRI for workers. |

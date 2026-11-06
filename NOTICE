@@ -14,5 +14,6 @@ pages: webapp/mock/img/google-play-badge-nl.png (Google Play and the Google Play
 logo are trademarks of Google LLC) and webapp/mock/img/f-droid-badge-nl.png
 (F-Droid's badge, CC BY-SA 3.0, credit F-Droid; gitlab.com/fdroid/artwork). See license.md.
 The placeholder pages (webapp/placeholder/, webapp/test-holding/) use copies of the app icon
-and of both badges, under the same terms.
+and of both badges, and the web app (webapp/src/assets/) copies of the app icon and the
+background photograph, under the same terms.
 Song lyrics are not part of this project.
