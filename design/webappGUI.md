@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.2 |
-| **Date** | 2026-11-05 |
+| **Status** | Draft 0.6 |
+| **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.4; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
 
@@ -37,21 +37,28 @@ This document describes the bibliotheek-manager web app as the user sees it and 
 |---|---|---|
 | GD-01 | 2026-11-05 | **Same look as the Songbook app.** The manager reuses the app's colour scheme, buttons and icons, so that a scout leader recognises the same family in both. The source is the app: `design/guiDesign.md` section 9 and `android/app/src/main/kotlin/nl/pe1mew/zangbundel/app/ui/theme/Theme.kt`. A change of palette in the app is followed here. |
 | GD-02 | 2026-11-05 | **This document also describes behaviour**, not only screens and look (section 1.1). The behaviour of a screen is specified with the screen, before it is built in the mock. |
+| GD-12 | 2026-11-06 | **The colours are those of the app's screens as users see them: black, dark grey and orange.** *(Owner, feedback on the mock.)* The first mock used the app's configuration scheme (night blue), which the app's songbook and campfire screens do not show; the owner found it "blue, not the app's colour scheme". Section 2.1 now follows the app's night theme. Supersedes the table of draft 0.1 to 0.3 in section 2.1. |
 
 ### 2.1 Colours (from GD-01)
 
-The manager uses the app's configuration-screen scheme (app `Theme.kt`, `ConfigurationScheme`):
+The manager uses the app's night theme, as its songbook, setlist and campfire screens show it (GD-12). Sources in the app: `LyricColors.Night` (`ui/LyricBody.kt`), `SheetNight` and `ButtonNight` (`ui/gathering/RoundButtons.kt`), `Palette` (`ui/theme/Theme.kt`); the store screenshots in `docs/store-listing/graphics/` show the result.
 
-| Role | Name | Value |
+| Role | In the app | Value |
 |---|---|---|
-| Background | Night blue dark | `#0B2545` |
-| Surface (panels, cards) | Night blue | `#13315C` |
-| Primary (main buttons, focus) | Fire orange | `#FF8A3D` |
-| Text on primary | Night blue dark | `#0B2545` |
-| Secondary accent | Fire orange light | `#FFB36B` |
-| Links, tertiary accent | Sky blue | `#4FC3F7` |
-| Text | White | `#FFFFFF` |
-| Secondary text | Off-white | `#CFE6FF` |
+| Background of the centre area | Lyric view background (night) | `#000000` |
+| Side bars, bottom bar, panels, dialogs | Sheets (`SheetNight`) | `#121212` |
+| Round and icon buttons | `ButtonNight` | `#1A1A1A` |
+| Dividers, disabled buttons | Divider (night) | `#2A2A2A` |
+| Input outlines, inactive tracks | Grey | `#444444` |
+| Text | Lyric text (night) | `#FFFFFF` |
+| Labels, secondary text | Secondary (night), as *Couplet 1* | `#BFBFBF` |
+| Primary buttons, outlines, text buttons, focus | Fire orange | `#FF8A3D` |
+| Text on an orange button | Night blue dark | `#0B2545` |
+| Error and attention text (until GQ-02) | Fire orange light | `#FFB36B` |
+| The selected row, as the leader's current-song bar | Night blue | `#13315C` |
+| Links, keyboard focus ring | Sky blue | `#4FC3F7` |
+
+The configuration scheme of the app (night blue background, `ConfigurationScheme`) is not used; whether the app's background photograph has a place, for example on the splash, is GQ-01.
 
 Reception green (`#4CC36A`) and the eight library colours of app guiDesign D-51 have app-specific meanings and are not used, unless a decision here gives them a meaning in the manager. Colours for the severities of the validation panel (Fatal, Error, Warning, Info, FDS §6.1) are open (GQ-02).
 
@@ -121,11 +128,58 @@ The owner's GUI notes of 2026-11-05 are recorded below as decisions GD-03 to GD-
 ```
 
 - **Bottom bar:** the primary navigation icons, in the same style as the icons of the Songbook app (GD-01, section 2.3).
-- **Right bar:** the library's song list. It shows every song by name (its title), with buttons per song, for example *view* and *edit*.
+- **Right bar:** the library's song list. It shows every song by name (its title). Clicking a song shows it in the centre (view mode); each row has one button, *Bewerken* (GD-13). Above the list: search, sort and filters as in the app's songbook (GD-13).
 - **Left bar:** the tags and metadata fields of the selected song, to the left of the editor.
 - **Centre area:** above the bottom bar, between the left and right bars. It shows the selected song in view mode or in edit mode.
 
 Not yet placed in this layout: the library's own fields (title, description, licence, maintainer), the sets, the validation panel, signing and keys, and the language choice (GQ-10 to GQ-12).
+
+**GD-10 — The side bars can be resized and folded.** *(Owner, 2026-11-06, feedback on the mock.)* The left bar and the right bar can each be made wider or narrower, and folded in and out. A small tab in the middle of each bar's inner edge shows that the bar can be folded, and folds or unfolds it.
+
+| Action | Behaviour |
+|---|---|
+| Drag a bar's inner edge | The bar follows the pointer; the centre area takes the rest of the width. Left bar 220 to 480 px, right bar 240 to 520 px; the edge stops at the limit. |
+| Click or tap the tab | The bar folds in to nothing but its edge with the tab, or unfolds to the width it had. The tab's chevron points the way the bar will move. |
+| Keyboard | The tab is a button (Enter or Space folds and unfolds). The edge is a separator: the left and right arrow keys resize in steps of 16 px. |
+| Folded bar | Its content is hidden and not reachable by keyboard; the centre area uses the space. Selecting a song in a folded right bar is not possible until it is unfolded. |
+| Splash (GD-03) | The tabs and edges are greyed out with the bars, and do nothing. |
+
+Whether the widths and folded state are remembered for the next visit is GQ-16.
+
+**GD-13 — The song list: a click shows the song; search, sort and filters as in the app.** *(Owner, 2026-11-06, feedback on the mock.)*
+
+- **No *Bekijken* button.** A click on a song row selects it and shows it in the centre area in view mode. Each row keeps one button, *Bewerken*, which opens the song in edit mode.
+- **Search and filters above the list, the same as the app's songbook** (app guiDesign D-52; built in the app as `ui/songbook/SongbookScreen.kt` and `library/SongbookFilter.kt`):
+
+| Control (Dutch UI) | Behaviour, as in the app |
+|---|---|
+| Search field *Zoeken* | A song is shown when its title holds every typed word, compared without case or accents (*Één* finds *een*). The list follows while typing. |
+| Switch *Ook in de tekst* | Off by default. On: the typed words are looked for in the lyrics instead of the title (the app's full-text search, FR-LIB-31 there). |
+| Sort button *A–Z* / *Z–A* | Toggles the order. Sorting uses the sort title when the song has one (`{sorttitle}`), otherwise the title, compared without case or accents. |
+| Filter chips | One row of chips, scrolling sideways: the languages of the library's songs (only when there is more than one) and its tags. Within a group any chosen chip matches; the groups all apply. A chosen chip shows a check mark. |
+| *Wis filters* | Shown only while search, switch, sort or a chip differs from the default; clears them all at once. |
+| No match | The list reads *Geen liederen gevonden.* |
+
+The app's library chips and colour squares are left out, since the manager has one library open. The app's orders and filters by use (*vaakst gezongen*, *nog nooit gezongen*, …) are left out too: the manager has no campfire memories. Search, sort and filters are not part of the library, and are cleared when another library is opened. Whether they also reset when a song is added that the filter hides, and how a song that is being edited is kept visible, is GQ-17.
+
+**GD-14 — The identity (signing key) is managed from the bottom bar.** *(Owner, 2026-11-06.)* The bottom bar has a group of buttons for the user's identity, the Ed25519 key that signs a library (FDS §5, §7.7):
+
+| Button (Dutch UI) | Behaviour | FDS |
+|---|---|---|
+| *Sleutel maken* | Asks for the author's name, makes a new key pair, and shows the name and the fingerprint (`AB12-CD34-EF56-7890`, SG-20). Before the key file can be downloaded, the user must tick that they have read notice M-64. Then *Sleutelbestand downloaden* saves it as `sleutel-<name>.zbkey`; *Later* keeps the key in memory only. If a key is already in memory, the user confirms replacing it first. | EDT-61, SG-12, SG-20, M-64 |
+| *Sleutel downloaden* | Available only while a key is in memory. Shows its name and fingerprint and the same notice, then saves the key file. While a key made in this session has not been downloaded yet, the button carries a dot: without the file, the key is lost when the page closes (EDT-02, EDT-64). | EDT-61, EDT-64 |
+| *Sleutel laden* | Not in the owner's request, added because the FDS needs it: opens a key file (`.zbkey`), checks it (SG-11, M-31) and keeps it in memory for this session. The file stays on the user's computer (TD-06). | EDT-60, EDT-62, SG-11 |
+
+The key lives in the page's memory only; closing the page forgets it, and nothing about it is stored in the browser (EDT-64, TD-06). Signing the open library with this key (*Bibliotheek ondertekenen*, EDT-60, EDT-53) and checking a loaded key against a signed library (EDT-62, M-30) are not designed yet (GQ-18).
+
+**GD-15 — The bottom bar offers the Zangbundel app for Android.** *(Owner, 2026-11-06.)* A button *Android-app* opens a panel with:
+
+- the official store badges, as images served by the manager itself (TD-08): *Ontdek het op Google Play* (Google's Dutch badge) and *Verkrijg op F-Droid* (F-Droid's Dutch badge), each linking to the app's page in that store;
+- a text link to the signed APK on GitHub Releases (`github.com/pe1mew/Zangbundel/releases/latest`);
+- links to the source code of the app (`github.com/pe1mew/Zangbundel`) and of the manager (`github.com/pe1mew/Zangbundel-bibliotheek-manager`);
+- links to the app's manual on the wiki (*Handleiding* in Dutch, *Manual* in English) and to the manager's manual.
+
+Links open in a new browser tab. The owner asked for "the same images as on the wiki"; the wiki has no images (checked 2026-11-06), and the owner chose the official store badges instead. Open points: the app is not yet public on Google Play and not yet on F-Droid (resubmission from 2027-01-18), and the manager has no manual yet (GQ-19).
 
 ### 3.3 Edit mode
 
@@ -137,6 +191,8 @@ Not yet placed in this layout: the library's own fields (title, description, lic
 
 **GD-08 — Sections are reordered by dragging.** *(Owner, 2026-11-05.)* Sections are moved up and down by dragging them with the mouse. A keyboard alternative is GQ-15.
 
+**GD-11 — The song scrolls along while a section is dragged.** *(Owner, 2026-11-06, feedback on the mock.)* While a verse or chorus is dragged, the dragged block follows the pointer, and when the pointer comes near the top or bottom of the centre area (within 72 px, above the *Toepassen* bar), the song scrolls in that direction, faster the closer the pointer is to the edge. The dragged block stays in view. Scrolling stops at the start and end of the song, and the block cannot be dragged outside the song. A line shows where the block will land; on release it lands there and stays in view.
+
 ### 3.4 Applying changes
 
 **GD-09 — Apply checks, then shows.** *(Owner, 2026-11-05.)*
@@ -145,6 +201,34 @@ Not yet placed in this layout: the library's own fields (title, description, lic
 - After applying, the user sees the song as it will appear (view mode in the centre area).
 
 How *apply* relates to the FDS's validation while typing (EDT-42) and to Save being blocked only by Errors (EDT-50) is GQ-12.
+
+### 3.5 Mock
+
+`webapp/mock/` shows GD-03 to GD-09 as a clickable mock (TD-04): open `index.html` through the preview server `webapp-mock` in `.claude/launch.json`, or any static file server. It reads and writes no files; *Openen* loads a built-in example library with songs that are traditional or written for the mock. A strip at the top, not part of the design, jumps to each state and shows or hides the open-question badges.
+
+Where the notes leave a point open, the mock makes an assumption and marks it with the question's badge. None of these is a decision:
+
+| Open question | What the mock assumes |
+|---|---|
+| GQ-03, GQ-06 | The app icon as logo; the name *Zangbundel bibliotheek-manager*. |
+| GQ-04 | The platform's system font. |
+| GQ-05 | A desktop width of at least 980 px. |
+| GQ-07 | The splash stays 1.5 s, or until a click, as in the app. |
+| GQ-08 | *Bibliotheek openen*, with the line that the file stays on this computer. |
+| GQ-09 | *Sluiten en downloaden* opens a dialog with the proposed file name, the change note (EDT-58), *Opslaan als kopie* and *Downloaden en sluiten*. |
+| GQ-10 | With no song selected, the left bar shows the library's fields. |
+| GQ-11 | Sets are not shown. |
+| GQ-12 | *Toepassen* refuses a song with an Error and lists the problems above the sections, each with a link to the field; a field loses its mark once it is filled. |
+| GQ-13, GQ-14 | Only verse and chorus; no plain-text view. |
+| GQ-15 | Up and down buttons on each section, next to the drag handle. |
+| GQ-16 | Bar widths and folding last only while the page is open. |
+| GQ-17 | A newly applied song that the filter hides clears the filter. |
+| GQ-18 | Keys can be made, downloaded and loaded; signing the library with one is not in the mock. |
+| GQ-19 | Both badges are shown and link to the store pages; the manager's manual links to this repository's wiki, which does not exist yet. |
+| GQ-02 | Errors in fire orange light with a ⚠ and a sentence, so that colour is not the only sign. |
+| GQ-01 | No background photograph; the splash is black like the rest. |
+
+Further behaviour the mock shows: the bottom bar's *Bewerken* is available only with a song selected, and *Sluiten en downloaden* only with a library open, with a dot after an applied change. While a song is being edited, the song list and *Sluiten en downloaden* ask the user to apply or cancel first. *Openen* and *Nieuw* ask for confirmation when there are unsaved changes (M-60). A new song's ID is proposed from its title on apply (EDT-36). Typing `{` or `}` in a section is refused with a hint, and pasted text loses such characters (GD-07).
 
 ---
 
@@ -167,6 +251,10 @@ How *apply* relates to the FDS's validation while typing (EDT-42) and to Save be
 | GQ-13 | 2026-11-05 | Which parts of the ChordPro profile the section editor (GD-06) represents besides verse and chorus: bridge (song format §7.1), repeating a chorus with `{chorus}` (§7.2), section labels, implicit verses (§7.3), `{comment}` remarks (§7.4), chords in brackets (§5.4), tab, grid and ABC blocks, `#` maintainer comments and unknown directives (§10.1). A song opened from a file may contain any of them; the editor must keep what it cannot show unchanged, or the song's content hash changes and the app sees a new song. |
 | GQ-14 | 2026-11-05 | FDS EDT-33 says the song text is edited "as ChordPro text directly". The section editor (GD-06, GD-07) replaces that with a structured editor. Keep a plain-text view as a second mode for users who know ChordPro, or amend EDT-33 to allow the section editor alone? |
 | GQ-15 | 2026-11-05 | A keyboard alternative to dragging sections (GD-08), for users who cannot use a mouse well: for example *move up* and *move down* buttons on each section. |
+| GQ-16 | 2026-11-06 | Are the bar widths and folded state (GD-10) remembered between visits? They are not tied to a library, so EDT-02 allows it, like the language choice (EDT-82); they would be kept in the browser's local storage on the user's computer only. Or does every visit start with both bars open at their default width? |
+| GQ-17 | 2026-11-06 | When a new song is applied (GD-09) that the current search or filter hides, does the list clear the filter, or show the song anyway with a note? The mock clears the filter, so that the new song is never invisible. |
+| GQ-18 | 2026-11-06 | Where and how the open library is signed with the key in memory (*Bibliotheek ondertekenen*, EDT-60, EDT-53), how a signed library that opens read-only (EDT-23) asks for its key (EDT-62, M-30), and where the identity in use (name and fingerprint, SG-21) is shown. |
+| GQ-19 | 2026-11-06 | The links of GD-15 while the app is not public: hide the Google Play and F-Droid badges until the app is in the store, or show them with a line *binnenkort* (*coming soon*)? And where does the manager's manual live: this repository's GitHub wiki, or pages on `zangbundel.nl`? |
 
 ---
 
@@ -176,3 +264,7 @@ How *apply* relates to the FDS's validation while typing (EDT-42) and to Save be
 |---|---|---|
 | Draft 0.1 | 2026-11-05 | First draft: the app's colours, buttons and icons reused (GD-01, sections 2.1 to 2.3); behaviour is part of this document (GD-02); list of screens to write; open questions GQ-01 to GQ-05. |
 | Draft 0.2 | 2026-11-05 | The owner's GUI notes: startup like the app's (GD-03), one main screen in four areas (GD-04), song fields in the left bar (GD-05), the song edited as verse and chorus sections (GD-06) with a small WYSIWYG editor each (GD-07), reordered by dragging (GD-08), a check before applying and a view after (GD-09). Open questions GQ-06 to GQ-15 for what the notes leave open or where they meet the FDS; GQ-05 extended. |
+| Draft 0.3 | 2026-11-06 | Section 3.5: the first mock in `webapp/mock/`, with the assumptions it makes on open questions. |
+| Draft 0.4 | 2026-11-06 | The owner's feedback on the mock: the side bars can be resized and folded, with a tab in the middle of each inner edge (GD-10, GQ-16); the song scrolls along while a section is dragged (GD-11); the colours are the app's night theme (black, dark grey, orange) instead of its night-blue configuration scheme (GD-12, section 2.1 rewritten). The mock follows all three. |
+| Draft 0.5 | 2026-11-06 | The owner's feedback on the mock: no *Bekijken* in the song list, a click shows the song; search, sort and filter chips above the list as in the app's songbook (GD-13). GQ-17 added. |
+| Draft 0.6 | 2026-11-06 | The owner's requests: identity buttons in the bottom bar to make, download and load a signing key (GD-14); an *Android-app* button with the official Google Play and F-Droid badges, the GitHub APK, the source code and the manuals of the app and the manager (GD-15). GQ-18 and GQ-19 added. |

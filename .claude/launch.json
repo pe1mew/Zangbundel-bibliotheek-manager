@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "webapp-mock",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8771", "--directory", "webapp/mock", "--bind", "127.0.0.1"],
+      "port": 8771
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # License Information
 
-Three kinds of material meet in this project, and each is licensed differently.
+Five kinds of material meet in this project, and each is licensed differently.
 
 ## Code license: Apache License 2.0
 
@@ -27,6 +27,26 @@ Under these conditions:
 - **Non-commercial**: the content may not be used for commercial purposes.
 
 Full text: https://creativecommons.org/licenses/by-nc/4.0/
+
+## Artwork from the Zangbundel app: CC BY-SA 4.0 and Apache 2.0
+
+The web app reuses the look of the Zangbundel app (`design/webappGUI.md` GD-01):
+
+| File | What it is | Licence |
+|---|---|---|
+| `webapp/mock/img/zangbundel-icon.svg` | The Zangbundel app icon, copied unchanged from the app's `design/icon/zangbundel-icon.svg` | CC BY-SA 4.0, credit "Remko Welling, PE1MEW" |
+| The icon paths in `webapp/mock/mock.js` (`ICONS`) | Google Material Icons path data, as the app uses them | Apache License 2.0 |
+
+Copies of these in the web app carry the same licences. The app icon may be shared and adapted for any purpose, also commercially, with attribution and under the same licence (https://creativecommons.org/licenses/by-sa/4.0/). The Material Icons follow the Apache License 2.0 of the code, see [NOTICE](NOTICE).
+
+## Third-party store badges
+
+The mock's *Android-app* panel (`design/webappGUI.md` GD-15) shows two official badges, unchanged, as links to the app's pages in those stores. They are not covered by this project's licences:
+
+| File | Source (downloaded 2026-11-06) | Terms |
+|---|---|---|
+| `webapp/mock/img/google-play-badge-nl.png` | `play.google.com/intl/en_us/badges/static/images/badges/nl_badge_web_generic.png` | Google's badge guidelines (`play.google.com/intl/en_us/badges/`): used unaltered, linking to the app on Google Play, with the notice "Google Play and the Google Play logo are trademarks of Google LLC." |
+| `webapp/mock/img/f-droid-badge-nl.png` | `fdroid.gitlab.io/artwork/badge/get-it-on-nl.png` | The licence of F-Droid's artwork repository (`gitlab.com/fdroid/artwork`); to be checked and named here before the web app is published. |
 
 ## Song lyrics: not in this repository
 

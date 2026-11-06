@@ -4,4 +4,12 @@ Copyright 2026 Remko Welling, PE1MEW
 The code of this project is licensed under the Apache License, Version 2.0;
 see the file LICENSE. Documentation and designs are licensed under
 CC BY-NC 4.0. See license.md.
+The web app's logo is the Zangbundel app icon (webapp/mock/img/zangbundel-icon.svg),
+licensed under CC BY-SA 4.0 (credit: Remko Welling, PE1MEW).
+The web app's icons use path data from Google's Material Icons, licensed under
+the Apache License, Version 2.0.
+The mock shows two third-party store badges, unchanged, as links to the app's store
+pages: webapp/mock/img/google-play-badge-nl.png (Google Play and the Google Play
+logo are trademarks of Google LLC) and webapp/mock/img/f-droid-badge-nl.png
+(from F-Droid's artwork, fdroid.gitlab.io/artwork). See license.md.
 Song lyrics are not part of this project.

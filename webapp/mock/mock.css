@@ -1,0 +1,355 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Mock of design/webappGUI.md. Colours: the app's night theme as its screens use it (webappGUI 2.1, GD-12). */
+
+:root {
+  /* The app's night theme: LyricColors.Night, SheetNight, RoundButtons (app android/app/.../ui). */
+  --bg: #000000;               /* lyric view background */
+  --sheet: #121212;            /* sheets, bars, dialogs (SheetNight) */
+  --btn: #1A1A1A;              /* round buttons (ButtonNight) */
+  --divider: #2A2A2A;          /* dividers, disabled buttons */
+  --grey: #444444;             /* inactive tracks, outlines */
+  --white: #FFFFFF;            /* text */
+  --secondary: #BFBFBF;        /* labels, secondary text */
+  --fire-orange: #FF8A3D;      /* primary, outlines, text buttons */
+  --fire-orange-light: #FFB36B;
+  --night-blue-dark: #0B2545;  /* text on orange */
+  --night-blue: #13315C;       /* highlight bar, as the leader's current-song bar */
+  --sky-blue: #4FC3F7;         /* links, focus */
+  --panel: var(--sheet);
+  --line: var(--divider);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* GQ-04 */
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--white);
+  font: 16px/1.45 var(--font);
+}
+
+button { font: inherit; color: inherit; }
+
+/* ---- Mock banner (not part of the design) ---- */
+.mockbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 12px;
+  background: repeating-linear-gradient(135deg, #222 0 12px, #2a2a2a 12px 24px);
+  color: #ddd;
+  font-size: 13px;
+  border-bottom: 1px solid #444;
+}
+.mockbar strong { color: var(--fire-orange-light); letter-spacing: .05em; }
+.mockbar button {
+  background: #333; border: 1px solid #555; border-radius: 4px;
+  padding: 3px 8px; cursor: pointer; color: #eee; font-size: 13px;
+}
+.mockbar button:hover { background: #444; }
+.mockbar label { margin-left: auto; display: flex; gap: 6px; align-items: center; cursor: pointer; }
+
+/* ---- App frame: four areas (GD-04) ---- */
+.app {
+  --lw: 300px;   /* left bar width, GD-10 */
+  --rw: 320px;   /* right bar width, GD-10 */
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--lw) minmax(0, 1fr) var(--rw);
+  transition: grid-template-columns .2s ease;
+  grid-template-rows: minmax(0, 1fr) 76px;
+  grid-template-areas:
+    "left centre right"
+    "bottom bottom bottom";
+  flex: 1;
+  min-height: 0;
+  min-width: 980px; /* GQ-05: desktop width assumed */
+}
+
+.left   { grid-area: left;   border-right: 1px solid var(--line); background: var(--sheet); }
+.right  { grid-area: right;  border-left: 1px solid var(--line);  background: var(--sheet); }
+.centre { grid-area: centre; background: var(--bg); position: relative; }
+.bottom { grid-area: bottom; border-top: 1px solid var(--line); background: var(--sheet); }
+
+.left, .right, .centre { overflow-y: auto; }
+.left, .right { overflow-x: hidden; }
+
+/* ---- Resizable, foldable side bars (GD-10) ---- */
+.app.resizing { transition: none; user-select: none; cursor: col-resize; }
+.app.lfold .left, .app.rfold .right { visibility: hidden; border: none; }
+.edge {
+  position: absolute; top: 0; bottom: 76px; width: 12px; z-index: 5;
+  display: flex; align-items: center; cursor: col-resize; outline: none;
+  transition: left .2s ease, right .2s ease;
+}
+.app.resizing .edge { transition: none; }
+.edge-left  { left: calc(max(var(--lw), 6px) - 6px); justify-content: flex-start; }
+.edge-right { right: calc(max(var(--rw), 6px) - 6px); justify-content: flex-end; }
+.edge::before {                       /* the line that lights up on hover and while dragging */
+  content: ""; position: absolute; top: 0; bottom: 0; left: 5px; width: 2px; background: transparent; transition: background .15s;
+}
+.edge:hover::before, .edge:focus-visible::before, .app.resizing .edge.active::before { background: var(--sky-blue); }
+.app.lfold .edge-left, .app.rfold .edge-right { cursor: default; }
+.foldtab {
+  position: relative; z-index: 1; width: 22px; height: 64px; padding: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--sheet); color: var(--secondary); border: 1px solid var(--line);
+}
+.edge-left .foldtab  { margin-left: 6px; border-left: none;  border-radius: 0 10px 10px 0; }
+.edge-right .foldtab { margin-right: 6px; border-right: none; border-radius: 10px 0 0 10px; }
+.foldtab:hover { color: var(--fire-orange); border-color: var(--fire-orange); }
+.foldtab:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 1px; }
+.foldtab svg { width: 18px; height: 18px; fill: currentColor; }
+.app.splash .edge { opacity: .35; pointer-events: none; }
+.pad { padding: 20px; }
+
+.greyed { opacity: .35; pointer-events: none; transition: opacity .3s; }
+
+h1, h2, h3 { margin: 0 0 8px; font-weight: 600; }
+h1 { font-size: 34px; }
+h2 { font-size: 22px; }
+h3 { font-size: 16px; color: var(--secondary); text-transform: uppercase; letter-spacing: .06em; font-size: 13px; }
+.muted { color: var(--secondary); }
+.small { font-size: 13px; }
+
+/* ---- Buttons (webappGUI 2.2, as in the app) ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; min-width: 48px; padding: 0 22px;
+  border-radius: 999px; border: 2px solid transparent;
+  cursor: pointer; font-weight: 600; background: none;
+}
+.btn svg { width: 20px; height: 20px; fill: currentColor; }
+.btn-primary  { background: var(--fire-orange); color: var(--night-blue-dark); }
+.btn-primary:hover { background: var(--fire-orange-light); }
+.btn-outline  { border-color: var(--fire-orange); color: var(--fire-orange); }
+.btn-outline:hover { background: rgba(255, 138, 61, .12); }
+.btn-text     { color: var(--fire-orange); padding: 0 12px; }
+.btn-text:hover { background: rgba(255, 138, 61, .10); }
+.btn-small    { min-height: 36px; padding: 0 14px; font-size: 14px; } /* list rows: 36 px visual inside a 48 px row */
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn:focus-visible, .iconbtn:focus-visible, .navbtn:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
+
+.iconbtn {
+  width: 40px; height: 40px; border-radius: 50%; border: none; background: none;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--secondary);
+}
+.iconbtn:hover { background: rgba(255, 255, 255, .12); color: var(--white); }
+.iconbtn svg { width: 22px; height: 22px; fill: currentColor; }
+
+/* ---- Bottom bar ---- */
+.bottom { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.navbtn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-width: 96px; height: 64px; border: none; border-radius: 12px; padding: 0 6px; background: none; cursor: pointer;
+  color: var(--secondary); font-size: 13px; position: relative;
+}
+.navbtn svg { width: 26px; height: 26px; fill: currentColor; }
+.navbtn:hover:not(:disabled) { background: rgba(255, 255, 255, .10); color: var(--white); }
+.navbtn.active { color: var(--fire-orange); }
+.navbtn:disabled { opacity: .35; cursor: not-allowed; }
+.navbtn .dot {
+  position: absolute; top: 8px; right: 34px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--fire-orange); display: none;
+}
+.navbtn.dirty .dot { display: block; }
+.nav-sep { width: 1px; height: 40px; background: var(--line); margin: 0 8px; }
+.navgroup { position: relative; display: flex; gap: 4px; padding-bottom: 12px; }
+.navgroup-label {
+  position: absolute; left: 0; right: 0; bottom: -2px; text-align: center; font-size: 11px; color: var(--secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: ui-monospace, Consolas, monospace;
+}
+
+/* ---- Identity dialogs (GD-14) and the Android panel (GD-15) ---- */
+.keycard { display: flex; gap: 14px; align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 12px; margin: 8px 0 14px; background: var(--bg); }
+.keycard svg { width: 32px; height: 32px; fill: var(--fire-orange); flex: none; }
+.notice { border-left: 3px solid var(--fire-orange-light); padding: 8px 12px; background: var(--bg); border-radius: 0 8px 8px 0; }
+.ack { display: flex; gap: 10px; align-items: center; margin-top: 12px; cursor: pointer; min-height: 44px; }
+.ack input { width: 20px; height: 20px; accent-color: var(--fire-orange); }
+.badges { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 18px 0 10px; }
+.badges img { height: 58px; width: auto; display: block; }
+.badges a:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; border-radius: 8px; }
+.linkgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.linkgrid div div { margin: 4px 0; }
+.dialog a { color: var(--sky-blue); }
+
+/* ---- Splash (GD-03) ---- */
+.splash {
+  height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; cursor: pointer; animation: fadein .3s ease-out;
+}
+.splash img { width: 128px; height: 128px; border-radius: 28px; margin-bottom: 20px; }
+.splash h1 { margin-bottom: 4px; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---- Home: primary actions ---- */
+.home { max-width: 760px; margin: 0 auto; padding: 48px 32px; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+.tile {
+  text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+  padding: 20px; cursor: pointer; display: flex; gap: 16px; align-items: flex-start; min-height: 112px;
+}
+.tile:hover:not(:disabled) { border-color: var(--fire-orange); }
+.tile:disabled { opacity: .4; cursor: not-allowed; }
+.tile svg { width: 36px; height: 36px; fill: var(--fire-orange); flex: none; }
+.tile b { display: block; font-size: 18px; margin-bottom: 4px; }
+.tile span { color: var(--secondary); font-size: 14px; }
+
+/* ---- Right bar: song list ---- */
+.libhead { padding: 20px 20px 12px; border-bottom: 1px solid var(--line); }
+.libhead .title { font-size: 18px; font-weight: 600; }
+.songlist { list-style: none; margin: 0; padding: 8px 0; }
+.song {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center;
+  padding: 10px 16px 10px 20px; border-left: 4px solid transparent; cursor: pointer;
+}
+.song:hover { background: rgba(255, 255, 255, .06); }
+.song.selected { background: var(--night-blue); border-left-color: var(--fire-orange); }
+.song .t { font-size: 16px; }
+.song .s { grid-column: 1; color: var(--secondary); font-size: 13px; }
+.song .actions { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.song .warn { color: var(--fire-orange-light); font-size: 13px; }
+.listfoot { padding: 12px 20px 24px; }
+
+/* ---- Song list toolbar: search, sort, filter chips (GD-13, as the app's songbook) ---- */
+.sbtools { padding: 4px 20px 8px; border-bottom: 1px solid var(--line); }
+.search {
+  width: 100%; min-height: 48px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--grey);
+  background: var(--bg); color: var(--white); font: inherit;
+}
+.search:focus { outline: none; border: 2px solid var(--fire-orange); padding: 7px 13px; }
+.search::placeholder { color: var(--secondary); }
+.tbrow { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.tbrow .switch { flex: 1; }
+.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px; }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.switch .track {
+  position: relative; width: 44px; height: 26px; border-radius: 13px; background: var(--divider); border: 2px solid var(--grey); flex: none; transition: background .15s;
+}
+.switch .track::after {
+  content: ""; position: absolute; top: 4px; left: 4px; width: 14px; height: 14px; border-radius: 50%; background: var(--grey); transition: all .15s;
+}
+.switch input:checked + .track { background: var(--fire-orange); border-color: var(--fire-orange); }
+.switch input:checked + .track::after { left: 20px; top: 2px; width: 18px; height: 18px; background: var(--white); }
+.switch input:focus-visible + .track { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
+.chiprow { display: flex; gap: 8px; overflow-x: auto; padding: 6px 0 4px; scrollbar-width: thin; }
+.fchip {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid var(--grey); background: none; color: var(--white); cursor: pointer; font-size: 14px;
+}
+.fchip:hover { border-color: var(--secondary); }
+.fchip.on { background: var(--divider); border-color: var(--fire-orange); color: var(--fire-orange); padding-left: 8px; }
+.fchip svg { width: 18px; height: 18px; fill: currentColor; }
+.fchip:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
+.song:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: -3px; }
+#clearwrap:empty { display: none; }
+#clearwrap { margin-top: 2px; }
+.empty { padding: 24px 20px; color: var(--secondary); }
+
+/* ---- Left bar: fields (GD-05) ---- */
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 13px; color: var(--secondary); margin-bottom: 4px; }
+.field .req { color: var(--fire-orange); }
+.field .value { min-height: 22px; }
+.field .value.none { color: rgba(255, 255, 255, .45); font-style: italic; }
+.field input, .field select {
+  width: 100%; min-height: 44px; padding: 8px 12px; border-radius: 8px;
+  border: 1px solid var(--grey); background: var(--bg); color: var(--white); font: inherit;
+}
+.field input:focus, .field select:focus { outline: none; border-color: var(--fire-orange); }
+.field.invalid input, .field.invalid select { border-color: var(--fire-orange-light); border-width: 2px; }
+.field .err { display: none; color: var(--fire-orange-light); font-size: 13px; margin-top: 4px; }
+.field.invalid .err { display: block; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--grey); color: var(--secondary); border-radius: 999px; padding: 2px 10px; font-size: 13px; }
+.songid { font-family: ui-monospace, Consolas, monospace; font-size: 13px; color: var(--secondary); }
+
+/* ---- Centre: view mode ---- */
+.view { max-width: 720px; margin: 0 auto; padding: 32px 40px 64px; }
+.viewhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.viewhead h1 { font-size: 30px; }
+.lyrics { font-size: 20px; line-height: 1.6; }
+.lyrics .sec { margin: 0 0 22px; }
+.lyrics .lbl { font-size: 15px; color: var(--secondary); margin-bottom: 2px; }  /* as the app: "Couplet 1", grey */
+.lyrics .chorus { }  /* the app shows a chorus like a verse, with its label */
+.lyrics p { margin: 0; white-space: pre-wrap; }
+
+/* ---- Centre: edit mode (GD-06 to GD-08) ---- */
+.edit { max-width: 760px; margin: 0 auto; padding: 24px 32px 120px; }
+.sections { display: flex; flex-direction: column; gap: 12px; margin: 16px 0; }
+.section {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px 12px;
+}
+.section.chorus { border-left: 4px solid var(--fire-orange); }
+.section.dragging { position: relative; z-index: 3; opacity: .92; box-shadow: 0 12px 28px rgba(0, 0, 0, .5); border-color: var(--fire-orange); }
+.section.dropbefore { box-shadow: 0 -3px 0 var(--sky-blue); }
+.secbar { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
+.handle { cursor: grab; color: var(--secondary); display: inline-flex; padding: 8px 4px; touch-action: none; }
+.section.dragging .handle { cursor: grabbing; }
+.handle svg { width: 22px; height: 22px; fill: currentColor; }
+.secbar select {
+  background: transparent; color: var(--white); border: 1px solid var(--line); border-radius: 8px;
+  min-height: 36px; padding: 0 8px; font: inherit; font-weight: 600;
+}
+.secbar select option { background: var(--sheet); }
+.secbar .grow { flex: 1; }
+.editor {
+  min-height: 72px; padding: 10px 12px; border-radius: 8px; background: var(--bg);
+  border: 1px solid transparent; font-size: 18px; line-height: 1.55; white-space: pre-wrap; outline: none;
+}
+.editor:focus { border-color: var(--fire-orange); }
+.section.chorus .editor { font-weight: 600; }
+.editor:empty::before { content: attr(data-placeholder); color: rgba(255, 255, 255, .4); }
+.hint { color: var(--fire-orange-light); font-size: 13px; min-height: 18px; margin-top: 4px; }
+.addrow { display: flex; gap: 12px; }
+.editfoot {
+  position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: 12px;
+  padding: 14px 32px; background: linear-gradient(transparent, var(--bg) 30%);
+}
+
+/* ---- Check result (GD-09) ---- */
+.checkbox {
+  border: 2px solid var(--fire-orange-light); border-radius: 12px; padding: 12px 16px; margin: 8px 0 16px;
+  background: rgba(255, 179, 107, .08);
+}
+.checkbox b { color: var(--fire-orange-light); }
+.checkbox ul { margin: 6px 0 0; padding-left: 0; list-style: none; }
+.checkbox li { margin: 4px 0; }
+.checkbox a { color: var(--sky-blue); cursor: pointer; text-decoration: underline; }
+
+/* ---- Dialogs and toast ---- */
+.scrim {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center; z-index: 10;
+}
+.dialog {
+  width: min(620px, 92vw); background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; padding: 24px;
+}
+.dialog .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.dialog .file {
+  display: flex; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 12px; margin-top: 12px; cursor: pointer;
+}
+.dialog .file:hover { border-color: var(--fire-orange); }
+.dialog .file svg { width: 28px; height: 28px; fill: var(--fire-orange); }
+.dialog textarea {
+  width: 100%; min-height: 72px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .4);
+  background: rgba(0, 0, 0, .2); color: var(--white); font: inherit; resize: vertical;
+}
+.toast {
+  position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: var(--white); color: #000;
+  padding: 10px 18px; border-radius: 999px; font-weight: 600; z-index: 20; animation: fadein .2s;
+}
+
+/* ---- Open-question badges (mock only) ---- */
+.gq {
+  display: inline-block; margin-left: 6px; padding: 0 6px; border: 1px dashed #c9c9c9; border-radius: 6px;
+  font: 11px/18px ui-monospace, Consolas, monospace; color: #e0e0e0; background: rgba(0, 0, 0, .35); vertical-align: middle; cursor: help;
+  font-weight: normal; text-transform: none; letter-spacing: 0;
+}
+body.nobadges .gq { display: none; }

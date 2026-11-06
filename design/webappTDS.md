@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | Technical Design Specification (TDS) of the web app |
-| **Status** | Draft 0.2 |
-| **Date** | 2026-11-05 |
+| **Status** | Draft 0.3 |
+| **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.4 |
 | **Companion** | `design/webappGUI.md` (screens, colours, buttons, icons) |
 
@@ -36,8 +36,20 @@ This document records how the bibliotheek-manager is built as a web app: where t
 | TD-06 | 2026-11-05 | **Libraries and keys are processed in the browser.** Opening, validating, editing, hashing, signing and saving a library run in JavaScript on the user's device. The server delivers the web app's files and nothing else: no library, song, key or manifest is ever sent to it. This meets FDS EDT-02, EDT-04 and EDT-65 by construction, since the server holds no session data, and keeps the promise on pe1mew/Zangbundel-bibliotheek#1 that nothing is uploaded. Resolves TQ-01. |
 | TD-07 | 2026-11-05 | **PHP has no part in library handling.** It may serve pages, the interface texts in the three languages (EDT-80) and security headers; it receives no form posts or uploads with library content. A future PHP feature that would receive user data needs a new decision here first. |
 | TD-08 | 2026-11-05 | **No request carries library data, and no third party is contacted.** The web app makes requests only to its own server, for its own files. A Content Security Policy enforces this (`default-src 'self'`, no `connect-src` beyond `'self'`), so a mistake in the code cannot send a library or key elsewhere. |
+| TD-09 | 2026-11-06 | **Domain: `zangbundel.nl`**, registered by the owner for the library manager. |
+| TD-10 | 2026-11-06 | **Host: contabo6.** `zangbundel.nl` is hosted on contabo6, the owner's VPS (configuration in the local repository `contabo-vps-6`). The same host also runs a **test instance**, where each version is tested (TD-04) before it reaches `zangbundel.nl`. The server configs for both are added to `contabo-vps-6`, next to the other sites. |
 
 ---
+
+### 2.1 contabo6 as found (2026-11-06)
+
+What the host already runs, from the repository `contabo-vps-6`. These are facts about the server, not decisions of this project; check them again before deploying.
+
+| Item | On contabo6 | Consequence |
+|---|---|---|
+| Web server | nginx, one config file per site in `contabo-vps-6/nginx/` | The nginx variant of TD-03 is the one that is tested first; the Apache variant stays documented but untested until a server needs it. |
+| TLS | Let's Encrypt certificates via `certbot --nginx` | TD-05 is met the same way as for the other sites. |
+| PHP | Native `php8.3-fpm` over a Unix socket; other PHP versions only in containers of other sites | See TQ-02. |
 
 ## 3. Requirements from the FDS that shape the build
 
@@ -60,11 +72,12 @@ These FDS requirements constrain every technical choice below; they are listed h
 | ID | Date | Question |
 |---|---|---|
 | TQ-01 | 2026-11-05 | *Resolved 2026-11-05 by TD-06: in the browser.* Where is a library processed: in the browser or on the server? |
-| TQ-02 | 2026-11-05 | Which PHP version is the minimum? With TD-06 and TD-07, PHP needs no extensions for libraries; the question is what the test server offers and what serving the pages needs. Is PHP needed at all for the first version, or can the server deliver static files only? |
-| TQ-03 | 2026-11-05 | Where does the mock live and how is it served for review: a folder of static HTML, CSS and JavaScript under `webapp/` (for example `webapp/mock/`), or under `design/`? Does it need PHP to run? |
-| TQ-04 | 2026-11-05 | Which test server, at which address, and how is the web app deployed there (copy, `git pull`, a script)? Who has access? |
+| TQ-02 | 2026-11-05 | Which PHP version is the minimum? With TD-06 and TD-07, PHP needs no extensions for libraries; the question is what the host offers and what serving the pages needs. Is PHP needed at all for the first version, or can the server deliver static files only? *2026-11-06: contabo6 runs PHP 8.3 (native `php8.3-fpm`, see `contabo-vps-6/php/readme.md`); if PHP is used, 8.3 is the target.* |
+| TQ-03 | 2026-11-05 | Where does the mock live and how is it served for review: a folder of static HTML, CSS and JavaScript under `webapp/` (for example `webapp/mock/`), or under `design/`? Does it need PHP to run? *2026-11-06: the first mock is in `webapp/mock/`, static, without PHP, served for review by `python -m http.server` (`.claude/launch.json`, `webapp-mock`). To be confirmed by the owner.* |
+| TQ-04 | 2026-11-05 | *Partly resolved 2026-11-06 by TD-09 and TD-10: `zangbundel.nl` and a test instance, both on contabo6.* Still open: the address of the test instance (for example `test.zangbundel.nl`), whether it is open to everyone or protected (for example with a password, so that testers do not mistake it for the real manager), how a version is deployed to each instance and promoted from test to `zangbundel.nl` (copy, `git pull`, a script), and who has access. |
 | TQ-05 | 2026-11-05 | Are external libraries allowed in the web app (a ZIP library, an Ed25519 library, a UI framework), or is everything written for the project? If allowed: which, at which version, served from the project's own server rather than a CDN (TD-08), so that no third party sees who uses the manager. |
 | TQ-06 | 2026-11-05 | Which browsers and versions are supported? TD-06 needs, in the browser: reading and writing ZIP (deflate), SHA-256, Ed25519 key generation, signing and verification, UTF-8 decoding that reports invalid bytes, and Unicode NFC. Check what the chosen browsers provide natively (Web Crypto, Compression Streams, `TextDecoder` with `fatal`, `String.prototype.normalize`) before deciding what TQ-05 must supply. |
+| TQ-07 | 2026-11-06 | Is `zangbundel.nl` for the library manager only, or also a home for the Zangbundel app's public pages (privacy policy, join page, manual), which are now on `pe1mew.github.io`? Moving those touches the app's App Links and published URLs, so it is the app repository's decision; this document only needs to know which paths the manager may use. |
 
 ---
 
@@ -74,3 +87,4 @@ These FDS requirements constrain every technical choice below; they are listed h
 |---|---|---|
 | Draft 0.1 | 2026-11-05 | First draft: the web app chosen (TD-01), `webapp/` (TD-02), nginx or Apache with PHP (TD-03), mock before deployment (TD-04), HTTPS (TD-05); FDS constraints; open questions TQ-01 to TQ-05. |
 | Draft 0.2 | 2026-11-05 | The owner's answer to TQ-01: processing in the browser (TD-06); PHP has no part in library handling (TD-07); no request carries library data, enforced by a Content Security Policy (TD-08). TQ-01 resolved, TQ-02 reworded, TQ-06 added. |
+| Draft 0.3 | 2026-11-06 | The owner registered `zangbundel.nl` (TD-09); it is hosted on contabo6, which also runs a test instance (TD-10); what contabo6 runs today (section 2.1). TQ-02 and TQ-04 partly answered, TQ-07 added. |

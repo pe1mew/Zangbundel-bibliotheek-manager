@@ -21,7 +21,7 @@ The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in 
 | Changing what the manager must do, the package format, a validation rule or a message | `design/FDS.md` — requirements `PF/MF/SG/EDT/APP-nn`, rules `PKG/STR/MAN/SIG/SNG-nn` with severity, messages `M-nn`, open items `O-nn` (section 11), decisions `D-nn` (section 12). |
 | Touching how the Zangbundel app reads songs or libraries today | The app repository `../Zangbundel` (github.com/pe1mew/Zangbundel): `design/song-format.md` defines the current `.zbl` release archive and the ChordPro profile. The FDS package format is a different, new format; the app reads both (FDS D-23). |
 | Designing a screen, a control, a colour, an icon, or what happens when the user does something | `design/webappGUI.md` — decisions `GD-nn` and open questions `GQ-nn`; screens **and behaviour**. Colours, buttons and icons come from the app (GD-01). Every design is checked in the mock before it is built. |
-| Choosing how the web app is built, served, tested or deployed, or adding a library or server dependency | `design/webappTDS.md` — decisions `TD-nn` and open questions `TQ-nn`. Libraries and keys are processed in the browser only; the server never receives them (TD-06 to TD-08). |
+| Choosing how the web app is built, served, tested or deployed, or adding a library or server dependency | `design/webappTDS.md` — decisions `TD-nn` and open questions `TQ-nn`. Libraries and keys are processed in the browser only; the server never receives them (TD-06 to TD-08). Domain `zangbundel.nl` and a test instance, both hosted on contabo6 (TD-09, TD-10; its config lives in `../contabo-vps-6`). |
 | Stuck or debugging something weird | `memory/gotcha-log.md` — problem-fix archive |
 | **Before committing** | Diff-driven review, lenses chosen by what changed — `/review-changes`. It needs the per-repo **review profile** at `.claude/review-profile.md`; without one it STOPS rather than reviewing at LOW. |
 | Ending a session | `memory/gotcha-log.md` — review, promote patterns, retire stale entries. Then `/curate`. |
@@ -64,9 +64,10 @@ Zangbundel-bibliotheek-manager/
 │   ├── FDS.md                    ← functional design specification (canonical)
 │   ├── webappGUI.md              ← web app screens, behaviour and look (GD-nn, GQ-nn)
 │   └── webappTDS.md              ← web app technical design: server, mock, deployment (TD-nn, TQ-nn)
-├── webapp/                       ← the web app (planned; mock first, then a test server)
+├── webapp/
+│   └── mock/                     ← clickable mock of webappGUI (static HTML, CSS, JS; app icon CC BY-SA 4.0)
 ├── memory/                       ← MEMORY.md index, gotcha-log.md, todo.md (committed, shared)
-├── .claude/                      ← review-profile.md
+├── .claude/                      ← review-profile.md, launch.json (preview server webapp-mock)
 ├── README.md, changelog.md, contributing.md, code_of_conduct.md, license.md, LICENSE, NOTICE
 ├── .editorconfig                 ← UTF-8, LF, final newline
 ├── .gitattributes                ← LF for text; test-libraries/ byte-exact (-text)
@@ -78,8 +79,11 @@ Related repositories: the app `github.com/pe1mew/Zangbundel` (imports libraries,
 ## How to Work Here
 
 ```bash
+# Serve the mock for review (or start "webapp-mock" from .claude/launch.json)
+python -m http.server 8771 --directory webapp/mock --bind 127.0.0.1
+
 # Stage changes — never commit
-git add design/ changelog.md
+git add design/ webapp/ changelog.md
 ```
 
 Every notable change gets a line under `[Unreleased]` in `changelog.md` in the same staging step. Once code exists, every source file starts with `SPDX-License-Identifier: Apache-2.0`, and the build and test commands go here.
