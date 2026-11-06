@@ -17,6 +17,7 @@ The process it supports:
 - The manager is a web app at `zangbundel.nl`, hosted on the owner's server with a test instance; libraries and keys are processed in the browser and never sent to the server (webappTDS TD-01 to TD-17).
 - `test-libraries/` holds 56 shared test libraries, one invalid case for nearly every rule of FDS section 6, with a checker (O-04). Still open: confirming the readings those cases had to make where the rules leave room (O-11).
 - The import side of the specification (FDS section 8) is built in the Zangbundel app, not here.
+- Milestone M0 of the [implementation plan](design/implementationPlan.md) is built in the repository: a placeholder page for `zangbundel.nl`, the nginx configuration for both hosts and a signed release chain, with a runbook in `webapp/server/README.md`. Nothing is installed on the server yet.
 
 The [changelog](changelog.md) lists what changed and when.
 
@@ -35,7 +36,8 @@ As specified in the FDS:
 
 ```
 design/                       the specification: FDS.md (what the manager does), webappGUI.md and webappTDS.md (the web app)
-webapp/                       the web app (planned)
+webapp/                       mock/ (design reference), placeholder/ and test-holding/ (static pages),
+                              tools/ (build, sign, header check), server/ (nginx, release scripts, runbook)
 memory/                       working memory for AI coding agents (index, gotcha log, to-do)
 .claude/                      review profile for AI coding agents
 CLAUDE.md                     orientation file for AI coding agents

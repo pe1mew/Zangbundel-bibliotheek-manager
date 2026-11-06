@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
+# Install as /usr/local/bin/zbm-receive (root:root 0755).
+# The forced command of the deploy user (SR-74): it does one thing, store the tar that arrives on
+# stdin in the staging directory. It ignores any command the client asks for, runs nothing it
+# receives, and activates nothing; activation is the owner's step (zbm-release activate).
+#
+#   authorized_keys of zbm-deploy:
+#   restrict,command="/usr/local/bin/zbm-receive" ssh-ed25519 AAAA... owner-deploy
+#
+#   on the owner's computer:
+#   ssh zbm-deploy@contabo6 < dist/placeholder-0.1.0.tar
+set -euo pipefail
+umask 027
+
+dir=/srv/zangbundel-staging/incoming
+max=$((50 * 1024 * 1024))   # 50 MB per upload
+keep=20                     # at most this many waiting uploads
+
+count=$(find "$dir" -maxdepth 1 -type f -name 'upload-*.tar' | wc -l)
+if [ "$count" -ge "$keep" ]; then
+    echo "refused: $count uploads are waiting; ask the owner to clear $dir" >&2
+    exit 1
+fi
+
+name="upload-$(date -u +%Y%m%dT%H%M%SZ)-$$.tar"
+tmp="$dir/.partial-$$"
+trap 'rm -f "$tmp"' EXIT
+
+head -c $((max + 1)) > "$tmp"
+size=$(stat -c %s "$tmp")
+if [ "$size" -gt "$max" ]; then
+    echo "refused: larger than $max bytes" >&2
+    exit 1
+fi
+if [ "$size" -eq 0 ]; then
+    echo "refused: nothing received" >&2
+    exit 1
+fi
+
+mv "$tmp" "$dir/$name"
+trap - EXIT
+logger -t zbm-receive "received $name ($size bytes)"
+echo "received $name ($size bytes, sha256 $(sha256sum "$dir/$name" | cut -d' ' -f1))"
+echo "next, as the owner on the server: sudo zbm-release activate <site> $dir/$name"

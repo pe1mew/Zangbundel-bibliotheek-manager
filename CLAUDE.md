@@ -1,6 +1,6 @@
 ---
 stack: Web app in webapp/ on nginx or Apache with PHP (webappTDS TD-01 to TD-03); Markdown design specifications; ZIP, JSON, SHA-256, Ed25519; ChordPro
-status: Design — version 0.1.0 (FDS draft 0.7, webappGUI draft 0.10, webappTDS draft 0.5, mock in webapp/mock/), no web app code yet
+status: M0 in progress — repository part done (placeholder, nginx, release chain, runbook webapp/server/README.md); the owner's server steps and the web app itself to do
 repo: github.com/pe1mew/Zangbundel-bibliotheek-manager
 framework: agent-ready-projects v1.49.2
 ---
@@ -10,7 +10,7 @@ framework: agent-ready-projects v1.49.2
 <!-- Canonical project file for Claude Code. No AGENTS.md exists; if one is
      added later, this file stays canonical and AGENTS.md should say so. -->
 
-The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.7. The Editor is built as a web app in `webapp/` (nginx or Apache with PHP); its GUI and technical design are being written, and no code exists.
+The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.7. The Editor is built as a web app in `webapp/` (nginx or Apache with PHP); its designs are written; milestone M0 (placeholder on `zangbundel.nl`, server set-up, signed release chain) is built in the repository, and the web app itself (M1 onwards) is not.
 
 ## Before You Start
 
@@ -69,7 +69,11 @@ Zangbundel-bibliotheek-manager/
 │   ├── securityAssessment.md     ← security and privacy: findings SF, requirements SR, release gate SC
 │   └── implementationPlan.md     ← milestones M0 to M7 for the test instance and the placeholder
 ├── webapp/
-│   └── mock/                     ← clickable mock of webappGUI (static HTML, CSS, JS; app icon CC BY-SA 4.0)
+│   ├── mock/                     ← clickable mock of webappGUI (static HTML, CSS, JS; app icon CC BY-SA 4.0); never deployed
+│   ├── placeholder/              ← zangbundel.nl until go-live: nl/en/de pages, privacy, security.txt (no script)
+│   ├── test-holding/             ← test.zangbundel.nl until M1.4
+│   ├── tools/                    ← build.py, sign-release.sh, check_headers.py (SC-01); release-key.pub once the owner makes it
+│   └── server/                   ← nginx config, zbm-receive, zbm-release, zbm-verify timer; README.md = M0 runbook
 ├── memory/                       ← MEMORY.md index, gotcha-log.md, todo.md (committed, shared)
 ├── .claude/                      ← review-profile.md, launch.json (preview server webapp-mock)
 ├── README.md, changelog.md, contributing.md, code_of_conduct.md, license.md, LICENSE, NOTICE
@@ -85,6 +89,15 @@ Related repositories: the app `github.com/pe1mew/Zangbundel` (imports libraries,
 ```bash
 # Serve the mock for review (or start "webapp-mock" from .claude/launch.json)
 python -m http.server 8771 --directory webapp/mock --bind 127.0.0.1
+
+# Trial build of a static site (a real release needs a clean, tagged tree: drop --allow-dirty)
+python webapp/tools/build.py build --src webapp/placeholder --name placeholder --version 0.1.0 --allow-dirty --force
+
+# SC-01 header check against a host (see webapp/server/README.md for --connect/--insecure/--auth)
+python webapp/tools/check_headers.py zangbundel.nl
+
+# M0 test in an Ubuntu 24.04 + nginx 1.24 container (start Docker Desktop first; Git Bash: MSYS_NO_PATHCONV=1)
+docker build -t zbm-m0test webapp/server/test && docker run --rm -v "$PWD:/repo:ro" zbm-m0test bash /repo/webapp/server/test/run.sh
 
 # Stage changes — never commit
 git add design/ webapp/ changelog.md

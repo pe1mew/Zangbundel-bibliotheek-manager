@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.4 |
+| **Status** | Draft 0.5 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.11, `design/webappTDS.md` draft 0.5 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
@@ -344,6 +344,17 @@ server {
 
 The test instance (`test.zangbundel.nl`) uses the same file with `root /srv/zangbundel-test/live`, `auth_basic` with its own `auth_basic_user_file` (SR-80), and `add_header X-Robots-Tag "noindex, nofollow" always;` (SR-81). Certificates come from `certbot` as for the other sites; certbot's edits are reviewed so that it does not remove the headers.
 
+**As implemented (M0, `webapp/server/nginx/`).** The sketch above is implemented with these deviations, each tested on nginx 1.24.0 (Ubuntu 24.04) with SC-01:
+
+- **No `http2`.** On nginx 1.24 the `http2` parameter of `listen` switches HTTP/2 on for every site on the host's 443 socket, so it would change the other sites. HTTP/1.1 serves a handful of static files well enough.
+- **One set of files for both hosts.** The common headers are a snippet that the server block and every location with its own headers include. The values that differ per host (the HTML CSP, `X-Robots-Tag`) come from maps keyed on `$server_name`, not on the client's `Host`.
+- **Responses that are not HTML pages** carry `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; sandbox`. An SVG opened on its own is a document that could run script.
+- **The error log** cannot shorten addresses. `log_not_found off` and rate-limit events at `warn` keep it to real faults; the privacy statement says so (7.5).
+- **TLS versions** are fixed by the default server of the 443 socket before SNI selects ours. On contabo6 that server allows TLS 1.2 and 1.3 only; SC-02 checks it.
+- **Certificates** come from `certbot certonly --webroot`, so certbot never edits our files. A separate port-80 server answers ACME challenges and redirects everything else.
+- **`release-manifest.json` and its signature** stay on disk for the integrity check, but nginx does not serve them.
+- **The placeholder** has a script-free CSP (`script-src 'none'; worker-src 'none'`). Its front door `/` redirects to `/nl/`, `/en/` or `/de/` by the first language in `Accept-Language`, else English.
+
 ### 7.2 DNS records (SR-03, SR-05, SR-07)
 
 ```
@@ -379,16 +390,18 @@ assets/app.<hash>.css           all styles; no style attributes anywhere
 ### 7.4 Releases and deployment (SR-10 to SR-13, SR-17, SR-73, SR-74, SR-84)
 
 1. On the owner's computer: `git tag -s vX.Y.Z`, then the build script (no network) writes `dist/` with hashed file names, SRI attributes and `release-manifest.json` (path, size, SHA-256 of every file).
-2. The owner signs the manifest with the release key (`ssh-keygen -Y sign -n zangbundel-release` or minisign); the public key is in this repository (`webapp/release-key.pub`) and on the server.
+2. The owner signs the manifest with the release key (`ssh-keygen -Y sign -n zangbundel-release`); the public key is in this repository (`webapp/tools/release-key.pub`) and on the server.
 3. Upload to `test.zangbundel.nl`'s staging directory as the deploy user (forced command, SR-74).
 4. On the server, an activation script (run by the owner, not by the deploy user) verifies the signature and every hash, copies the release to `/srv/zangbundel-test/releases/<version>/` read-only, and switches the `live` symlink.
 5. After testing, the same signed release is activated for `zangbundel.nl` by the same script (SR-84).
 6. A timer job checks the live files against the signed manifest hourly (SR-73) and reports to the owner.
+**As implemented (M0).** The build, signing and packing tools are `webapp/tools/build.py` and `webapp/tools/sign-release.sh`. The release travels as one tar file, piped over SSH to the deploy user, whose forced command `zbm-receive` only stores it. As the owner, `zbm-release activate` unpacks only listed regular files, checks the signature and every hash, installs the release read-only and switches `live` atomically. The hourly check is `zbm-release verify` (`zbm-verify.timer`), which pushes its result to Uptime Kuma. The runbook is `webapp/server/README.md`.
+
 7. Vendoring a package (SR-12): `npm pack <name>@<version>`, compare the tarball's SHA-512 with `npm view <name>@<version> dist.integrity`, check the provenance with `npm audit signatures` in a scratch project, copy the built file into `webapp/vendor/`, and record `name, version, source, sha256, licence` in `webapp/vendor/VENDOR.md`.
 
 ### 7.5 Privacy statement (SR-52)
 
-A page `privacy.html` in the three languages, with: who runs the site; that the manager processes libraries and keys only in the browser, and nothing is sent to the server; which server logs exist (shortened IP address, time, requested file, status) for security and fault finding, kept 14 days; that local storage holds only the language and the bar widths; that there are no cookies, no analytics, no third parties; which external sites the links lead to; contact and the right to complain to the Autoriteit Persoonsgegevens.
+A page `privacy.html` in the three languages, with: who runs the site; that the manager processes libraries and keys only in the browser, and nothing is sent to the server; which server logs exist (shortened IP address, time, requested file, status) for security and fault finding, kept 14 days, and that only a server fault puts a full address in the separate error log, also kept 14 days; that local storage holds only the language and the bar widths; that there are no cookies, no analytics, no third parties; which external sites the links lead to; contact and the right to complain to the Autoriteit Persoonsgegevens.
 
 ---
 
@@ -551,3 +564,4 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 | Draft 0.2 | 2026-11-06 | The owner's answers: SF-02 and SR-71 withdrawn (the legacy sites run in containers behind the host nginx); two-factor authentication on at the DNS provider (SR-05); no mail on the domain (SQ-06 decided, SR-07, section 7.2); legacy sites stay (SQ-02 decided). SR-70 allows native or container; section 10 gives the arguments for SQ-01 and works out SQ-03, SQ-04, SQ-05 (recommendation changed to a hybrid with non-extractable Web Crypto keys), SQ-07 (the offline package needs a local web server) and SQ-08. |
 | Draft 0.3 | 2026-11-06 | The owner's decisions: HSTS preload after three months (SQ-03, SR-02); no passphrases on key files (SQ-04, SR-47, accepted in section 9); hybrid Ed25519 with non-extractable Web Crypto keys (SQ-05, SR-15, SR-16); no offline package (SQ-07, SR-64 withdrawn); forget key on request and after 30 minutes of inactivity (SQ-08, SR-46). SQ-01 stays open. |
 | Draft 0.4 | 2026-11-06 | SQ-01 decided: the host nginx serves `zangbundel.nl` natively (SR-70, SR-83). All open questions are decided. |
+| Draft 0.5 | 2026-11-06 | M0 implemented: sections 7.1 and 7.4 record the implementation in `webapp/server/` and `webapp/tools/` and its deviations from the sketch (no `http2`, per-host maps, CSP and sandbox on non-HTML responses, error-log handling, `certonly --webroot`); the release public key is at `webapp/tools/release-key.pub`; 7.5 names the error log. |

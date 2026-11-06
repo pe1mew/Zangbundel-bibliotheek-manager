@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.2 |
+| **Status** | Draft 0.3 |
 | **Date** | 2026-11-06 |
-| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.8, `design/securityAssessment.md` draft 0.4, `test-libraries/` (56 cases) |
+| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.8, `design/securityAssessment.md` draft 0.5, `test-libraries/` (56 cases) |
 
 ---
 
@@ -67,7 +67,7 @@ Where the plan and a governing document differ, the document wins and the plan i
 | Name and logo | *Zangbundel bibliotheek-manager* (GD-26) with the app icon (GD-30), on the app's black background (GD-12) |
 | Text | One short paragraph: the manager for making song libraries for the Zangbundel app is being built; it will run here. No date (IQ-06). |
 | Links | The Android panel's content of GD-15 and GD-35 (badges marked *binnenkort*, the GitHub APK, both repositories, both manuals) |
-| Privacy | Link to `/privacy/` |
+| Privacy | Link to `/<lang>/privacy.html`, one statement per language |
 | Languages | Dutch, English and German as separate static pages. nginx sends `/` to the first matching language in `Accept-Language`, else English; each page links to the other two |
 | Technology | HTML and CSS only. CSP as SR-20 but with `script-src 'none'; worker-src 'none'`. Same headers, TLS and logging as the manager |
 
@@ -109,11 +109,12 @@ webapp/
 │   ├── build.py              offline, reproducible: hashed names, SRI, release-manifest.json (SR-10, SR-13)
 │   ├── vendor.py             verifies a package against npm's dist.integrity, writes VENDOR.md (SR-12)
 │   ├── sign-release.sh       signs the manifest with the release key (SR-11)
-│   ├── check-headers.py      SC-01 against a live host
+│   ├── check_headers.py      SC-01 against a live host
 │   └── release-key.pub       public release key
 ├── placeholder/              the placeholder site (section 2.1)
-└── server/                   copies of the nginx vhosts and the activation script; the live
-                              copies are kept in ../contabo-vps-6 (SR-75)
+├── test-holding/             the test instance's holding page until M1.4 (M0.5)
+└── server/                   nginx config, zbm-receive, zbm-release, the zbm-verify timer and the
+                              M0 runbook (README.md); the live copies are kept in ../contabo-vps-6 (SR-75)
 ```
 
 ### 3.2 Threads
@@ -157,15 +158,17 @@ Each milestone ends with its exit checks passing and the result written to `desi
 
 **Exit:** SC-01, SC-02, SC-09, SC-12 and SC-13 pass for both hosts; the placeholder is live on `zangbundel.nl`.
 
+**State (2026-11-06).** The repository part of M0 is done: M0.4 to M0.6 and M0.8 are in `webapp/server/`, `webapp/placeholder/`, `webapp/test-holding/` and `webapp/tools/`. It was tested in an Ubuntu 24.04 container with nginx 1.24.0, a throwaway key and self-signed certificates; SC-01 passed for both hosts. M0.1 to M0.3, M0.7, M0.9, the installation and the exit checks are the owner's steps, in the order of the runbook `webapp/server/README.md`.
+
 ### M1 — Toolchain and release pipeline (M)
 
 | # | Work | Requirements |
 |---|---|---|
-| M1.1 | Repository layout of 3.1; `build.py` writing hashed names, SRI attributes and `release-manifest.json`; reproducibility check (two builds, identical bytes) | SR-10, SR-13, SR-61 |
+| M1.1 | Repository layout of 3.1; `build.py` (written in M0 for static pages: hashed names, SRI, `release-manifest.json`, identical rebuilds) extended to the app's scripts and workers; reproducibility check (two builds, identical bytes) | SR-10, SR-13, SR-61 |
 | M1.2 | Vendor `fflate` 0.8.3 and `@noble/ed25519` 3.2.0 with `vendor.py`: integrity, provenance, `VENDOR.md`, `NOTICE` | SR-12, SR-14 |
 | M1.3 | Test runner: `node --test` for `core/`; the conformance runner reading `test-libraries/*.expected.json` | SR-34 |
 | M1.4 | A minimal app (the splash only) built, signed, deployed to the test instance and activated | SR-11, SR-84 |
-| M1.5 | `check-headers.py` (SC-01) run against both hosts | SC-01 |
+| M1.5 | `check_headers.py --app` (SC-01, written in M0) run against the test instance once the manager is on it; the host's CSP line in `conf.d/zangbundel.conf` switched to the SR-20 policy | SC-01 |
 
 **Exit:** a signed build reaches `test.zangbundel.nl` end to end; SC-08 and SC-09 pass.
 
@@ -329,3 +332,4 @@ The placeholder and the manager have separate release directories and separate m
 |---|---|---|
 | Draft 0.1 | 2026-11-06 | First plan: the manager on `test.zangbundel.nl`, a static placeholder on `zangbundel.nl` (TD-20); repository layout, threads and tools; milestones M0 to M7 with work, requirements and exit checks; order, testing, release procedure, risks R-01 to R-08, open questions IQ-01 to IQ-06. |
 | Draft 0.2 | 2026-11-06 | The owner's decisions on IQ-01 to IQ-06: `test.zangbundel.nl`, Node.js LTS as a development tool (TD-21), a written browser checklist first, `v0.2.0`, the requester and two or three leaders as testers with GitHub issues, no date on the placeholder. |
+| Draft 0.3 | 2026-11-06 | M0's repository part done and tested locally (state under M0); privacy link per language; `check_headers.py` and the test holding page in the layout; M1.1 and M1.5 build on the M0 tools. |

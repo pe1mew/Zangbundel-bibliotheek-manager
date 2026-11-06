@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+# Install as /etc/systemd/system/zbm-verify.service. Started by zbm-verify.timer (SR-73).
+# Checks the live files of both sites against their signed manifests and reports to the
+# Uptime Kuma push monitor whose URL is in /etc/zangbundel/kuma-push-url (root 0600).
+[Unit]
+Description=Zangbundel: check live web files against the signed release manifest
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/zbm-release verify
+LoadCredential=kuma-push-url:/etc/zangbundel/kuma-push-url
+DynamicUser=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native

@@ -66,6 +66,16 @@
      and name the documents.
 -->
 
+### nginx: map regex braces, $server_name in a multi-name server (2026-11-06)
+**Problem**: `nginx -t` failed with `unexpected "{"` on the IPv6 line of the address-shortening `map` (`[0-9a-f]{0,4}`). Separately, the shared port-80 server redirected `test.zangbundel.nl` to `https://zangbundel.nl/…`.
+**Root cause**: In nginx, a regex containing `{` must be quoted. `$server_name` is the FIRST name of the `server_name` list, not the name that matched.
+**Fix**: Quote the regex (`"~*^(?<p>…{0,4}…):"`). Redirect with `$host`, which is safe when `server_name` lists exact names only. Both were caught by `webapp/server/test/run.sh` (SC-01 in an Ubuntu 24.04/nginx 1.24 container), not by reading. Rule: if server config changes, run that test before claiming it works.
+
+### Local server test needs Docker Desktop started; Git Bash mangles container paths (2026-11-06)
+**Problem**: `docker info` failed with "cannot find dockerDesktopLinuxEngine"; mounted paths like `/repo` arrived rewritten.
+**Root cause**: Docker Desktop is installed but not running by default. Git Bash (MSYS) converts arguments that look like POSIX paths.
+**Fix**: Start it with `Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"`; the engine is up within seconds. Prefix `docker run` with `MSYS_NO_PATHCONV=1`. `bash -c` with several `cat <<'EOF'` blocks still fails in this shell; a single `python - <<'PY'` heredoc works, and the Write tool always does.
+
 ## Promoted
 
 <!-- Track gotchas that have been promoted to topic files or the memory index.

@@ -1,0 +1,250 @@
+# Server set-up for zangbundel.nl and test.zangbundel.nl (milestone M0)
+
+The owner's runbook for `design/implementationPlan.md` M0 on contabo6 (169.58.68.107, Ubuntu, nginx 1.24). Every step names the requirement it meets (`design/securityAssessment.md`). The files in this folder are the source; once installed, copy the live versions into `../contabo-vps-6` as for the other sites (SR-75).
+
+Tested on 2026-11-06 in an Ubuntu 24.04 container with its nginx 1.24.0, Python 3.12 and OpenSSH 9.6, using self-signed certificates and a throwaway release key. The test covered the build and signing, the install of steps 4 to 7, uploads through the forced command, activation, eight kinds of refused upload, the integrity check with a push, and SC-01 for both hosts: 31 of 31 passed. Not tested there: DNS, real certificates, certbot, systemd, sshd and the real host's other sites.
+
+Rerun the test after any change in this folder or in `webapp/tools/` (needs Docker; on Git Bash, put `MSYS_NO_PATHCONV=1` before `docker run`):
+
+```bash
+docker build -t zbm-m0test webapp/server/test
+```
+
+```bash
+docker run --rm -v "$PWD:/repo:ro" zbm-m0test bash /repo/webapp/server/test/run.sh
+```
+
+## What goes where
+
+| File in this repository | On contabo6 | Owner, mode |
+|---|---|---|
+| `server/nginx/conf.d/zangbundel.conf` | `/etc/nginx/conf.d/zangbundel.conf` | root, 0644 |
+| `server/nginx/snippets/zbm-*.conf` (6 files) | `/etc/nginx/snippets/` | root, 0644 |
+| `server/nginx/sites-available/*.conf` (3 files) | `/etc/nginx/sites-available/`, linked from `sites-enabled/` | root, 0644 |
+| `server/bin/zbm-receive` | `/usr/local/bin/zbm-receive` | root, 0755 |
+| `server/bin/zbm-release` | `/usr/local/sbin/zbm-release` | root, 0755 |
+| `server/systemd/zbm-verify.service`, `.timer` | `/etc/systemd/system/` | root, 0644 |
+| `tools/release-key.pub` (step 3) | inside `/etc/zangbundel/allowed_signers` | root, 0644 |
+| (made on the server) | `/etc/nginx/zangbundel-test.htpasswd` | root:www-data, 0640 |
+| (made on the server) | `/etc/zangbundel/kuma-push-url` | root, 0600 |
+
+Directories: `/srv/zangbundel/releases/` and `/srv/zangbundel-test/releases/` (root, 0755; `live` is a symlink to one release), `/srv/zangbundel-staging/incoming/` (zbm-deploy, 0750), `/var/www/acme/` (root, 0755).
+
+## 1. DNS at Openprovider (M0.1, SR-03, SR-07, SC-12)
+
+| Name | Type | Value |
+|---|---|---|
+| `zangbundel.nl.` | A | `169.58.68.107` (replaces `127.0.0.1`) |
+| `test.zangbundel.nl.` | A | `169.58.68.107` |
+| `zangbundel.nl.` | MX | `0 .` (null MX; replaces `10 mail.zangbundel.nl`) |
+| `zangbundel.nl.` | TXT | `v=spf1 -all` |
+| `_dmarc.zangbundel.nl.` | TXT | `v=DMARC1; p=reject; adkim=s; aspf=s` |
+| `*._domainkey.zangbundel.nl.` | TXT | `v=DKIM1; p=` |
+| `zangbundel.nl.` | CAA | `0 issue "letsencrypt.org"`; the `accounturi` is added in step 5 |
+| `zangbundel.nl.` | CAA | `0 issuewild ";"` |
+| `zangbundel.nl.` | CAA | `0 iodef "mailto:<an address the owner reads>"` |
+
+- **AAAA only if IPv6 works.** contabo6 publishes no IPv6 address today. Add AAAA records only when `ip -6 addr show scope global` shows one and `curl -6 https://zangbundel.nl/` works from another network. A broken AAAA record is worse than none.
+- **CAA covers `test.zangbundel.nl` as well**, because CAA is inherited by subdomains.
+- **Check.** `dig +dnssec zangbundel.nl A MX TXT CAA`, `dig test.zangbundel.nl A`, `dig _dmarc.zangbundel.nl TXT`. Then check the DNSSEC chain at https://dnsviz.net/d/zangbundel.nl/dnssec/.
+
+## 2. Registrar (M0.2, SR-05)
+
+1. Switch the transfer lock on for `zangbundel.nl`.
+2. Confirm two-factor authentication on the registrar account; the DNS account already has it.
+3. Check with `whois zangbundel.nl`: the status shows the lock instead of only `active`.
+
+## 3. Keys, on the owner's computer (M0.7, SR-11, SR-74)
+
+There are two keys: a release key that signs releases, and a deploy key that may only upload. Neither private key ever goes to the server.
+
+```bash
+ssh-keygen -t ed25519 -C "zangbundel release key" -f ~/.ssh/zangbundel-release
+```
+
+```bash
+ssh-keygen -t ed25519 -C "zangbundel deploy" -f ~/.ssh/zangbundel-deploy
+```
+
+1. Give the release key a passphrase. Keep a copy of `~/.ssh/zangbundel-release` offline, for example on a USB stick in a drawer: without it, no new release can be activated.
+2. Copy `~/.ssh/zangbundel-release.pub` to `webapp/tools/release-key.pub` and commit it. `sign-release.sh` checks every signature against that file.
+
+## 4. Install on contabo6 (M0.4 to M0.6)
+
+Copy this folder and `tools/release-key.pub` to the server, for example to `~/zbm/`. Then, as root:
+
+```bash
+install -m 0644 ~/zbm/nginx/conf.d/zangbundel.conf /etc/nginx/conf.d/
+install -m 0644 ~/zbm/nginx/snippets/zbm-*.conf /etc/nginx/snippets/
+install -m 0644 ~/zbm/nginx/sites-available/*.conf /etc/nginx/sites-available/
+install -m 0755 ~/zbm/bin/zbm-receive /usr/local/bin/
+install -m 0755 ~/zbm/bin/zbm-release /usr/local/sbin/
+install -m 0644 ~/zbm/systemd/zbm-verify.service ~/zbm/systemd/zbm-verify.timer /etc/systemd/system/
+mkdir -p /var/www/acme /etc/zangbundel /srv/zangbundel/releases /srv/zangbundel-test/releases /srv/zangbundel-staging/incoming
+```
+
+**The release key.** Store it as the only trusted signer:
+
+```bash
+printf 'release@zangbundel.nl namespaces="zangbundel-release" %s\n' "$(cut -d' ' -f1,2 ~/zbm/release-key.pub)" > /etc/zangbundel/allowed_signers
+```
+
+**The deploy user (SR-74).** It has no password and no shell use: its only command is `zbm-receive`.
+
+```bash
+useradd --system --create-home --shell /bin/bash zbm-deploy
+passwd -l zbm-deploy
+chown zbm-deploy:zbm-deploy /srv/zangbundel-staging/incoming && chmod 0750 /srv/zangbundel-staging/incoming
+install -d -m 0700 -o zbm-deploy -g zbm-deploy /home/zbm-deploy/.ssh
+```
+
+Put the deploy key in `/home/zbm-deploy/.ssh/authorized_keys` (owner zbm-deploy, mode 0600) as **one** line:
+
+```
+restrict,command="/usr/local/bin/zbm-receive" ssh-ed25519 AAAA…(contents of zangbundel-deploy.pub)… zangbundel deploy
+```
+
+If `sshd_config` has an `AllowUsers` or `AllowGroups` line, add `zbm-deploy` to it, then run `sshd -t && systemctl reload ssh`.
+
+**The bootstrap vhost.** Enable only the port-80 vhost for now: the 443 vhosts need certificates that don't exist yet.
+
+```bash
+ln -s ../sites-available/zangbundel-http.conf /etc/nginx/sites-enabled/
+nginx -t && systemctl reload nginx
+```
+
+## 5. Certificates (M0.3, SR-01, SR-03)
+
+`certonly --webroot` means certbot never edits an nginx file, so it cannot drop the security headers the way `certbot --nginx` would (plan R-08).
+
+```bash
+certbot certonly --webroot -w /var/www/acme -d zangbundel.nl --deploy-hook "systemctl reload nginx"
+```
+
+```bash
+certbot certonly --webroot -w /var/www/acme -d test.zangbundel.nl --deploy-hook "systemctl reload nginx"
+```
+
+```bash
+certbot renew --dry-run
+```
+
+Next, the CAA account binding (SR-03):
+
+1. Run `certbot show_account`. It prints the account URL, `https://acme-v02.api.letsencrypt.org/acme/acct/<id>`.
+2. At Openprovider, change the `issue` record to `0 issue "letsencrypt.org; accounturi=https://acme-v02.api.letsencrypt.org/acme/acct/<id>"`.
+3. Run `certbot renew --dry-run` once more: it must still succeed with the bound CAA.
+
+## 6. Enable both sites (M0.4, M0.5, SR-80)
+
+```bash
+htpasswd -B -c /etc/nginx/zangbundel-test.htpasswd <tester name>
+chown root:www-data /etc/nginx/zangbundel-test.htpasswd && chmod 0640 /etc/nginx/zangbundel-test.htpasswd
+ln -s ../sites-available/zangbundel.nl.conf ../sites-available/test.zangbundel.nl.conf /etc/nginx/sites-enabled/
+nginx -t && systemctl reload nginx
+```
+
+- **Testers' accounts.** Add one account per tester with `htpasswd -B /etc/nginx/zangbundel-test.htpasswd <name>` (without `-c`). Remove one with `htpasswd -D`. Pass passwords on by phone or in person, not in the GitHub issue.
+- **The default server.** Run `nginx -T | grep -n default_server`. The default server of port 443 must be another site's or a catch-all, not one of ours. Our two vhosts carry no `default_server` and must keep it that way. That default server also fixes the TLS versions on offer (`snippets/zbm-tls.conf` explains why).
+
+## 7. First releases (M0.8, SR-11, SR-84)
+
+These steps run on the owner's computer, from a clean, tagged checkout. `build.py` refuses uncommitted sources; `--allow-dirty` is only for trial builds.
+
+```bash
+python webapp/tools/build.py build --src webapp/placeholder --name placeholder --version 0.1.0
+```
+
+```bash
+python webapp/tools/build.py build --src webapp/test-holding --name test-holding --version 0.1.0
+```
+
+```bash
+bash webapp/tools/sign-release.sh dist/placeholder-0.1.0
+```
+
+```bash
+bash webapp/tools/sign-release.sh dist/test-holding-0.1.0
+```
+
+```bash
+ssh -i ~/.ssh/zangbundel-deploy zbm-deploy@169.58.68.107 < dist/placeholder-0.1.0.tar
+```
+
+```bash
+ssh -i ~/.ssh/zangbundel-deploy zbm-deploy@169.58.68.107 < dist/test-holding-0.1.0.tar
+```
+
+Each upload prints its file name in the staging directory. Then, on the server as root:
+
+```bash
+zbm-release activate zangbundel.nl /srv/zangbundel-staging/incoming/upload-<…>.tar
+```
+
+```bash
+zbm-release activate test.zangbundel.nl /srv/zangbundel-staging/incoming/upload-<…>.tar
+```
+
+```bash
+zbm-release list
+```
+
+- **What activation does.** `activate` refuses any upload whose signature fails, whose files differ from the manifest, or which holds unlisted files, links or unsafe paths. A release goes in read-only under `releases/<name>-<version>/` and becomes live by an atomic symlink switch. `zbm-release switch <site> <release>` goes back to an earlier release.
+- **Clearing staging.** Delete processed uploads from the staging directory; `zbm-receive` refuses new uploads once 20 are waiting.
+
+## 8. Integrity check and monitoring (M0.6, M0.9, SR-06, SR-62, SR-73)
+
+1. In Uptime Kuma, add a monitor of type **Push** named "zangbundel integrity", with a heartbeat interval of 3900 s (just over an hour).
+2. Store its push URL, the whole URL Kuma shows:
+
+   ```bash
+   install -m 0600 /dev/null /etc/zangbundel/kuma-push-url && nano /etc/zangbundel/kuma-push-url
+   ```
+
+3. Start the timer and run the check once:
+
+   ```bash
+   systemctl daemon-reload && systemctl enable --now zbm-verify.timer && systemctl start zbm-verify.service && journalctl -u zbm-verify.service -n 5
+   ```
+
+Once that works, the monitor turns green. It turns red when a live file no longer matches its signed manifest, or when the hourly push stops.
+
+Uptime Kuma runs on contabo6 itself, so it cannot see the host go down. Add from outside:
+
+- **Availability.** An external monitor on `https://zangbundel.nl/nl/` (keyword `Zangbundel`) and on `https://test.zangbundel.nl/robots.txt`, for example a free UptimeRobot account or a Kuma on another machine. Use certificate-expiry alerts where offered.
+- **Certificate Transparency (SR-62).** A watch on `zangbundel.nl` including subdomains, for example SSLMate Cert Spotter (free for one domain). Any certificate not issued by our own certbot is an incident.
+
+## 9. HSTS ramp (SR-02, SQ-03)
+
+`snippets/zbm-common-headers.conf` starts at `max-age=300`. Raise it only after a clean period at each step, run `nginx -t && systemctl reload nginx`, and check with `check_headers.py --hsts-min <new value>`:
+
+| Step | max-age | After |
+|---|---|---|
+| 1 | 300 (5 minutes) | start |
+| 2 | 604800 (1 week) | a day without problems on both hosts |
+| 3 | 2592000 (1 month) | a week |
+| 4 | 31536000 (1 year) | a month |
+| 5 | add `; preload`, submit at hstspreload.org | three months at one year (SQ-03) |
+
+`includeSubDomains` covers every name under `zangbundel.nl`. Before raising the ramp, make sure no subdomain will ever need plain HTTP.
+
+## 10. Release gate for M0 (SC-01, SC-02, SC-09, SC-12, SC-13)
+
+Run these from the owner's computer and save the results in `design/test-results/` (one file per run):
+
+```bash
+python webapp/tools/check_headers.py zangbundel.nl --report design/test-results/<date>-sc01-zangbundel.nl.md
+```
+
+```bash
+python webapp/tools/check_headers.py test.zangbundel.nl --auth <tester>:<password> --report design/test-results/<date>-sc01-test.zangbundel.nl.md
+```
+
+| Check | How |
+|---|---|
+| SC-02 | `testssl.sh zangbundel.nl` and `testssl.sh test.zangbundel.nl`: only TLS 1.2 and 1.3, no weak suites, a valid chain, HSTS present |
+| SC-09 | `zbm-release verify` on the server: both sites `ok` |
+| SC-12 | The checks of step 1 and step 2 |
+| SC-13 | `https://zangbundel.nl/.well-known/security.txt` is served and its `Expires` is in the future (renew it before 2027-11-01). The privacy statement matches the logging: shortened addresses in the access log, full addresses only in the error log, both kept 14 days by Ubuntu's logrotate for `/var/log/nginx/*.log` |
+
+Finally, copy the live files into `../contabo-vps-6` (SR-75): the three vhosts, `conf.d/zangbundel.conf`, the snippets, both scripts and both systemd units. Leave out the htpasswd file and the push URL, which are secrets.

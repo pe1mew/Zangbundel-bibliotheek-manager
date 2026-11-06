@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- Milestone M0, the repository part (`design/implementationPlan.md` draft 0.3, `design/securityAssessment.md` draft 0.5):
+  - **Placeholder for `zangbundel.nl`** in `webapp/placeholder/`: static pages in Dutch, English and German, a privacy statement in each language and `security.txt`. No script, no inline style.
+  - **Holding page** for `test.zangbundel.nl` in `webapp/test-holding/`.
+  - **nginx configuration** for both hosts in `webapp/server/nginx/`: security headers on every response, per-host CSP, basic auth and `noindex` on the test instance, GET/HEAD only, rate limits, shortened addresses in the access log, `certbot certonly --webroot`.
+  - **Release chain:** `webapp/tools/build.py` (hashed asset names, SRI, `release-manifest.json`, identical rebuilds) and `sign-release.sh` (ssh-keygen signature). On the server, `zbm-receive` is the deploy user's forced command and `zbm-release` activates and checks releases; an hourly `zbm-verify` timer pushes to Uptime Kuma.
+  - **SC-01 header check:** `webapp/tools/check_headers.py`.
+  - **Runbook** for the owner's steps (DNS, registrar lock, keys, install, certificates, monitoring, HSTS ramp, release gate): `webapp/server/README.md`.
+  - **Testing.** Tested in an Ubuntu 24.04 container with nginx 1.24.0: install, upload, activation, eight refused uploads, integrity check, and SC-01 for both hosts, 31 of 31 passed. The test is kept in `webapp/server/test/` and can be rerun. Nothing is installed on contabo6 yet.
 - `design/implementationPlan.md` draft 0.1: the plan for implementing the manager on `test.zangbundel.nl` with a static placeholder on `zangbundel.nl` (webappTDS draft 0.9, TD-20). Repository layout, threads and tools; milestones M0 (infrastructure and placeholder) to M7 (hardening and test release) with their work, requirements and exit checks; testing, release procedure, risks and six open questions (among them `test.zangbundel.net` versus `.nl`, and Node.js as a development tool).
 - `design/securityAssessment.md` draft 0.1: a security and privacy assessment of the web app's design. It names the assets, attackers and 20 findings (among them: the site's code as the root of trust, the shared host with end-of-life PHP sites, CVE-2026-45820 in `fflate` before 0.8.3, the unaudited `@noble/ed25519` v3, DOM injection from library content, missing security headers, no CAA, registrar lock, SPF or DMARC on the new domain), and specifies 67 binding requirements (SR-01 to SR-93), the nginx, DNS, application and release implementation, a release gate of 13 checks, accepted risks and eight open questions. webappTDS draft 0.6 makes it binding (TD-18).
 

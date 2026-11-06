@@ -1,0 +1,324 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+"""Activate and check signed releases of the Zangbundel web pages on contabo6.
+
+Install as /usr/local/sbin/zbm-release (root:root 0755). securityAssessment 7.4, SR-11, SR-73, SR-84.
+
+    zbm-release activate <site> <upload.tar>   verify an upload, install it read-only, switch to it
+    zbm-release switch   <site> <release>      switch back to an installed release (after re-checking it)
+    zbm-release list     [<site>...]           installed releases; * marks the live one
+    zbm-release verify   [<site>...]           check the live files against their signed manifest
+
+<site> is zangbundel.nl or test.zangbundel.nl. activate and switch are the owner's steps (root);
+the deploy user can only upload (zbm-receive). verify runs hourly from zbm-verify.timer and,
+given --push-url-file, reports to an Uptime Kuma push monitor: up when every site checks out,
+down with the reason otherwise. A missed hourly push also raises Kuma's alarm.
+
+A release is valid only if release-manifest.json carries a good signature of the release key
+(ssh-keygen -Y verify, namespace zangbundel-release, /etc/zangbundel/allowed_signers) and the
+tree holds exactly the files the manifest lists, with their sizes and SHA-256 hashes.
+
+Standard library and ssh-keygen only. ZBM_ROOT prefixes every path (for tests off the server).
+"""
+import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import tarfile
+import urllib.parse
+import urllib.request
+
+ROOT = os.environ.get('ZBM_ROOT', '')
+SITES = {
+    'zangbundel.nl': ROOT + '/srv/zangbundel',
+    'test.zangbundel.nl': ROOT + '/srv/zangbundel-test',
+}
+ALLOWED_SIGNERS = ROOT + '/etc/zangbundel/allowed_signers'
+IDENTITY = 'release@zangbundel.nl'
+NAMESPACE = 'zangbundel-release'
+MANIFEST = 'release-manifest.json'
+SIGNATURE = MANIFEST + '.sig'
+MAX_TOTAL = 50 * 1024 * 1024
+MAX_FILES = 2000
+NAME_RE = re.compile(r'^[a-z][a-z0-9-]{0,31}$')
+VERSION_RE = re.compile(r'^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$')
+SEGMENT_RE = re.compile(r'^[A-Za-z0-9_][A-Za-z0-9_.-]*$')
+
+
+class Refused(Exception):
+    pass
+
+
+def safe_path(p):
+    """A relative POSIX path of plain segments: no '..', no empty or dot segments except .well-known."""
+    if not isinstance(p, str) or not p or p.startswith('/') or '\\' in p or len(p) > 255:
+        return False
+    for i, seg in enumerate(p.split('/')):
+        if seg == '.well-known' and i == 0:
+            continue
+        if not SEGMENT_RE.match(seg):
+            return False
+    return True
+
+
+def sha256_file(path):
+    h = hashlib.sha256()
+    with open(path, 'rb') as fh:
+        for chunk in iter(lambda: fh.read(1 << 16), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def verify_signature(tree):
+    man, sig = os.path.join(tree, MANIFEST), os.path.join(tree, SIGNATURE)
+    for f in (man, sig):
+        if not os.path.isfile(f) or os.path.islink(f):
+            raise Refused(f'missing {os.path.basename(f)}')
+    if not os.path.isfile(ALLOWED_SIGNERS):
+        raise Refused(f'no {ALLOWED_SIGNERS}')
+    with open(man, 'rb') as fh:
+        r = subprocess.run(['ssh-keygen', '-Y', 'verify', '-f', ALLOWED_SIGNERS, '-I', IDENTITY,
+                            '-n', NAMESPACE, '-s', sig], stdin=fh, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise Refused('the signature of the manifest does not verify with the release key')
+
+
+def load_manifest(tree):
+    try:
+        with open(os.path.join(tree, MANIFEST), 'rb') as fh:
+            m = json.loads(fh.read().decode('utf-8'))
+    except (OSError, ValueError) as e:
+        raise Refused(f'unreadable manifest: {e}')
+    if not isinstance(m, dict) or m.get('format') != 1:
+        raise Refused('manifest format is not 1')
+    if not NAME_RE.match(str(m.get('name', ''))) or not VERSION_RE.match(str(m.get('version', ''))):
+        raise Refused('manifest name or version is not valid')
+    files = m.get('files')
+    if not isinstance(files, list) or not files or len(files) > MAX_FILES:
+        raise Refused('manifest file list is empty or too long')
+    seen = set()
+    for f in files:
+        if not isinstance(f, dict) or not safe_path(f.get('path')) or f['path'] in (MANIFEST, SIGNATURE):
+            raise Refused(f'unsafe path in the manifest: {f!r:.80}')
+        if f['path'] in seen:
+            raise Refused(f'path listed twice: {f["path"]}')
+        if not isinstance(f.get('size'), int) or not re.match(r'^[0-9a-f]{64}$', str(f.get('sha256', ''))):
+            raise Refused(f'bad size or hash for {f["path"]}')
+        seen.add(f['path'])
+    return m
+
+
+def check_tree(tree):
+    """Signature first, then every file. Returns the manifest."""
+    verify_signature(tree)
+    m = load_manifest(tree)
+    listed = {f['path']: f for f in m['files']}
+    present = set()
+    for dirpath, dirnames, filenames in os.walk(tree, followlinks=False):
+        for d in dirnames:
+            if os.path.islink(os.path.join(dirpath, d)):
+                raise Refused(f'symbolic link in the tree: {d}')
+        for fn in filenames:
+            full = os.path.join(dirpath, fn)
+            rel = os.path.relpath(full, tree).replace(os.sep, '/')
+            st = os.lstat(full)
+            if not stat.S_ISREG(st.st_mode):
+                raise Refused(f'not a regular file: {rel}')
+            present.add(rel)
+    extra = present - set(listed) - {MANIFEST, SIGNATURE}
+    if extra:
+        raise Refused('files not in the manifest: ' + ', '.join(sorted(extra)[:10]))
+    missing = set(listed) - present
+    if missing:
+        raise Refused('files missing: ' + ', '.join(sorted(missing)[:10]))
+    for p, f in sorted(listed.items()):
+        full = os.path.join(tree, p.replace('/', os.sep))
+        if os.path.getsize(full) != f['size'] or sha256_file(full) != f['sha256']:
+            raise Refused(f'file differs from the manifest: {p}')
+    return m
+
+
+def unpack(tar_path, dest):
+    """Extract regular files only, by hand, after checking every member (no extractall)."""
+    total = 0
+    with tarfile.open(tar_path, 'r:') as tar:
+        members = tar.getmembers()
+        if len(members) > MAX_FILES + 2:
+            raise Refused('too many entries in the upload')
+        for mbr in members:
+            name = mbr.name[2:] if mbr.name.startswith('./') else mbr.name
+            if mbr.isdir():
+                continue
+            if not mbr.isfile():
+                raise Refused(f'not a regular file in the upload: {mbr.name!r:.80}')
+            if not (safe_path(name) or name in (MANIFEST, SIGNATURE)):
+                raise Refused(f'unsafe path in the upload: {mbr.name!r:.80}')
+            total += mbr.size
+            if total > MAX_TOTAL:
+                raise Refused('upload larger than 50 MB unpacked')
+            target = os.path.join(dest, name.replace('/', os.sep))
+            if os.path.exists(target):
+                raise Refused(f'entry twice in the upload: {name}')
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            src = tar.extractfile(mbr)
+            with open(target, 'xb') as out:
+                shutil.copyfileobj(src, out)
+
+
+def make_read_only(tree):
+    as_root = hasattr(os, 'geteuid') and os.geteuid() == 0
+    for dirpath, dirnames, filenames in os.walk(tree):
+        for fn in filenames:
+            full = os.path.join(dirpath, fn)
+            if as_root:
+                os.chown(full, 0, 0)
+            os.chmod(full, 0o644)
+        if as_root:
+            os.chown(dirpath, 0, 0)
+        os.chmod(dirpath, 0o755)
+
+
+def site_dir(site):
+    if site not in SITES:
+        raise Refused(f'unknown site {site}; one of: ' + ', '.join(SITES))
+    return SITES[site]
+
+
+def live_release(site):
+    live = os.path.join(site_dir(site), 'live')
+    if not os.path.islink(live):
+        return None
+    target = os.readlink(live)
+    parts = target.replace('\\', '/').split('/')
+    if len(parts) != 2 or parts[0] != 'releases' or not SEGMENT_RE.match(parts[1]):
+        raise Refused(f'{live} points outside releases/: {target}')
+    return parts[1]
+
+
+def switch_to(site, release):
+    base = site_dir(site)
+    if not SEGMENT_RE.match(release) or release.startswith('.'):
+        raise Refused(f'not a release name: {release}')
+    tree = os.path.join(base, 'releases', release)
+    if not os.path.isdir(tree) or os.path.islink(tree):
+        raise Refused(f'no installed release {release} for {site}')
+    check_tree(tree)
+    before = live_release(site)
+    tmp = os.path.join(base, 'live.new')
+    if os.path.lexists(tmp):
+        os.remove(tmp)
+    os.symlink('releases/' + release, tmp)
+    os.replace(tmp, os.path.join(base, 'live'))      # atomic on Linux
+    return before
+
+
+def cmd_activate(a):
+    base = site_dir(a.site)
+    releases = os.path.join(base, 'releases')
+    os.makedirs(releases, exist_ok=True)
+    work = os.path.join(releases, f'.incoming-{os.getpid()}')
+    shutil.rmtree(work, ignore_errors=True)
+    os.makedirs(work)
+    try:
+        unpack(a.upload, work)
+        m = check_tree(work)
+        release = f'{m["name"]}-{m["version"]}'
+        target = os.path.join(releases, release)
+        if os.path.exists(target):
+            with open(os.path.join(target, MANIFEST), 'rb') as x, open(os.path.join(work, MANIFEST), 'rb') as y:
+                if x.read() != y.read():
+                    raise Refused(f'{release} is already installed with different content; raise the version')
+            print(f'{release} is already installed with the same manifest')
+        else:
+            make_read_only(work)
+            os.rename(work, target)
+        before = switch_to(a.site, release)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    print(f'{a.site}: live is now {release} (was {before or "nothing"}); signed manifest and {len(m["files"])} files verified')
+    if before and before != release:
+        print(f'to go back: zbm-release switch {a.site} {before}')
+
+
+def cmd_switch(a):
+    before = switch_to(a.site, a.release)
+    print(f'{a.site}: live is now {a.release} (was {before or "nothing"})')
+
+
+def cmd_list(a):
+    for site in a.sites or list(SITES):
+        rel_dir = os.path.join(site_dir(site), 'releases')
+        live = live_release(site)
+        names = sorted(n for n in os.listdir(rel_dir) if not n.startswith('.')) if os.path.isdir(rel_dir) else []
+        print(site)
+        for n in names:
+            print(('  * ' if n == live else '    ') + n)
+
+
+def push(url_file, ok, msg):
+    try:
+        with open(url_file, encoding='utf-8') as fh:
+            url = fh.read().strip()
+    except OSError as e:
+        print(f'no push URL: {e}', file=sys.stderr)
+        return
+    parts = urllib.parse.urlsplit(url)
+    if parts.scheme != 'https' and parts.hostname not in ('127.0.0.1', 'localhost'):
+        print('push URL must be https', file=sys.stderr)
+        return
+    query = urllib.parse.urlencode({'status': 'up' if ok else 'down', 'msg': msg[:200], 'ping': ''})
+    try:
+        urllib.request.urlopen(urllib.parse.urlunsplit(parts._replace(query=query)), timeout=15).read()
+    except OSError as e:
+        print(f'push failed: {e}', file=sys.stderr)
+
+
+def cmd_verify(a):
+    problems, done = [], []
+    for site in a.sites or list(SITES):
+        try:
+            release = live_release(site)
+            if release is None:
+                if os.path.isdir(site_dir(site)):
+                    raise Refused('no live release')
+                continue                               # site not set up on this host
+            m = check_tree(os.path.join(site_dir(site), 'releases', release))
+            done.append(f'{site} {release} ({len(m["files"])} files)')
+        except (Refused, OSError) as e:
+            problems.append(f'{site}: {e}')
+    for line in done:
+        print('ok      ' + line)
+    for line in problems:
+        print('FAILED  ' + line, file=sys.stderr)
+    if a.push_url_file:
+        push(a.push_url_file, not problems and bool(done),
+             '; '.join(problems) if problems else ('OK ' + ', '.join(done) if done else 'no site checked'))
+    return 1 if problems or not done else 0
+
+
+def main():
+    ap = argparse.ArgumentParser(prog='zbm-release', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest='cmd', required=True)
+    p = sub.add_parser('activate'); p.add_argument('site'); p.add_argument('upload')
+    p = sub.add_parser('switch'); p.add_argument('site'); p.add_argument('release')
+    p = sub.add_parser('list'); p.add_argument('sites', nargs='*')
+    p = sub.add_parser('verify'); p.add_argument('sites', nargs='*'); p.add_argument('--push-url-file')
+    a = ap.parse_args()
+    if a.cmd == 'verify' and a.push_url_file is None and os.environ.get('CREDENTIALS_DIRECTORY'):
+        cand = os.path.join(os.environ['CREDENTIALS_DIRECTORY'], 'kuma-push-url')
+        a.push_url_file = cand if os.path.exists(cand) else None
+    try:
+        rc = {'activate': cmd_activate, 'switch': cmd_switch, 'list': cmd_list, 'verify': cmd_verify}[a.cmd](a)
+    except Refused as e:
+        print(f'zbm-release: refused: {e}', file=sys.stderr)
+        rc = 2
+    sys.exit(rc or 0)
+
+
+if __name__ == '__main__':
+    main()

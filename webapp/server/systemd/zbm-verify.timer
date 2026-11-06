@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+# Install as /etc/systemd/system/zbm-verify.timer; enable with: systemctl enable --now zbm-verify.timer
+[Unit]
+Description=Zangbundel: hourly integrity check of the live web files (SR-73)
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target
