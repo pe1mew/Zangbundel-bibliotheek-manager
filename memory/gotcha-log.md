@@ -96,6 +96,11 @@
 **Root cause**: Old rotations are only deleted when a rotation happens; `notifempty` skips it.
 **Fix**: Own folder and stanza (`webapp/server/logrotate/zangbundel`: `ifempty`, `rotate 13`, `maxage 14`), tested by forcing 16 rotations in `run.sh`. Rule: a retention promise is checked against the rotation config, not against "daily, 14 kept".
 
+### A source transform that deletes statements changes ASI (2026-11-06)
+**Problem**: The bundler blanked `import`/`export { }` statements to spaces. Before a line starting with `(` or `[`, the previous statement without `;` then ran on into it: `let msg = greet` + `('x')` became `greet('x')`. The bundle was valid JavaScript, just different, so no syntax check could see it.
+**Root cause**: A blank is not a statement boundary; the removed statement was the boundary.
+**Fix**: Replace a removed statement with `;` plus blanks (`webapp/tools/bundle.py` `blank`). Rule: test a source transform by comparing its output's behaviour with the original's (`test_bundle.py` `same_as_native`), not only by checking that it parses.
+
 ## Promoted
 
 <!-- Track gotchas that have been promoted to topic files or the memory index.
@@ -135,6 +140,8 @@
 
 | Date | Finding shape | Check | Status | Occurrences |
 |------|---------------|-------|--------|-------------|
+| 2026-11-06 | Bundle valid but behaves differently from the modules (ASI, regex/division) | `webapp/tests/test_bundle.py` `same_as_native` (7 cases, node); against the 13f7776 bundler 9 checks went red and one crashed | live | 0 |
+| 2026-11-06 | Doc presents a one-off or manual check as a repository test | needs intent | rejected | 0 |
 | 2026-11-06 | Quiet log kept past the promised retention | `webapp/server/test/run.sh` "16 forced rotations leave the log and 13 old copies" | proposed | 0 |
 | 2026-11-06 | Refusal message lost, exit code still right | `webapp/server/test/run.sh` `refused` helper asserts the message; it went red on all 8 `zbm-receive` refusals when stderr was silenced | live | 0 |
 | 2026-11-06 | Integrity check blind to unreadable directories | `webapp/server/test/run.sh` "verify: file hidden in an unreadable dir" | proposed | 0 |

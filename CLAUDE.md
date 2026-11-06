@@ -99,7 +99,7 @@ python webapp/tools/build.py build --src webapp/placeholder --name placeholder -
 python webapp/tests/test_build.py
 python webapp/tests/test_bundle.py
 
-# Trial build of the web app (the version must equal webapp/src/app/version.js)
+# Trial build of the web app (the version must equal webapp/src/app/version.js; needs node on PATH for its syntax check)
 python webapp/tools/build.py build --src webapp/src --name manager --version 0.2.0-dev.1 --allow-dirty --force
 
 # SC-01 header check against a host (see webapp/server/README.md for --connect/--insecure/--auth)

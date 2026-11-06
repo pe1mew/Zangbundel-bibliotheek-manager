@@ -14,6 +14,9 @@ sys.path.insert(0, os.path.join(HERE, '..', 'tools'))
 import bundle  # noqa: E402
 
 ok_all = True
+if shutil.which('node') is None:
+    print('node is not on PATH (webappTDS TD-21); in Git Bash on Windows: export PATH="/c/Program Files/nodejs:$PATH"')
+    sys.exit(2)
 
 
 def report(ok, name, detail=''):
@@ -118,6 +121,74 @@ for name, (text, expect) in BAD.items():
         report(expect in str(e), f'refuses {name}', str(e))
     finally:
         shutil.rmtree(d, ignore_errors=True)
+
+# ---- same result as native ES modules (review of 13f7776: ASI, regex after ')', x++ / y, ...) ----
+def same_as_native(name, files):
+    """Run src/main.js natively (ESM) and as a bundle; both must set the same globalThis.__r."""
+    d = tree(dict(files, **{'src/package.json': '{"type": "module"}'}))
+    try:
+        code, workers, _ = bundle.bundle(os.path.join(d, 'src', 'main.js'), d)
+        with open(os.path.join(d, 'bundle.mjs'), 'w', encoding='utf-8') as fh:
+            fh.write(code)
+        outs = []
+        for target in ('./src/main.js', './bundle.mjs'):
+            with open(os.path.join(d, 'run.mjs'), 'w', encoding='utf-8') as fh:
+                fh.write(f"await import('{target}'); console.log(JSON.stringify(globalThis.__r));\n")
+            r = subprocess.run(['node', os.path.join(d, 'run.mjs')], capture_output=True, text=True)
+            err = (r.stderr.strip().splitlines() or ['?'])[-1][:80]
+            outs.append(r.stdout.strip() if r.returncode == 0 else 'ERROR ' + err)
+        report(outs[0] == outs[1] and not outs[0].startswith('ERROR'), f'same as native: {name}',
+               f'native {outs[0]} / bundle {outs[1]}')
+    except bundle.BundleError as e:
+        report(False, f'same as native: {name}', str(e))
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+same_as_native('export list after a line without ;', {
+    'src/main.js': "import { msg } from './m.js';\nglobalThis.__r = typeof msg;\n",
+    'src/m.js': "const greet = (s) => 'hi ' + s\nlet msg = greet\nexport { msg }\n('x')\n"})
+same_as_native('import between two lines without ;', {
+    'src/main.js': "const f = (x) => x\nlet g = f\nimport { one } from './one.js'\n(1)\nglobalThis.__r = [typeof g, one];\n",
+    'src/one.js': 'export const one = 1;\n'})
+same_as_native('export list before a line starting with [', {
+    'src/main.js': "import { a } from './a.js';\nglobalThis.__r = a;\n",
+    'src/a.js': "const a = [1]\nexport { a }\n[0].forEach(() => {})\n"})
+same_as_native('regex after if (...)', {
+    'src/main.js': "const t = 'export {k}', k = 1; let r = 'none';\nif (k) /export {k}/i.test(t) ? (r = 'match') : 0;\nglobalThis.__r = r;\n"})
+same_as_native('division after x++', {
+    'src/main.js': "let i = 4; let h = i++ / 2; export const g = 7; let z = h / 4;\nglobalThis.__r = [h, g, z, i];\n"})
+same_as_native('object keys and class fields named import/export', {
+    'src/main.js': "const o = { export: 1, import: 2 };\nclass C { export = 3; import() { return 4; } }\nconst c = new C();\nglobalThis.__r = [o.export, o.import, c.export, c.import()];\n"})
+same_as_native('a module that shadows Object', {
+    'src/main.js': "import { v } from './o.js';\nglobalThis.__r = v;\n",
+    'src/o.js': "const Object = { freeze: () => 'hijacked' };\nexport const v = 5;\n"})
+
+for name, text, expect in (
+        ('export { a as default }', 'const a = 1;\nexport { a as default };\n', 'default exports'),
+        ("export { 'a-b' as c }", "const c = 1;\nexport { 'a-b' as c };\n", 'cannot read export'),
+        ('a non-ASCII identifier', 'const é = 1;\nexport { é };\n', 'plain ASCII'),
+        ('a NUL character', "const s = '\x00';\nexport const t = 1;\n", 'NUL'),
+        ('import.meta.url on its own', 'export const u = import.meta.url;\n', 'import.meta is allowed only')):
+    d = tree({'src/main.js': text})
+    try:
+        bundle.bundle(os.path.join(d, 'src', 'main.js'), d)
+        report(False, f'refuses {name}', 'was bundled')
+    except bundle.BundleError as e:
+        report(expect in str(e), f'refuses {name}', str(e))
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+
+d = tree({'src/main.js': "const u = new URL('./w.js', import.meta.url);\nexport const url = u;\n",
+          'src/w.js': 'export const w = 1;\n'})
+try:
+    code, workers, _ = bundle.bundle(os.path.join(d, 'src', 'main.js'), d)
+    report(len(workers) == 1 and code.splitlines()[1] == "'use strict';",
+           "worker URL outside new Worker(); bundle starts 'use strict'")
+except bundle.BundleError as e:
+    report(False, "worker URL outside new Worker(); bundle starts 'use strict'", str(e))
+finally:
+    shutil.rmtree(d, ignore_errors=True)
 
 d = tree({'src/a.js': "import { b } from './b.js';\nexport const a = 1;\n",
           'src/b.js': "import { a } from './a.js';\nexport const b = 2;\n"})

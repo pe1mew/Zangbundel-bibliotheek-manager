@@ -171,7 +171,7 @@ def check_html(path, text):
         if tag == 'script' and not dict(attrs).get('src'):
             problems.add('a <script> without src')
         if tag == 'script' and dict(attrs).get('type') != 'module':
-            problems.add('a <script> without type="module" (TD-22)')
+            problems.add('a <script> without type="module" (webappTDS TD-22)')
         for name, value in attrs:
             if name == 'style':
                 problems.add('a style attribute')
@@ -229,13 +229,36 @@ def check_output(out_data, renamed_sources=()):
                     fail(f'{p}: url({url}) does not resolve to a file of the release')
         elif p.endswith('.js'):
             text = body.decode('utf-8')
+            try:
+                literals = [t[1] for t in bundler.tokenize(text, p) if t[0] == 'str']
+            except bundler.BundleError as e:
+                fail(str(e))
             for old in renamed_sources:
-                if old in text or posixpath.basename(old) in text:
-                    fail(f'{p}: names {old}, which the build renames; refer to it from HTML or CSS instead')
+                base = posixpath.basename(old)
+                if any(lit == base or lit.endswith('/' + base) for lit in literals):
+                    fail(f'{p}: names {old}, which the build renames; refer to it from HTML or CSS instead '
+                         '(a name built by concatenation is not caught: do not build asset paths in code)')
         elif p.endswith('.svg'):
             text = body.decode('utf-8')
             if re.search(r'<script|\son[a-z]+\s*=|javascript:|<foreignObject', text, re.I):
                 fail(f'{p}: an SVG with script, event handlers or foreignObject (SR-24)')
+
+
+def syntax_check(body, label):
+    """Parse a bundle with Node (a development tool, webappTDS TD-21) as a module. A bundle the
+    lexer misread, or a top-level await now inside a module's function, is a syntax error here."""
+    node = shutil.which('node')
+    if node is None:
+        fail('node is needed to check the bundles (webappTDS TD-21); install Node.js LTS or put it on PATH')
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        f = os.path.join(tmp, 'bundle.mjs')
+        with open(f, 'wb') as fh:
+            fh.write(body)
+        r = subprocess.run([node, '--check', f], capture_output=True, text=True)
+    if r.returncode != 0:
+        msg = [l for l in r.stderr.splitlines() if l.strip() and not l.startswith('Node.js')]
+        fail(f'the bundle of {label} is not valid JavaScript: ' + ' / '.join(msg[-3:])[:400])
 
 
 def git(src, *args):
@@ -281,9 +304,15 @@ def build(args):
     files = walk(src)
     src_files = list(files)
     if 'app/version.js' in files:                        # the version shown must be the version released
-        vm = re.search(r"export const VERSION = '([^']*)';", open(os.path.join(src, 'app', 'version.js'), encoding='utf-8').read())
-        if not vm or vm.group(1) != args.version:
-            fail(f"app/version.js says {vm.group(1) if vm else 'nothing'}, --version is {args.version}")
+        vtext = open(os.path.join(src, 'app', 'version.js'), encoding='utf-8').read()
+        try:
+            vt = [(t[0], t[1]) for t in bundler.tokenize(vtext, 'app/version.js')]   # comments skipped
+        except bundler.BundleError as e:
+            fail(str(e))
+        found = [vt[i + 4][1] for i in range(len(vt) - 4)
+                 if vt[i:i + 4] == [('id', 'export'), ('id', 'const'), ('id', 'VERSION'), ('p', '=')] and vt[i + 4][0] == 'str']
+        if len(found) != 1 or found[0] != args.version:
+            fail(f"app/version.js says {found or 'nothing'}, --version is {args.version}")
     data = {p: open(os.path.join(src, p.replace('/', os.sep)), 'rb').read() for p in files}
     for p in files:
         if posixpath.splitext(p)[1].lower() in TEXT_EXT:
@@ -311,7 +340,11 @@ def build(args):
             if bundles.get(w, '') is None:
                 fail(f'worker cycle at {os.path.relpath(w, root)}')
             names[w] = posixpath.basename(make_bundle(w))
-        body = bundler.place_workers(code, names).encode('utf-8')
+        try:
+            body = bundler.place_workers(code, names).encode('utf-8')
+        except bundler.BundleError as e:
+            fail(str(e))
+        syntax_check(body, os.path.relpath(entry, root))
         name = f'assets/{posixpath.splitext(os.path.basename(entry))[0]}.{sha256(body)[:12]}.js'
         if name in data or any(b == name for b in bundles.values()):
             fail(f'two bundles or files named {name}')

@@ -7,12 +7,15 @@ one file without imports or exports. Used by build.py; standard library only.
 
 The subset, and nothing else (anything else fails the build with the file and line):
     import { a, b as c } from './x.js';      import * as ns from './x.js';
-    export function f() {}   export async function f() {}   export class C {}
+    export function f() {}   export async function f() {}   export function* g() {}   export class C {}
     export const x = ...;    export let x = ...;           export var x = ...;   (one name each)
-    export { a, b as c };
-    new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })   (bundled separately)
-Relative specifiers only; no default exports, re-exports, dynamic import(), other import.meta uses
-or import cycles. An imported binding is a copy taken when the importing module starts.
+    export { a, b as c };                                  (identifiers; never 'default')
+    new URL('./worker.js', import.meta.url)   a worker entry point, bundled separately; the code
+                                              passes the URL to new Worker() through its Trusted
+                                              Types policy (webappTDS TQ-08)
+Relative specifiers only; no default exports, re-exports, dynamic import(), other import.meta uses,
+non-ASCII identifiers or import cycles; top-level await fails build.py's syntax check of the bundle. A regular expression may follow ')' only
+after if, while, for or with. An imported binding is a copy taken when the importing module starts.
 
 Each module becomes a function scope whose exports are returned as a frozen object; modules run in
 dependency order, as ES modules do.
@@ -37,6 +40,8 @@ def tokenize(src, path):
     are respected, so 'import' inside them is never mistaken for a statement."""
     toks, i, n, depth = [], 0, len(src), 0
     stack = []                      # template nesting: brace depth at which each ${ ... } closes
+    parens = []                     # for each open '(': was it the condition of if/while/for/with?
+    close_kw = set()                # indexes of ')' tokens that closed such a condition
 
     def line(pos):
         return src.count('\n', 0, pos) + 1
@@ -46,6 +51,10 @@ def tokenize(src, path):
             return True
         k, v = toks[-1][0], toks[-1][1]
         if k == 'p':
+            if v == ')':                                 # regex only after if (...), while (...), ...
+                return len(toks) - 1 in close_kw
+            if v in '+-' and len(toks) >= 2 and toks[-2][1] == v and toks[-2][3] == toks[-1][2]:
+                return False                             # x++ / y: postfix, so division
             return v in REGEX_AFTER_PUNCT or v == '}'
         return k == 'id' and v in REGEX_AFTER_WORD
 
@@ -125,8 +134,12 @@ def tokenize(src, path):
                 j += 1
             toks.append(('re', src[i:j], i, j, depth))
             i = j
-        elif c.isalpha() or c in '_$':
+        elif c.isalpha() or c in '_$' or c == '\\':
             m = IDENT.match(src, i)
+            if m is None:
+                raise BundleError(f'{path}:{line(i)}: identifiers must be plain ASCII (webappTDS TD-22)')
+            if m.end() < n and (src[m.end()].isalpha() or src[m.end()] == '\\'):
+                raise BundleError(f'{path}:{line(i)}: identifiers must be plain ASCII (webappTDS TD-22)')
             toks.append(('id', m.group(0), i, m.end(), depth))
             i = m.end()
         elif c.isdigit():
@@ -135,12 +148,16 @@ def tokenize(src, path):
             i = m.end()
         else:
             if c in '([{':
+                if c == '(':
+                    parens.append(bool(toks) and toks[-1][0] == 'id' and toks[-1][1] in ('if', 'while', 'for', 'with'))
                 toks.append(('p', c, i, i + 1, depth))
                 depth += 1
             elif c in ')]}':
                 depth -= 1
                 if depth < 0:
                     raise BundleError(f'{path}:{line(i)}: unbalanced {c}')
+                if c == ')' and parens and parens.pop():
+                    close_kw.add(len(toks))
                 toks.append(('p', c, i, i + 1, depth))
             else:
                 toks.append(('p', c, i, i + 1, depth))
@@ -162,6 +179,8 @@ class Module:
 
 def parse_module(path, rel, root):
     src = open(path, encoding='utf-8').read()
+    if '\x00' in src:
+        raise BundleError(f'{rel}: contains a NUL character (webappTDS TD-22)')
     m = Module(path, rel)
     m.src = src
     toks = tokenize(src, rel)
@@ -185,8 +204,9 @@ def parse_module(path, rel, root):
         return target
 
     def blank(a, b):
-        """Replace source[a:b] by spaces, keeping newlines, so line numbers stay the same."""
-        m.edits.append((a, b, re.sub(r'[^\n]', ' ', src[a:b])))
+        """Replace a statement source[a:b] by ';' and spaces, keeping newlines, so line numbers stay
+        the same and the statement before it cannot run on into the one after it (ASI)."""
+        m.edits.append((a, b, ';' + re.sub(r'[^\n]', ' ', src[a + 1:b])))
 
     def tok_line(t):
         return line(t[2])
@@ -212,23 +232,32 @@ def parse_module(path, rel, root):
             j += 1
         fail(s, 'end an exported declaration with ;')
 
-    k = 0
+    k, braces = 0, 0
     while k < len(toks):
         kind, val, s, e, d = toks[k]
         prev = toks[k - 1] if k else None
-        after_dot = prev is not None and prev[0] == 'p' and prev[1] == '.'
-        if kind == 'id' and val == 'import' and not after_dot:
-            nxt = toks[k + 1] if k + 1 < len(toks) else None
+        nxt = toks[k + 1] if k + 1 < len(toks) else None
+        after_dot = prev is not None and prev[0] == 'p' and prev[1] in ('.', '?.')
+        if kind == 'p' and val in '{}':
+            braces += 1 if val == '{' else -1
+        # a property key, shorthand, class field or method called import/export/await is a name
+        is_name = after_dot or (nxt is not None and nxt[0] == 'p' and nxt[1] in (':', '=', ',', '}', ')')
+                                and not (val == 'export' and nxt[1] == '{'))
+        if kind == 'id' and val == 'import' and not is_name:
             if nxt and nxt[0] == 'p' and nxt[1] == '(':
+                close = next((q for q in range(k + 2, len(toks)) if toks[q][1] == ')' and toks[q][4] == nxt[4]), None)
+                if close is not None and close + 1 < len(toks) and toks[close + 1][1] == '{' and d > 0:
+                    k += 1                               # a method called import() { ... }
+                    continue
                 fail(s, 'dynamic import() is not allowed')
             if nxt and nxt[0] == 'p' and nxt[1] == '.':
-                # import.meta: only as new URL('<literal>', import.meta.url) inside new Worker(...)
-                ok = (k >= 4 and toks[k - 1][1] == ',' and toks[k - 2][0] == 'str' and toks[k - 3][1] == '('
-                      and toks[k - 4][1] == 'URL' and k + 3 < len(toks) and toks[k + 2][1] == 'meta'
-                      and toks[k + 3][1] == '.' and toks[k + 4][1] == 'url')
-                ok = ok and k >= 7 and toks[k - 5][1] == 'new' and toks[k - 6][1] == '(' and toks[k - 7][1] == 'Worker'
+                # import.meta: only as new URL('<literal>.js', import.meta.url), a worker entry point
+                ok = (k >= 5 and toks[k - 1][1] == ',' and toks[k - 2][0] == 'str' and toks[k - 3][1] == '('
+                      and toks[k - 4][1] == 'URL' and toks[k - 5][1] == 'new' and k + 5 < len(toks)
+                      and toks[k + 2][1] == 'meta' and toks[k + 3][1] == '.' and toks[k + 4][1] == 'url'
+                      and toks[k + 5][1] == ')')
                 if not ok:
-                    fail(s, "import.meta is allowed only in new Worker(new URL('./x.js', import.meta.url), ...)")
+                    fail(s, "import.meta is allowed only as new URL('./worker.js', import.meta.url)")
                 lit = toks[k - 2]
                 m.workers.append((lit[2], lit[3], resolve(lit[1], lit[2])))
                 k += 5
@@ -270,7 +299,7 @@ def parse_module(path, rel, root):
             blank(s, stmt[-1][3])
             k = j + 1
             continue
-        if kind == 'id' and val == 'export' and not after_dot:
+        if kind == 'id' and val == 'export' and not is_name:
             if d != 0:
                 fail(s, 'export must be at the top level')
             nxt = toks[k + 1]
@@ -294,10 +323,14 @@ def parse_module(path, rel, root):
                         continue
                     if len(words) == 1 and IDENT.fullmatch(words[0]):
                         m.exports.append((words[0], words[0]))
-                    elif len(words) == 3 and words[1] == 'as':
+                    elif len(words) == 3 and words[1] == 'as' and IDENT.fullmatch(words[0]) and IDENT.fullmatch(words[2]):
                         m.exports.append((words[2], words[0]))
                     else:
                         fail(s, f'cannot read export: {part.strip()}')
+                    if m.exports[-1][0] == 'default':
+                        fail(s, 'default exports are not allowed')
+                if any(t[0] == 'str' for t in stmt):
+                    fail(s, 'export names must be identifiers')
                 blank(s, stmt[-1][3])
                 k = j + 1
                 continue
@@ -354,7 +387,9 @@ def bundle(entry, root):
     visit(os.path.abspath(entry), [])
     ids = {p: i for i, p in enumerate(order)}
     out = ['// Bundled by webapp/tools/build.py (webappTDS TD-22). Sources: '
-           + ', '.join(modules[p].rel for p in order) + '\n']
+           + ', '.join(modules[p].rel for p in order) + '\n'
+           "'use strict';\n"                                  # also when started as a classic worker
+           'const __zbm_freeze = Object.freeze;\n']           # before any module can shadow Object
     workers = []
     for p in order:
         m = modules[p]
@@ -382,12 +417,14 @@ def bundle(entry, root):
         ret = ', '.join(e if e == l else f'{e}: {l}' for e, l in m.exports)
         out.append(f'// ---- {m.rel}\nconst __zbm_m{ids[p]} = (() => {{\n'
                    + ''.join(l + '\n' for l in lines) + text.rstrip('\n')
-                   + f'\nreturn Object.freeze({{ {ret} }});\n}})();\n')
+                   + f'\nreturn __zbm_freeze({{ {ret} }});\n}})();\n')
     return ''.join(out), workers, list(order)
 
 
 def place_workers(code, names):
     """Replace the worker placeholders with the bundles' file names (same folder as the bundle)."""
     def sub(mt):
+        if mt.group(1) not in names:
+            raise BundleError(f'no bundle for worker {mt.group(1)}')
         return "'./" + names[mt.group(1)] + "'"
     return re.sub(r"'\x00WORKER:(.*?)\x00'", sub, code)

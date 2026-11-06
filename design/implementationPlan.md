@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.6 |
+| **Status** | Draft 0.7 |
 | **Date** | 2026-11-06 |
-| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.11, `design/securityAssessment.md` draft 0.8, `test-libraries/` (56 cases) |
+| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.12, `design/securityAssessment.md` draft 0.9, `test-libraries/` (56 cases) |
 
 ---
 
@@ -88,7 +88,8 @@ webapp/
 │   ├── app/                  main thread: UI, rendering with DOM APIs, i18n, state
 │   │   ├── dom.js            the element builder; the only place that touches the DOM directly
 │   │   ├── screens/          splash, home, library, song view, editor, sets, panels, dialogs
-│   │   ├── i18n/             nl.js, en.js, de.js (texts of GUI and FDS §9)
+│   │   ├── i18n.js           texts in nl, en, de (GUI and FDS §9); split per language when it grows
+│   │   ├── version.js        the version on the splash; build.py checks it against --version
 │   │   └── storage.js        localStorage allow-list: zbm.lang, zbm.bars (SR-42)
 │   ├── core/                 pure functions, no DOM, no workers: runs in workers and in tests
 │   │   ├── zip.js            reading with limits, writing deterministically (on fflate)
@@ -102,7 +103,8 @@ webapp/
 │   ├── workers/
 │   │   ├── library-worker.js reads and writes libraries with core/ (SR-30, SR-31)
 │   │   └── crypto-worker.js  keys and signing (SR-40, SR-41, SR-15, SR-16)
-│   └── styles/               app.css; no inline styles
+│   ├── assets/               app.css (all styles; no inline styles), icon, photograph
+│   └── .well-known/          security.txt (SR-92)
 ├── vendor/                   fflate 0.8.3, @noble/ed25519 3.2.0, VENDOR.md with hashes (SR-12)
 ├── tests/                    test_build.py, test_bundle.py; later unit tests of core/, the conformance runner, fuzzing
 ├── tools/
@@ -174,8 +176,8 @@ Each milestone ends with its exit checks passing and the result written to `desi
 **Exit:** a signed build reaches `test.zangbundel.nl` end to end; SC-08 and SC-09 pass.
 
 **State (2026-11-06).**
-- **M1.1 done.** `webapp/tools/bundle.py`; `build.py` bundles each entry point and refuses JavaScript that names a renamed asset or a `--version` that differs from `app/version.js`. Tested: `webapp/tests/test_bundle.py` runs bundles in Node, and fflate 0.8.3 and @noble/ed25519 3.2.0 bundled from their npm packages behave as natively, including an RFC 8032 signature.
-- **M1.4 built, not deployed.** The minimal app is in `webapp/src/` (splash, then a card). In the container test it is signed, activated on the test instance as a trial build and passes SC-01 with `--app`; in the browser pane it ran under the SR-20 CSP and `Integrity-Policy` without a report, and a copy without its integrity attribute was refused. Deploying it waits for M0's server steps.
+- **M1.1 done.** `webapp/tools/bundle.py`; `build.py` bundles each entry point, checks each bundle with `node --check`, and refuses JavaScript that names a renamed asset or a `--version` that differs from `app/version.js`. Tested in the repository: `webapp/tests/test_bundle.py` (33 checks, run in Node: bundles give the same result as the native modules, and the refusals) and `webapp/server/test/run.sh` (two builds byte-identical). A one-off experiment outside the repository, to be repeated in M1.2: fflate 0.8.3 and @noble/ed25519 3.2.0 bundled from their npm packages behaved as natively, including an RFC 8032 signature.
+- **M1.4 built, not deployed.** The minimal app is in `webapp/src/` (splash, then a card). In the container test it is signed, activated on the test instance as a trial build and passes SC-01 with `--app`; a manual check in the browser pane (not in the repository's tests): it ran under the SR-20 CSP and `Integrity-Policy` without a report, and copies with a missing or a wrong script integrity were refused. Deploying it waits for M0's server steps.
 - **M1.5, configuration part:** the test instance's CSP is now the SR-20 policy.
 - **Open:** M1.2 (vendoring with `vendor.py`) and M1.3 (`node --test` and the conformance runner). Node.js LTS 26.13.0 is installed.
 
@@ -343,3 +345,4 @@ The placeholder and the manager have separate release directories and separate m
 | Draft 0.4 | 2026-11-06 | After the review of M0: AAAA records only once contabo6 has working IPv6 (M0.1); the state under M0 names the extended container test. |
 | Draft 0.5 | 2026-11-06 | After the second review round: the state under M0 names 68 checks and the build test. M1.1 must add reference rewriting for JavaScript and web manifests; `build.py` refuses both until then. |
 | Draft 0.6 | 2026-11-06 | M1.1 bundles each entry point (webappTDS TD-22); Node.js LTS 26.13.0 installed on the development machine (IQ-02). |
+| Draft 0.7 | 2026-11-06 | After the review of M1 part 1: the M1 state separates repository tests from one-off and manual checks; layout 3.1 matches `webapp/src/`. |

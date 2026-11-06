@@ -56,7 +56,8 @@ check "trial build of test-holding" \
   python3 /repo/webapp/tools/build.py build --src /repo/webapp/test-holding --name test-holding --version 0.1.0 --out $W/dist/test-holding-0.1.0 --allow-dirty
 check "trial build of the manager (bundled, TD-22)" \
   python3 /repo/webapp/tools/build.py build --src /repo/webapp/src --name manager --version "$(sed -n "s/^export const VERSION = '\\(.*\\)';/\\1/p" /repo/webapp/src/app/version.js)" --out $W/dist/manager --allow-dirty
-check "manager release holds a bundle, no JS source" sh -c "ls $W/dist/manager/assets/main.*.js && ! find $W/dist/manager -path '*/app/*' | grep -q ."
+check "manager release holds a bundle, no JS source" sh -c "ls $W/dist/manager/assets/main.*.js && test \$(find $W/dist/manager -name '*.js' | wc -l) -eq 1"
+check "a second build of the manager is byte-identical (SR-10)" sh -c "python3 /repo/webapp/tools/build.py build --src /repo/webapp/src --name manager --version \$(sed -n \"s/^export const VERSION = '\\\\(.*\\\\)';/\\\\1/p\" /repo/webapp/src/app/version.js) --out /tmp/manager2 --allow-dirty >/dev/null && diff -r $W/dist/manager /tmp/manager2"
 check "sign and pack manager" bash $W/tools/sign-release.sh $W/dist/manager $W/rk/test-release
 for n in placeholder test-holding; do
   check "sign and pack $n" bash $W/tools/sign-release.sh $W/dist/$n-0.1.0 $W/rk/test-release
@@ -232,7 +233,9 @@ grep -E '^(PASS|FAIL)|^        -' /tmp/out | grep -v '^PASS' | head -20
 check "SC-01 report written" test -s /tmp/report/sc01.md
 # M1.4: the minimal manager on the test instance
 check "activate --trial the manager on test.zangbundel.nl" zbm-release activate --trial test.zangbundel.nl $W/dist/manager.tar
-check "SC-01 test.zangbundel.nl with the manager (--app)" python3 /repo/webapp/tools/check_headers.py test.zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure --auth tester:test-only-pw --app
+check "live on test.zangbundel.nl is the manager" sh -c "readlink /srv/zangbundel-test/live | grep -q '^releases/manager-'"
+check "SC-01 test.zangbundel.nl with the manager (--app)" python3 /repo/webapp/tools/check_headers.py test.zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure --auth tester:test-only-pw --app --report /tmp/report/sc01-manager.md
+check "verify as zbm-verify with the manager live" as_verify zbm-release verify
 grep -E '^(PASS|FAIL)|^        -' /tmp/out | grep -v '^PASS' | head -20
 b=$(grep -o '<script[^>]*>' /srv/zangbundel-test/live/index.html | grep -o 'src="[^"]*"' | cut -d'"' -f2)
 curl -sk -u tester:test-only-pw --resolve test.zangbundel.nl:443:127.0.0.1 "https://test.zangbundel.nl/$b" -o /tmp/bundle.js

@@ -2,11 +2,11 @@
 
 The owner's runbook for `design/implementationPlan.md` M0 on contabo6 (169.58.68.107, Ubuntu, nginx 1.24). Every step names the requirement it meets (`design/securityAssessment.md`). The files in this folder are the source; once installed, copy the live versions into `../contabo-vps-6` as for the other sites (SR-75).
 
-Tested on 2026-11-06 in an Ubuntu 24.04 container with its nginx 1.24.0, Python 3.12, OpenSSH 9.6 and git, using self-signed certificates and throwaway keys; 74 of 74 checks passed. The test:
+Tested on 2026-11-06 in an Ubuntu 24.04 container with its nginx 1.24.0, Python 3.12, OpenSSH 9.6 and git, using self-signed certificates and throwaway keys; 77 of 77 checks passed. The test:
 
 - builds the placeholder from a signed git tag and the holding page as a trial build, then signs both;
 - runs `webapp/tests/test_build.py`: 25 unsafe pages or modules refused, one valid page built;
-- builds the manager (`webapp/src`) as a trial, activates it on the test instance and runs SC-01 with `--app`, and checks the served bundle against its SRI hash;
+- builds the manager (`webapp/src`) twice as a trial and compares the bytes, activates it on the test instance, runs SC-01 with `--app` and the hourly check, and checks the served bundle against its SRI hash;
 - installs the nginx, script and logrotate files of steps 4 and 6 (not the systemd units, sshd, authorized_keys or `passwd -l`);
 - uploads through the forced command and activates as root;
 - tries nine kinds of bad upload, two misplaced trial builds, eight upload limits of `zbm-receive` (size, cut short twice, compressed, run as root, 20 waiting, 200 MB waiting, 200 MB passed) and parallel uploads;
@@ -210,7 +210,7 @@ ssh -i ~/.ssh/zangbundel-deploy zbm-deploy@169.58.68.107 < dist/placeholder-0.1.
 ssh -i ~/.ssh/zangbundel-deploy zbm-deploy@169.58.68.107 < dist/test-holding-0.1.0.tar
 ```
 
-The manager itself is built the same way once it is tagged, from `webapp/src` with `--name manager` and the version in `webapp/src/app/version.js`. Before that, `--allow-dirty` makes a trial build of it for the test instance only (`zbm-release activate --trial test.zangbundel.nl …`).
+Building the manager needs Node.js on PATH: the build checks each bundle with `node --check` (webappTDS TD-21, TD-22). The manager is built the same way once it is tagged, from `webapp/src` with `--name manager` and the version in `webapp/src/app/version.js`. Before that, `--allow-dirty` makes a trial build of it for the test instance only (`zbm-release activate --trial test.zangbundel.nl …`).
 
 Each upload prints its file name in the staging directory. Then, on the server as root:
 

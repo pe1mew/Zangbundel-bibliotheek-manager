@@ -7,6 +7,8 @@ import { pickLanguage, t } from './i18n.js';
 import { VERSION } from './version.js';
 
 const SPLASH_MS = 3000;   // GD-27
+// SR-81: the test instance's banner is fixed and Dutch, in every interface language.
+const TEST_BANNER = 'TESTVERSIE — niet voor echte bibliotheken of sleutels';
 
 function isTestInstance(hostname) {
   return hostname.startsWith('test.') || hostname === 'localhost' || hostname === '127.0.0.1';
@@ -53,7 +55,7 @@ function start() {
   document.documentElement.lang = lang;
   document.title = t(lang, 'appName');
   const banner = isTestInstance(location.hostname)
-    ? [el('div', { class: 'testbanner', role: 'note' }, [t(lang, 'testBanner')])]
+    ? [el('div', { class: 'testbanner', role: 'note', lang: 'nl' }, [TEST_BANNER])]
     : [];
   replace(root, ...banner, splash(lang, () => replace(root, ...banner, home(lang))));
 }

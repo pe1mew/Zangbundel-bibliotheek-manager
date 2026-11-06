@@ -28,6 +28,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - `design/securityAssessment.md` draft 0.1: a security and privacy assessment of the web app's design. It names the assets, attackers and 20 findings (among them: the site's code as the root of trust, the shared host with end-of-life PHP sites, CVE-2026-45820 in `fflate` before 0.8.3, the unaudited `@noble/ed25519` v3, DOM injection from library content, missing security headers, no CAA, registrar lock, SPF or DMARC on the new domain), and specifies 67 binding requirements (SR-01 to SR-93), the nginx, DNS, application and release implementation, a release gate of 13 checks, accepted risks and eight open questions. webappTDS draft 0.6 makes it binding (TD-18).
 
 ### Changed
+- Review of M1 part 1 (`/review-changes`, four lenses on 13f7776), with fixes (`design/webappTDS.md` draft 0.12, `design/securityAssessment.md` draft 0.9, `design/implementationPlan.md` draft 0.7):
+  - **The bundler no longer makes silently wrong bundles.** A removed `import` or `export` line becomes `;`, so the line before it can't run on into the next one. A `/` after `if (…)` is read as a regex, and after `x++` as division.
+  - **The build checks every bundle with `node --check`,** which also refuses a top-level `await`. The test image now has Node.
+  - **Newly refused:** `export { a as default }`, string export names, non-ASCII identifiers and NUL bytes.
+  - **No longer refused:** keys, class fields and methods named `import` or `export`.
+  - **Every bundle starts with `'use strict'`.** A worker is any `new URL('./x.js', import.meta.url)`, so the code can pass it through a Trusted Types policy (open question TQ-08).
+  - **The version check reads tokens,** so a comment can't fool it.
+  - **The renamed-asset check looks at string literals only,** with no false hit on prose.
+  - **The test banner is SR-81's fixed Dutch text in every language.**
+  - **`test_bundle.py`** compares bundles with the native modules in Node: 33 checks.
+  - **`run.sh`** checks that two builds are identical, that `live` really is the manager, and the hourly check with the manager live: 77 of 77.
+  - **Documentation:** the plan separates repository tests from one-off and manual checks. The assessment records SR-27's one differing header until go-live and how SR-12 and SR-13 apply to bundles.
 - Second review round of M0 (`/review-changes`, three lenses on f089ab0), with fixes (`design/securityAssessment.md` draft 0.7, `design/implementationPlan.md` draft 0.5):
   - **Logs.** They move to `/var/log/nginx/zangbundel/` with their own logrotate stanza (`webapp/server/logrotate/zangbundel`), because Ubuntu's `notifempty` kept quiet logs, full addresses and all, indefinitely. Retention is again 14 days.
   - **Byte ranges off.** A 416 answer doubled every header.

@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.8 |
+| **Status** | Draft 0.9 |
 | **Date** | 2026-11-06 |
-| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.11, `design/webappTDS.md` draft 0.5 |
+| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.12 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
 
 ---
@@ -357,6 +357,7 @@ The test instance (`test.zangbundel.nl`) uses the same file with `root /srv/zang
 - **TLS versions** are fixed by the default server of the 443 socket before SNI selects ours. The cipher list of `zbm-tls.conf` does apply. On contabo6 the default server (snakeoil certificate, `return 444`) sets no protocols. Ubuntu's OpenSSL 3 refused TLS 1.0 and 1.1 in the container test even where `nginx.conf` lists them. SC-02 checks what the real host offers.
 - **Certificates** come from `certbot certonly --webroot`, so certbot never edits our files. A separate port-80 server answers ACME challenges and redirects everything else.
 - **`release-manifest.json` and its signature** stay on disk for the integrity check, but nginx does not serve them.
+- **SR-27 and the CSP.** While `zangbundel.nl` serves the placeholder and the test instance the manager, the two hosts differ in one header: the placeholder's script-free CSP (SR-20 allows that form) against SR-20's full policy. Every other header is the same. When the manager goes live, both carry SR-20's policy.
 - **The placeholder** has a script-free CSP (`script-src 'none'; worker-src 'none'`). Its front door `/` redirects to `/nl/`, `/en/` or `/de/` by the first language in `Accept-Language`, else English.
 
 ### 7.2 DNS records (SR-03, SR-05, SR-07)
@@ -377,14 +378,14 @@ The current MX record (`10 mail.zangbundel.nl`) is replaced by the null MX. The 
 ### 7.3 Application structure (SR-30, SR-32, SR-40 to SR-43)
 
 ```
-index.html                      no inline script or style; <script type="module" src="/assets/app.<hash>.js" integrity="sha384-…">
-assets/app.<hash>.js            main thread: UI only; renders with DOM APIs (createElement, textContent)
+index.html                      no inline script or style; <script type="module" src="/assets/main.<hash>.js" integrity="sha384-…">
+assets/main.<hash>.js           main thread: UI only; renders with DOM APIs (createElement, textContent)
 assets/library-worker.<hash>.js worker "library": fflate, manifest, ChordPro, FDS §6 validation
 assets/crypto-worker.<hash>.js  worker "crypto": @noble/ed25519, SHA-256/512 via crypto.subtle, keys
 assets/app.<hash>.css           all styles; no style attributes anywhere
 ```
 
-**Bundles (webappTDS TD-22).** Each `.js` above is one bundle made by `webapp/tools/build.py` from a subset of ES modules. The vendored files of SR-12 (`webapp/vendor/`) are bundled into the worker that uses them, not served separately. The main bundle carries SRI, which `Integrity-Policy` enforces. The two workers cannot: browsers have no integrity attribute for `new Worker()`, and `blocked-destinations=(script)` does not cover the `worker` destination. Their hashed names, the signed release manifest (SR-11) and the hourly check (SR-73) protect them.
+**Bundles (webappTDS TD-22).** Each `.js` above is one bundle made by `webapp/tools/build.py` from a subset of ES modules. The vendored files of SR-12 (`webapp/vendor/`) are bundled into the worker that uses them, not served separately. The main bundle carries SRI, which `Integrity-Policy` enforces. The two workers cannot: browsers have no integrity attribute for `new Worker()`, and `blocked-destinations=(script)` does not cover the `worker` destination. Their hashed names, the signed release manifest (SR-11) and the hourly check (SR-73) protect them. SR-13's SRI is therefore computed over the bundles, which contain the vendored code, not over the vendored files themselves; SR-12's checks of the vendored files hold through git, the signed tag and the reproducible build. Starting a worker needs a Trusted Types policy that SR-20 does not list yet (webappTDS TQ-08).
 
 - **Messages between threads** carry plain data only. The library worker returns, for example, `{ songs: [{ id, title, … }], findings: [{ code, severity, where, params }] }`; the main thread builds messages from the code and the translated text with `textContent`.
 - **Rendering**: a small helper builds elements (`el('li', { class: 'song' }, [text(title)])`); there is no HTML string anywhere. The Trusted Types policy `zbm-download` only wraps `URL.createObjectURL` for download links; with `require-trusted-types-for 'script'` any accidental `innerHTML` throws.
@@ -592,3 +593,4 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 | Draft 0.6 | 2026-11-06 | Review of the M0 implementation (7.1, 7.4, 7.5). nginx's own error pages carry a CSP, COOP and COEP. IPv6 is shortened correctly for compressed addresses. TLS and HTTP/2 are described as on contabo6. Log retention is stated as at most 15 days, and failed test logins are named. The build enforces a signed tag (SR-10, SR-90) and checks HTML with a parser. The hourly check runs as its own user and checks owner, mode and unreadable directories. `zbm-receive` takes one upload at a time. SR-74's shell deviation is recorded. |
 | Draft 0.7 | 2026-11-06 | Second review round of M0 (7.1, 7.4, 7.5). Logs move to their own folder and logrotate stanza, because Ubuntu's `notifempty` kept quiet logs indefinitely; retention is again 14 days. Byte ranges are off, because a 416 doubled the headers. The build is tied to `main` and to a clean `webapp/tools/`. It refuses parser-divergent markup, frames, `<base>`, `<meta http-equiv>`, external resources, SVG script, and (until M1.1) JavaScript and web manifests. The trial-build deviation from SR-10 is recorded. `zbm-receive` refuses root, compressed uploads and tars without an end marker, and counts the upload itself in the 200 MB. Activation no longer depends on root's umask. SR-74's protection is described precisely. |
 | Draft 0.8 | 2026-11-06 | Section 7.3: the app ships as three bundles (webappTDS TD-22); the vendored libraries are inside the worker bundles; workers are protected by hashed names, SR-11 and SR-73, since browsers have no SRI for workers. |
+| Draft 0.9 | 2026-11-06 | After the review of M1 part 1: 7.3 names the main bundle `main.<hash>.js`, says SRI covers bundles and how SR-12 still holds, and points at webappTDS TQ-08 (the workers' Trusted Types policy). 7.1 records the one header that differs between the hosts until go-live (SR-27). The app's test banner is the fixed Dutch text of SR-81 in every language. |
