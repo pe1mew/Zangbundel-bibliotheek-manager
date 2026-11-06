@@ -44,7 +44,7 @@ CSP_STATIC = ("default-src 'none'; script-src 'none'; worker-src 'none'; style-s
 CSP_APP = ("default-src 'none'; script-src 'self'; worker-src 'self'; style-src 'self'; img-src 'self' data: blob:; "
            "manifest-src 'self'; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; "
            "frame-src 'none'; child-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
-           "upgrade-insecure-requests; require-trusted-types-for 'script'; trusted-types zbm-download")
+           "upgrade-insecure-requests; require-trusted-types-for 'script'; trusted-types zbm-download zbm-worker")
 CSP_FILE = "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; sandbox"
 HTML = {
     'Cache-Control': 'no-cache',

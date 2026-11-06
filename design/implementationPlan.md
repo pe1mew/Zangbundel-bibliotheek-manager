@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.7 |
+| **Status** | Draft 0.8 |
 | **Date** | 2026-11-06 |
-| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.12, `design/securityAssessment.md` draft 0.9, `test-libraries/` (56 cases) |
+| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.13, `design/securityAssessment.md` draft 0.10, `test-libraries/` (56 cases) |
 
 ---
 
@@ -192,7 +192,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
 | M2.5 | `view.js`: write and check the 1.1 view, byte-exact | FDS §3.7, VIEW-01 to VIEW-03 |
 | M2.6 | Signature verification through the crypto worker's public functions | SIG-01 to SIG-03 |
 | M2.7 | `convert.js`: plain ZIPs and release archives into this format | EDT-25, EDT-26 |
-| M2.8 | `library-worker.js` with a 20-second time limit per file | SR-30, SR-31 |
+| M2.8 | `library-worker.js` with a 20-second time limit per file; the Trusted Types policy `zbm-worker` that starts it (webappTDS TD-23) | SR-30, SR-31, SR-20 |
 | M2.9 | Fuzzing of the ZIP and ChordPro readers, corpus from `test-libraries/` | SR-35 |
 
 **Exit:** all 56 test libraries give exactly their expected findings (SC-04); a valid library opened and saved without changes is byte-identical (EDT-51); fuzzing ran without crash or hang (SC-11).
@@ -346,3 +346,4 @@ The placeholder and the manager have separate release directories and separate m
 | Draft 0.5 | 2026-11-06 | After the second review round: the state under M0 names 68 checks and the build test. M1.1 must add reference rewriting for JavaScript and web manifests; `build.py` refuses both until then. |
 | Draft 0.6 | 2026-11-06 | M1.1 bundles each entry point (webappTDS TD-22); Node.js LTS 26.13.0 installed on the development machine (IQ-02). |
 | Draft 0.7 | 2026-11-06 | After the review of M1 part 1: the M1 state separates repository tests from one-off and manual checks; layout 3.1 matches `webapp/src/`. |
+| Draft 0.8 | 2026-11-06 | M2.8 includes the Trusted Types policy `zbm-worker` (webappTDS TD-23, the owner's decision on TQ-08). |
