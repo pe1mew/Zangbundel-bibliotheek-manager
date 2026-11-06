@@ -2,24 +2,116 @@
 // The rules of FDS section 6, as the Editor applies them: every finding with its Editor severity
 // and its place (where). Pure: no DOM, no workers; runs in the library worker and in node --test.
 //
-// Implemented so far (implementationPlan M2): PKG (6.2), STR (6.3), MAN (6.4), SIG (6.5).
-// To come: SNG (6.6, with chordpro.js), SET (6.7), VIEW (6.8). The conformance runner compares
-// only the families listed in IMPLEMENTED and keeps the rest as to-dos.
+// All rule families of section 6: PKG (6.2), STR (6.3), MAN (6.4), SIG (6.5), SNG (6.6, with
+// chordpro.js), SET (6.7) and VIEW (6.8). The conformance runner compares the families listed in
+// IMPLEMENTED (implementationPlan M2, SC-04).
 //
 // Readings where section 6 leaves room follow test-libraries/README.md (FDS O-11): a Fatal finding
 // stops everything else; ignored system files are set aside before any other rule; the library
 // folder is the top-level folder that holds manifest.json; a second .cho file is STR-06 only;
 // MAN-07 and MAN-08 are their own findings, not also MAN-02; SIG-03 is not checked when
-// author.publicKey already fails MAN-02.
+// author.publicKey already fails MAN-02; song rules apply to songs/<id>/<id>.cho only; SET-02 is
+// reported at the later set; VIEW-02 once per view file that disagrees.
 
 import { readCentralDirectory, readEntry, ZipError } from './zip.js';
 import { caseClashes, compareOrdinal, isIgnored, isSongId, nameProblem, pathTooLong } from './names.js';
 import { readManifest, readSignature } from './manifest.js';
+import { canonicalize, parseSong, SINGLE } from './chordpro.js';
 import { verifyAsync } from '../../vendor/noble-ed25519-3.2.0.js';
 
-export const IMPLEMENTED = Object.freeze(['PKG', 'STR', 'MAN', 'SIG']);
+export const IMPLEMENTED = Object.freeze(['PKG', 'STR', 'MAN', 'SIG', 'SNG', 'SET', 'VIEW']);
 
 const LIBRARY_TOP = new Set(['manifest.json', 'manifest.sig', 'zangbundel.json', 'LICENSE', 'setlists', 'songs']);
+
+const SONG_MAX = 64 * 1024;                           // FDS 3.5, SNG-18
+const SONG_RECOMMENDED = 8 * 1024;                    // SNG-17
+const LANGUAGE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/;
+const SONG_LICENSE = /^[A-Za-z0-9.+-]+$/;             // SPDX, public-domain or proprietary (W010)
+const VIEW_APP_VERSION = [0, 1, 0];                   // PF-41: an app from 0.1.0 on must accept the view
+
+/** FDS 6.6 for one song file songs/<id>/<id>.cho; returns its title, or null. */
+function checkSong(id, bytes, add) {
+  if (bytes.length > SONG_MAX) add('SNG-18', 'Error', id);
+  const c = canonicalize(bytes);
+  if (!c.bytesOk || c.controlChars) {
+    add('SNG-01', 'Error', id);
+    return null;
+  }
+  const { meta, unknown, lines, problems } = parseSong(c.text);
+  const get = (k) => meta.get(k) || [];
+  const title = get('title')[0] || '';
+  if (problems.malformed) add('SNG-04', 'Error', id);
+  if (!title) add('SNG-02', 'Error', id);
+  if ([...meta].some(([k, v]) => SINGLE.has(k) && v.length > 1)) add('SNG-03', 'Error', id);
+  if (problems.bracket) add('SNG-05', 'Warning', id);
+  if (problems.envError) add('SNG-06', 'Error', id);
+  if (unknown.size) add('SNG-07', 'Info', id);
+  if (problems.chordName) add('SNG-08', 'Warning', id);
+  if (lines.length === 0) add('SNG-09', 'Error', id);
+  const lang = get('language');
+  if (lang.length !== 1 || !LANGUAGE.test(lang[0])) add('SNG-11', 'Error', id);
+  if (get('id').length !== 1 || get('id')[0] !== id) add('SNG-12', 'Info', id);
+  if (problems.chorusEarly) add('SNG-13', 'Error', id);
+  if (problems.newSong) add('SNG-14', 'Error', id);
+  if (get('redistribute').some((v) => v !== 'yes' && v !== 'no') || get('year').some((v) => !/^\d{4}$/.test(v))
+      || [...get('variant-group'), ...get('tag')].some((v) => !isSongId(v))) {
+    add('SNG-15', 'Error', id);
+  }
+  const recommended = (get('lyricist').length || get('composer').length) && get('copyright').length
+    && get('license').length && get('source').length && get('tag').length;
+  if (!recommended || get('license').some((v) => !SONG_LICENSE.test(v))) add('SNG-16', 'Warning', id);
+  if ([...title].length > 60 || lines.some((l) => [...l].length > 120) || lines.length > 254 || bytes.length > SONG_RECOMMENDED) {
+    add('SNG-17', 'Warning', id);
+  }
+  return title || null;
+}
+
+function deepEqual(a, b) {
+  if (a === b) return true;
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object' || Array.isArray(a) !== Array.isArray(b)) return false;
+  const ka = Object.keys(a);
+  const kb = Object.keys(b);
+  return ka.length === kb.length && ka.every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k]));
+}
+
+/** Song format 4.3, L002 to L006, for the view's zangbundel.json (VIEW-03). */
+function viewLibraryOk(bytes) {
+  let v;
+  try {
+    v = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+  } catch {
+    return false;                                       // L002
+  }
+  const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x);
+  if (!isObj(v) || ['format', 'format_version', 'id', 'name', 'description', 'min_app_version'].some((k) => typeof v[k] !== 'string')) return false;
+  if (!isObj(v.maintainer) || typeof v.maintainer.name !== 'string' || !(v.maintainer.email || v.maintainer.url)) return false;
+  if (!isObj(v.license) || ['id', 'file', 'summary'].some((k) => typeof v.license[k] !== 'string')) return false;
+  if (v.format !== 'zangbundel-library') return false;                       // L003
+  if (!/^1\.\d+$/.test(v.format_version)) return false;                      // L004
+  const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(v.min_app_version);
+  if (!m) return false;                                                       // L005
+  const want = m.slice(1).map(Number);
+  for (let i = 0; i < 3; i++) {
+    if (want[i] !== VIEW_APP_VERSION[i]) {
+      if (want[i] > VIEW_APP_VERSION[i]) return false;
+      break;
+    }
+  }
+  return isSongId(v.id);                                                      // L006
+}
+
+/** PF-43: the bytes of setlists/set-<n>.zbs for a set. */
+function setlistBytes(libraryId, set, n) {
+  const lines = [`{title: ${set.name}}`, `{meta: id set-${n}}`];
+  if (set.songs.length) {
+    lines.push('', ...set.songs.map((id) => `${libraryId}/${id}`));
+  }
+  return new TextEncoder().encode(`${lines.join('\n')}\n`);
+}
+
+function sameBytes(a, b) {
+  return a.length === b.length && a.every((x, i) => x === b[i]);
+}
 
 async function sha256hex(bytes) {
   const d = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
@@ -170,6 +262,21 @@ export async function validateLibrary(bytes, options = {}) {
     add('STR-02', 'Warning');
   }
 
+  // ---- SNG: every songs/<id>/<id>.cho; SNG-10 over the titles of the library
+  const titles = new Map();
+  for (const song of songs) {
+    const title = checkSong(song.id, rel.get(song.path), add);
+    if (title) {
+      const k = title.toLowerCase();
+      titles.set(k, [...(titles.get(k) || []), song.id]);
+    }
+  }
+  for (const ids of titles.values()) {
+    if (ids.length > 1) {
+      add('SNG-10', 'Warning', [...ids].sort(compareOrdinal).join(', '));
+    }
+  }
+
   // ---- MAN: the manifest
   const manBytes = rel.get('manifest.json');
   if (manBytes === undefined) {
@@ -226,6 +333,57 @@ export async function validateLibrary(bytes, options = {}) {
       }
     }
   }
+
+  if (m === null) {
+    return { findings, fatal: false, songs, manifest: m };
+  }
+
+  // ---- SET (6.7): the sets of the manifest against the song folders
+  const sets = Array.isArray(m.sets) ? m.sets.filter((x) => x !== null && typeof x === 'object' && Array.isArray(x.songs)) : [];
+  const folderIds = new Set(songsDir.dirs);
+  const seenNames = new Set();
+  for (const set of sets) {
+    const name = String(set.name);
+    if (set.songs.some((id) => !folderIds.has(id))) add('SET-01', 'Error', name);
+    if (seenNames.has(name.toLowerCase())) add('SET-02', 'Error', name);
+    seenNames.add(name.toLowerCase());
+    if (set.songs.length === 0) add('SET-03', 'Warning', name);
+    if (new Set(set.songs).size !== set.songs.length) add('SET-04', 'Warning', name);
+    if (set.songs.length > 200) add('SET-05', 'Warning', name);
+  }
+
+  // ---- VIEW (6.8): the 1.1 view against the manifest (Info in the Editor; it writes a new view)
+  const want = new Set(['zangbundel.json', 'LICENSE', ...sets.map((_, i) => `setlists/set-${i + 1}.zbs`)]);
+  const have = new Set([...rel.keys()].filter((p) => p === 'zangbundel.json' || p === 'LICENSE' || p.startsWith('setlists/')));
+  if (want.size !== have.size || [...want].some((p) => !have.has(p))) {
+    add('VIEW-01', 'Info');
+  }
+  const lic = m.license !== null && typeof m.license === 'object' ? m.license : {};
+  const view = rel.get('zangbundel.json');
+  if (view !== undefined) {
+    if (!viewLibraryOk(view)) add('VIEW-03', 'Info', 'zangbundel.json');
+    let v = null;
+    try {
+      v = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(view));
+    } catch {
+      v = null;
+    }
+    const agrees = v !== null && typeof v === 'object' && v.id === m.libraryId && v.name === m.title
+      && v.description === (m.description || m.title) && deepEqual(v.maintainer, m.maintainer)
+      && deepEqual(v.license, { id: lic.id, file: 'LICENSE', summary: lic.summary });
+    if (!agrees) add('VIEW-02', 'Info', 'zangbundel.json');
+  }
+  const licenseFile = rel.get('LICENSE');
+  if (licenseFile !== undefined) {
+    const source = typeof lic.text === 'string' && lic.text ? lic.text : lic.summary;
+    const expected = typeof source === 'string' ? new TextEncoder().encode(`${source.replace(/\n+$/, '')}\n`) : null;
+    if (expected === null || !sameBytes(licenseFile, expected)) add('VIEW-02', 'Info', 'LICENSE');
+  }
+  sets.forEach((set, i) => {
+    const path = `setlists/set-${i + 1}.zbs`;
+    const b = rel.get(path);
+    if (b !== undefined && !sameBytes(b, setlistBytes(m.libraryId, set, i + 1))) add('VIEW-02', 'Info', path);
+  });
 
   return { findings, fatal: false, songs, manifest: m };
 }

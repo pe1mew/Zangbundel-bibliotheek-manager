@@ -43,6 +43,7 @@ cp $W/rk/test-release.pub $W/tools/release-key.pub
 check "build.py refuses unsafe pages, builds a valid one" python3 /repo/webapp/tests/test_build.py /repo/webapp/tools/build.py
 check "bundler: same as native ES modules, refusals (test_bundle.py)" python3 /repo/webapp/tests/test_bundle.py
 check "vendored packages match VENDOR.md and work bundled (test_vendor.py)" sh -c "cp -r /repo/webapp /tmp/webapp-rw && python3 /tmp/webapp-rw/tests/test_vendor.py"
+check "bundled library engine = native engine on all 56 test libraries" sh -c "cp -r /repo/test-libraries /tmp/test-libraries 2>/dev/null; NODE_OPTIONS=--experimental-global-webcrypto python3 /tmp/webapp-rw/tests/test_engine_bundle.py"
 check "node --test: unit tests and the test-library corpus" sh -c "cp -r /repo/test-libraries /tmp/test-libraries && node --experimental-global-webcrypto --test /tmp/webapp-rw/tests/"   # Node 18 (apt): crypto is global from Node 19
 
 # --- build: placeholder from a signed tag (SR-10, SR-90), holding page as a trial build ---

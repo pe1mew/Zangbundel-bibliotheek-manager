@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M2: every validation rule of FDS section 6, SC-04 met.** `webapp/src/core/chordpro.js` reads a song as the ChordPro profile of the app's song format defines it: canonical form, metadata, environments, chorus repeats and the canonical line list. It reproduces the worked example of song format §9.3.
+  - **`validate.js`** adds the song rules (SNG-01 to SNG-18), the set rules (SET-01 to SET-05) and the view checks (VIEW-01 to VIEW-03, with the exact PF-42/PF-43 bytes).
+  - **SC-04:** all 56 test libraries give exactly their expected Editor findings, with no to-dos left. Five seeded defects turn cases red.
+  - **The bundled engine gives the same findings** as the native modules on every library (`webapp/tests/test_engine_bundle.py`); `tests/unit/chordpro.test.mjs` covers the parser.
+  - **Container test:** 81 of 81. `design/implementationPlan.md` draft 0.11 lists the readings made beyond the corpus and what is left of M2.
 - **M2 started: the library engine** in `webapp/src/core/` (`design/implementationPlan.md` draft 0.10).
   - **`zip.js`** reads the ZIP as untrusted input. It checks the central directory and every limit before inflating, then inflates each entry into a buffer of exactly its declared size and checks the CRC-32, so a ZIP bomb cannot allocate more than the limits.
   - **`names.js`, `manifest.js` and `fingerprint.js`** cover the name rules, the manifest and `manifest.sig`, and SG-20.

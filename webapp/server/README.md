@@ -2,10 +2,10 @@
 
 The owner's runbook for `design/implementationPlan.md` M0 on contabo6 (169.58.68.107, Ubuntu, nginx 1.24). Every step names the requirement it meets (`design/securityAssessment.md`). The files in this folder are the source; once installed, copy the live versions into `../contabo-vps-6` as for the other sites (SR-75).
 
-Tested on 2026-11-06 in an Ubuntu 24.04 container with its nginx 1.24.0, Python 3.12, OpenSSH 9.6 and git, using self-signed certificates and throwaway keys; 80 of 80 checks passed. The test:
+Tested on 2026-11-06 in an Ubuntu 24.04 container with its nginx 1.24.0, Python 3.12, OpenSSH 9.6 and git, using self-signed certificates and throwaway keys; 81 of 81 checks passed. The test:
 
 - builds the placeholder from a signed git tag and the holding page as a trial build, then signs both;
-- runs `webapp/tests/test_build.py` (25 unsafe pages or modules refused, one valid page built), `test_bundle.py`, `test_vendor.py` and `node --test webapp/tests/`;
+- runs `webapp/tests/test_build.py` (25 unsafe pages or modules refused, one valid page built), `test_bundle.py`, `test_vendor.py`, `test_engine_bundle.py` and `node --test webapp/tests/`;
 - builds the manager (`webapp/src`) twice as a trial and compares the bytes, activates it on the test instance, runs SC-01 with `--app` and the hourly check, and checks the served bundle against its SRI hash;
 - installs the nginx, script and logrotate files of steps 4 and 6 (not the systemd units, sshd, authorized_keys or `passwd -l`);
 - uploads through the forced command and activates as root;

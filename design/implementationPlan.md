@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.10 |
+| **Status** | Draft 0.11 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.11, `test-libraries/` (56 cases) |
 
@@ -201,15 +201,20 @@ Each milestone ends with its exit checks passing and the result written to `desi
 **Exit:** all 56 test libraries give exactly their expected findings (SC-04); a valid library opened and saved without changes is byte-identical (EDT-51); fuzzing ran without crash or hang (SC-11).
 
 **State (2026-11-06).**
-- **Done:** M2.1 and M2.2, and the rule families PKG, STR, MAN and SIG of M2.4 and M2.6.
-  - `webapp/src/core/zip.js` reads the central directory, checks every limit before inflating, inflates each entry into exactly its declared size and checks its CRC-32.
-  - `names.js`, `manifest.js` and `fingerprint.js` cover the name rules, the manifest and signature reading, and SG-20.
-  - `validate.js` applies the rules with the readings of FDS O-11.
-  - The signature is verified with the vendored `@noble/ed25519`, through an injectable `verify` that M3's crypto worker will supply.
-- **Tested:**
-  - `conformance.test.mjs`: all 56 cases give exactly their expected findings for these four families. A seeded defect (SIG-03 skipped, or STR-08 for a second `.cho`) turns cases red.
-  - `tests/unit/zip.test.mjs`: the PKG-02 and PKG-03 forms the corpus cannot hold, a ZIP bomb that lies about its size, the name rules, and the RFC 8032 fingerprint.
-- **To do:** SNG (M2.3 `chordpro.js`, M2.4), SET, VIEW (M2.5), conversion (M2.7), the library worker (M2.8) and fuzzing (M2.9). Until then the conformance runner lists those families as to-dos (49).
+- **SC-04 met:** all 56 test libraries give exactly their expected Editor findings, every rule family of FDS section 6 (`webapp/tests/conformance.test.mjs`, 0 to-dos). Seeded defects turn cases red: SIG-03 skipped, STR-08 for a second `.cho`, SNG-10 case-sensitive, SET-03 skipped, phase 2 directives not listed.
+- **Done:** M2.1, M2.2, M2.4 and M2.6, and the reading half of M2.3 and M2.5.
+  - `webapp/src/core/`: `zip.js`, `names.js`, `manifest.js`, `fingerprint.js`, `validate.js`.
+  - `chordpro.js` gives the canonical form, the metadata, the environments, the chorus repeats and the canonical line list. It reproduces the song format's worked example of §9.3 on the corpus's `vuur-in-de-nacht`.
+  - The view checks generate the exact PF-42 and PF-43 bytes.
+- **Also tested:** the bundled engine gives the same findings as the native modules on all 56 libraries (`webapp/tests/test_engine_bundle.py`).
+- **Readings beyond the test libraries:**
+  - `{album: …}` is a known directive (song format §5.3 calls `album` a standard name).
+  - VIEW-03 checks `min_app_version` against 0.1.0, the value PF-41 fixes, so a view that would lock out an app from 0.1.0 is reported.
+  - SNG-17's 254-line bound counts the canonical line list with chorus repeats (song format W004).
+- **To do:**
+  - M2.3's block form and its round trip (GD-18, GD-19, locked blocks byte-exact);
+  - writing the view and the deterministic ZIP (M2.5, M2.1's writer), and EDT-51 (open and save unchanged, byte-identical);
+  - conversion (M2.7), the library worker (M2.8) and fuzzing (M2.9).
 
 ### M3 — Keys and signing (M)
 
@@ -363,3 +368,4 @@ The placeholder and the manager have separate release directories and separate m
 | Draft 0.8 | 2026-11-06 | M2.8 includes the Trusted Types policy `zbm-worker` (webappTDS TD-23, the owner's decision on TQ-08). |
 | Draft 0.9 | 2026-11-06 | M1.2 and M1.3 done (state under M1): vendoring with `vendor.py`, `node --test` with unit tests and the conformance runner's corpus checks. |
 | Draft 0.10 | 2026-11-06 | M2 started (state under M2): ZIP reader, names, manifest, fingerprint, and the PKG, STR, MAN and SIG rules, conformant on all 56 cases for those families. |
+| Draft 0.11 | 2026-11-06 | M2: every rule family implemented; SC-04 met on all 56 test libraries; readings beyond the corpus and what is left of M2 listed under M2. |
