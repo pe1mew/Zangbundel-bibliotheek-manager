@@ -1,0 +1,43 @@
+{
+  "description": "lorem-ipsum padded with comment lines to 65,537 bytes, one byte over 64 KiB. Such a file is also over the 8 KiB recommendation, so SNG-17 comes with it; that cannot be avoided.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SNG-18"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-18",
+        "severity": "Error",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-17",
+        "severity": "Warning",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S002",
+      "SL101"
+    ],
+    "note": "The song is skipped (larger than 64 KiB); its entry in setlists/set-2.zbs is not found."
+  },
+  "sha256": "73aadde70bc8fb507d6478ddb276f7461eb3aeac30e36cc721eac846b327b17f"
+}

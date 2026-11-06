@@ -1,0 +1,44 @@
+{
+  "description": "An extra song, in no set, in the folder \"Testlied\": upper case is not valid in a song ID (STR-10). Its {meta: id} is the valid \"testlied\", which then differs from the folder name (SNG-12). A second finding cannot be avoided: the song ID is also the file name and the {meta: id} (PF-14), and an {meta: id} equal to the invalid folder name would fail the profile's id syntax (S003) instead.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "STR-10",
+      "SNG-12"
+    ],
+    "note": "SNG-12 is an Error in the app. An app that stops at the first refusing rule reports STR-10."
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "STR-10",
+        "severity": "Error",
+        "where": "songs/Testlied"
+      },
+      {
+        "code": "SNG-12",
+        "severity": "Info",
+        "where": "Testlied"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S004"
+    ],
+    "note": "The extra song is skipped."
+  },
+  "sha256": "c7db411948a93fc6aac795dda7dc62df98a15ad45764a2787bf2b9ec6df76c19"
+}

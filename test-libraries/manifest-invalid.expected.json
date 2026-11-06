@@ -1,0 +1,34 @@
+{
+  "description": "\"created\" is \"2026-11-06T13:00:00+01:00\": ISO 8601, but not the UTC form YYYY-MM-DDThh:mm:ssZ that section 4.1 requires. The manifest is valid JSON; nothing else differs.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "MAN-02"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "MAN-02",
+        "severity": "Error"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ]
+  },
+  "sha256": "c7a90a29ad493d7d2080ce5e77d05b56e218104eb664f2543aa9923f4d5af8ba"
+}

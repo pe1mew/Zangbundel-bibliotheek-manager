@@ -1,0 +1,26 @@
+{
+  "description": "\"formatVersion\" is 2, a version no application supports yet. MAN-03 is Fatal, so nothing else is checked.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "MAN-03"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "MAN-03",
+        "severity": "Fatal"
+      }
+    ],
+    "note": "Fatal: the Editor does not open the library, so no other rule is applied (EDT-20)."
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ],
+    "note": "An app before this format reads the view only and never sees formatVersion."
+  },
+  "sha256": "63ddda266b04a3748a101afcdfd1da3388e21a3276e5159555f7a0c9b2a2685c"
+}

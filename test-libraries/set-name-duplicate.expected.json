@@ -1,0 +1,35 @@
+{
+  "description": "The second set is named \"kampvuur\", the first \"Kampvuur\": the same name, case-insensitively.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SET-02"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SET-02",
+        "severity": "Error",
+        "where": "kampvuur"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ]
+  },
+  "sha256": "f87e3d55622bc223a01c3903239ef2e4f0c35642954bf90832b7955150f2ee01"
+}

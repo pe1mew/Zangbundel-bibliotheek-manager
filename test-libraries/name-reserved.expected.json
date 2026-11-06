@@ -1,0 +1,36 @@
+{
+  "description": "The library folder is named \"AUX\", a Windows reserved name (PF-21). Its name has no meaning (PF-02), so the library is otherwise the reference library (unsigned).",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "PKG-06"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "PKG-06",
+        "severity": "Error",
+        "where": "AUX"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ],
+    "note": "Song format 12.2 has no rule on reserved names."
+  },
+  "sha256": "51d09805fab57d09799d31c764588e7ed07d6d8cce4e5d82b3b0bbd1cc51abf7"
+}

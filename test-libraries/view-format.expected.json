@@ -1,0 +1,35 @@
+{
+  "description": "In the view's zangbundel.json, \"format\" is \"zangbundel-bibliotheek\" instead of \"zangbundel-library\", listed with its new hash. An older app refuses it (L003), so VIEW-03 fails. \"format\" is fixed by PF-41 and is not among the fields VIEW-02 compares with the manifest, so VIEW-02 holds.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "VIEW-03"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "VIEW-03",
+        "severity": "Info",
+        "where": "zangbundel.json"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "refused",
+    "codes": [
+      "L003"
+    ]
+  },
+  "sha256": "99aab5c82bebbd9b323d1e2b60344da7aae708883771d2e78d83688170727239"
+}

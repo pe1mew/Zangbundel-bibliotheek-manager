@@ -1,0 +1,37 @@
+{
+  "description": "The reference library (unsigned) plus a second top-level folder \"extra/\" holding one file, as when two folders are compressed together.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "PKG-05"
+    ],
+    "note": "APP-02 recognises this format by manifest.json in the single top-level folder, which this ZIP does not have; an app that recognises the format before applying section 6 answers M-20 (not a song library) instead of M-05. Either way the import is refused."
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "PKG-05",
+        "severity": "Error",
+        "where": "extra"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ],
+    "note": "The Editor takes the folder that holds manifest.json as the library folder; the rest of the library is the valid reference."
+  },
+  "format_1_1": {
+    "verdict": "refused",
+    "codes": [
+      "A001"
+    ]
+  },
+  "sha256": "dfb054b87b927336a9c5ed3c68f51a97671e9cb72c7a04c01b09e7fb2f268b91"
+}

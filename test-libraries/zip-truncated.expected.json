@@ -1,0 +1,25 @@
+{
+  "description": "The reference library (unsigned) cut off after 4096 bytes, as by a broken download: no central directory, so it is not a readable ZIP.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "PKG-01"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "PKG-01",
+        "severity": "Fatal"
+      }
+    ],
+    "note": "Fatal: the Editor does not open the library, so no other rule is applied (EDT-20)."
+  },
+  "format_1_1": {
+    "verdict": "refused",
+    "codes": [
+      "A001"
+    ]
+  },
+  "sha256": "91d44bc3951f9626e753331fadd96b51563db0fcc345f5ee8dc62b7905004688"
+}

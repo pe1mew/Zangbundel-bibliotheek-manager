@@ -1,0 +1,38 @@
+{
+  "description": "The set Kampvuur holds 201 different songs: its three, then 198 small valid songs written for the test (testlied-001 to testlied-198). Each song appears once, so SET-04 holds.",
+  "app": {
+    "verdict": "accepted",
+    "codes": [],
+    "signed": false,
+    "song_format_warnings": [
+      "W013"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SET-05",
+        "severity": "Warning",
+        "where": "Kampvuur"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "SL103"
+    ]
+  },
+  "sha256": "51a3aeececa6ed40af3be0666c93341010d1f6fead5db55c0805345f1a242436"
+}

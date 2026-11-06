@@ -1,0 +1,37 @@
+{
+  "description": "A subfolder \"oud/\" with a copy of the song in the folder of lorem-ipsum, listed in the manifest.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "STR-07"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "STR-07",
+        "severity": "Error",
+        "where": "songs/lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S005"
+    ],
+    "note": "The two files share an id; the first in path order is imported."
+  },
+  "sha256": "534454d99a63868222df7b28ff1b21897c33641137beb1cd7a82704cd49e9404"
+}

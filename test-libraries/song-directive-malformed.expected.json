@@ -1,0 +1,38 @@
+{
+  "description": "A line \"{comment: zachter\" without its closing brace in the first verse of lorem-ipsum.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SNG-04"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-04",
+        "severity": "Error",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S011",
+      "SL101"
+    ],
+    "note": "The song is skipped (malformed directive); its entry in setlists/set-2.zbs is not found."
+  },
+  "sha256": "b770af0ce5a28b727169c81689191695ed5b2d06a90c4a31391a1a2ce83a27e1"
+}

@@ -1,0 +1,36 @@
+{
+  "description": "The maintainer's only contact is an http: URL; section 4.1 asks for an e-mail address or an https: URL. The view was written from this manifest, so it agrees (VIEW-02 holds).",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "MAN-08"
+    ],
+    "note": "Shown with M-75 (D-42)."
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "MAN-08",
+        "severity": "Error"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ],
+    "note": "Song format 4.2 does not require https: for the maintainer URL."
+  },
+  "sha256": "3466878550ab168032588912a7d007fad9c3c9336143400ec8d496d562bd0624"
+}

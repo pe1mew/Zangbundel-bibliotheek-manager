@@ -1,0 +1,40 @@
+{
+  "description": "The reference library without manifest.json: the view (zangbundel.json, LICENSE, setlists/) and the songs only, which is a repository snapshot (song format 12.5).",
+  "app": {
+    "verdict": "accepted as snapshot",
+    "codes": [],
+    "signed": false,
+    "song_format_warnings": [
+      "A102",
+      "W002",
+      "W013"
+    ],
+    "note": "Not this format (MAN-01, APP-02): imported as a repository snapshot under song format 12, song by song. Its id is the libraryId of the reference library, so on a device that knows that library it is an unsigned copy (APP-06): M-71 or M-72 is asked. W002 is for vader-jacob."
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "MAN-01",
+        "severity": "Info"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ],
+    "note": "Opened as a new library (EDT-21, EDT-26): a new libraryId, the songs and both sets taken over from the snapshot, M-41."
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ]
+  },
+  "sha256": "e982990e307c47c3f1bdbdf295f0980780a97cf67c620d259b9ba7ba5408b210"
+}

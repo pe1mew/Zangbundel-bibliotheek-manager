@@ -1,0 +1,25 @@
+{
+  "description": "Every song padded with comment lines to 60 KiB, the manifest listing the padded files: the uncompressed total is 37 times the ZIP file size, above the 20 times of FDS 3.5 (a zip-bomb guard). The songs stay under 64 KiB, so only the ratio fails; were it not Fatal, each song would also give SNG-17 (larger than 8 KiB).",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "PKG-02"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "PKG-02",
+        "severity": "Fatal"
+      }
+    ],
+    "note": "Fatal: the Editor does not open the library, so no other rule is applied (EDT-20)."
+  },
+  "format_1_1": {
+    "verdict": "refused",
+    "codes": [
+      "A003"
+    ]
+  },
+  "sha256": "9aa8a902231fe5145f9aec720c8b5334eff40750801a7654ef8f99a89708a9ba"
+}

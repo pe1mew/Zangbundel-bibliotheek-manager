@@ -35,6 +35,7 @@ The web app reuses the look of the Zangbundel app (`design/webappGUI.md` GD-01):
 | File | What it is | Licence |
 |---|---|---|
 | `webapp/mock/img/zangbundel-icon.svg` | The Zangbundel app icon, copied unchanged from the app's `design/icon/zangbundel-icon.svg` | CC BY-SA 4.0, credit "Remko Welling, PE1MEW" |
+| `webapp/mock/img/backdrop-3200x1440.webp` | The app's background photograph, landscape export, copied unchanged from the app's `design/gui/backdrop-3200x1440.webp`; taken by the owner (app guiDesign D-09) | CC BY-SA 4.0, credit "Remko Welling, PE1MEW" |
 | The icon paths in `webapp/mock/mock.js` (`ICONS`) | Google Material Icons path data, as the app uses them | Apache License 2.0 |
 
 Copies of these in the web app carry the same licences. The app icon may be shared and adapted for any purpose, also commercially, with attribution and under the same licence (https://creativecommons.org/licenses/by-sa/4.0/). The Material Icons follow the Apache License 2.0 of the code, see [NOTICE](NOTICE).
@@ -46,7 +47,7 @@ The mock's *Android-app* panel (`design/webappGUI.md` GD-15) shows two official 
 | File | Source (downloaded 2026-11-06) | Terms |
 |---|---|---|
 | `webapp/mock/img/google-play-badge-nl.png` | `play.google.com/intl/en_us/badges/static/images/badges/nl_badge_web_generic.png` | Google's badge guidelines (`play.google.com/intl/en_us/badges/`): used unaltered, linking to the app on Google Play, with the notice "Google Play and the Google Play logo are trademarks of Google LLC." |
-| `webapp/mock/img/f-droid-badge-nl.png` | `fdroid.gitlab.io/artwork/badge/get-it-on-nl.png` | The licence of F-Droid's artwork repository (`gitlab.com/fdroid/artwork`); to be checked and named here before the web app is published. |
+| `webapp/mock/img/f-droid-badge-nl.png` | `fdroid.gitlab.io/artwork/badge/get-it-on-nl.png` | CC BY-SA 3.0, as F-Droid's badge page states (`f-droid.org/docs/Badges/`, checked 2026-11-06: "The badges are licensed CC-BY-SA-3.0 and the scripts GPL-3.0-or-later"); credit "F-Droid". Used unaltered; F-Droid intends the badges to link to apps in its main repository (GD-35: no link until the app is there). |
 
 ## Song lyrics: not in this repository
 

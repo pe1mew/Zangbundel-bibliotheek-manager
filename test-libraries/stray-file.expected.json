@@ -1,0 +1,35 @@
+{
+  "description": "A file README.txt in the library folder, listed in the manifest (so MAN-05 holds).",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "STR-01"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "STR-01",
+        "severity": "Error",
+        "where": "README.txt"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ]
+  },
+  "sha256": "65168fc09d4d9edab06e9abb03ec1ccb2b445504f6dcdd7cd5da68385589df64"
+}

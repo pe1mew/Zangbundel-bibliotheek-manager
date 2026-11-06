@@ -1,0 +1,35 @@
+{
+  "description": "The files list names \"songs/testlied/testlied.cho\", which the ZIP does not hold: as if a song in no set was deleted from the ZIP by hand.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "MAN-04"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "MAN-04",
+        "severity": "Error",
+        "where": "songs/testlied/testlied.cho"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ]
+  },
+  "sha256": "7c450707f0f5ab3f51af95910c89c775e446be43b6e987cac8c9ab38b5d013d0"
+}

@@ -1,0 +1,36 @@
+{
+  "description": "A line of lorem-ipsum changed after saving (\"sit\" to \"sat\", same size); the manifest is unchanged, so the hash differs.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "MAN-06"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "MAN-06",
+        "severity": "Error",
+        "where": "songs/lorem-ipsum/lorem-ipsum.cho"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ],
+    "note": "An older app cannot see the change: FDS limitation 9."
+  },
+  "sha256": "a6d6bfe7c0314424ae8c7b3a71b65edb3ce353e82a28d5ead98597f422814167"
+}

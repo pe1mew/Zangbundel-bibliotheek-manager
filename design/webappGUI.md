@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.7 |
+| **Status** | Draft 0.10 |
 | **Date** | 2026-11-06 |
-| **Depends on** | `design/FDS.md` draft 0.4; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
+| **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
 
 ---
@@ -73,6 +73,8 @@ Reception green (`#4CC36A`) and the eight library colours of app guiDesign D-51 
 | Round buttons | Circle buttons of the app's gathering screens | Only where a decision here calls for them |
 
 Every control is at least 48 × 48 px (app guiDesign D-18, NFR-ACC-01 there).
+
+A block in the section editor has the same inner spacing on every side: 12 px inside its border, also below the text and next to the coloured border of a chorus or bridge. A hint under the text takes space only while it is shown. *(Owner, 2026-11-06, feedback on the mock.)*
 
 ### 2.3 Icons (from GD-01)
 
@@ -206,7 +208,7 @@ How *apply* relates to the FDS's validation while typing (EDT-42) and to Save be
 
 `webapp/mock/` shows GD-03 to GD-09 as a clickable mock (TD-04): open `index.html` through the preview server `webapp-mock` in `.claude/launch.json`, or any static file server. It reads and writes no files; *Openen* loads a built-in example library with songs that are traditional or written for the mock. A strip at the top, not part of the design, jumps to each state and shows or hides the open-question badges.
 
-Where the notes leave a point open, the mock makes an assumption and marks it with the question's badge. None of these is a decision. *Since 2026-11-06 most of these questions are answered (section 3.6); the table shows what the first mocks assumed, and the mock is brought in line with section 3.6.*
+Where the notes leave a point open, the mock makes an assumption and marks it with the question's badge. None of these is a decision. *Since 2026-11-06 all of these questions are answered (section 3.6); the table shows what the first mocks assumed. The mock of draft 0.7 follows section 3.6:* it is in Dutch, English and German (`webapp/mock/i18n.js`), and the mock bar jumps to the splash, home, a song, the library fields, edit mode, the ChordPro text, the check panel, a set and a signed library. Two example libraries: an unsigned one with a song that has an Error and one with Warnings, and one signed by *Akela* with two key files to try (one matching, one not). The design-ID badges show which decision a part implements.
 
 | Open question | What the mock assumes |
 |---|---|
@@ -282,6 +284,24 @@ The owner's answers to the open questions, and two further requests made during 
 
 **GD-35 — Store badges say *binnenkort* until the app is there; the manager's manual is on its GitHub wiki.** *(Resolves GQ-19.)* In the Android panel (GD-15), a badge is shown greyed with *binnenkort* (*coming soon*) and no link while the app is not public in that store; the GitHub APK link works now. The manager's manual lives on this repository's GitHub wiki (`github.com/pe1mew/Zangbundel-bibliotheek-manager/wiki`), like the app's.
 
+**GD-36 — An action elsewhere while a song is being edited asks what to do with the changes, and names the song.** *(Owner, 2026-11-06, feedback on the mock.)* The short message *Pas eerst toe of annuleer* did not say what would be applied or cancelled. Instead, a click outside the song editor that would leave it (a song or set in the right bar, adding a song to a set, *Downloaden*, *Openen*, *Nieuw*, *Sluiten*) opens a dialog *Je bent een lied aan het bewerken*: *Je wijzigingen in "<titel>" zijn nog niet toegepast. Wat wil je ermee doen voordat je verdergaat?*, with three buttons:
+
+| Button | Result |
+|---|---|
+| *Wijzigingen in "<titel>" toepassen* (primary) | The song is applied as with *Toepassen* (GD-20), and the click the user made is then carried out. |
+| *Wijzigingen in "<titel>" weggooien* | The changes are discarded, a message says so, and the click is carried out. |
+| *Verder bewerken* | Nothing happens; the editor stays open. |
+
+The title is the song's name before editing, so the user recognises it; a new song is named by its typed title, or *Nieuw lied*. Searching, sorting, filtering, switching tabs in the right bar, the language, *Controle*, the key buttons, *Android-app* and *Over* do not leave the editor and need no question. This replaces the message of GD-09's first mock.
+
+**GD-37 — Following FDS drafts 0.5 and 0.6.** *(2026-11-06.)* Three FDS changes reach the screens:
+
+- **The maintainer is required** (FDS D-36, EDT-14, MAN-08). In the library fields of GD-22 the maintainer's name and an e-mail address or website are marked as required; until they are filled in, *Controle* lists the Error M-39 (*Vul in wie deze bibliotheek beheert …*) and *Downloaden* is blocked. The note says that a group address or website serves as well as a personal one. This supersedes "the maintainer is optional" in GD-14's dialog text and in the first mocks.
+- **The title is at most 80 characters** (D-38, EDT-10), in the *Nieuwe bibliotheek* dialog and the library fields.
+- **The fixed terms are *signed by* and *not signed*** (D-43, EDT-83): *ondertekend door* / *niet ondertekend*, *signed by* / *not signed*, *signiert von* / *nicht signiert*; never a bare *signed* or *unsigned*.
+
+The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown in the interface: nobody edits it (PF-45).
+
 ---
 
 ## 4. Open questions
@@ -321,3 +341,6 @@ The owner's answers to the open questions, and two further requests made during 
 | Draft 0.5 | 2026-11-06 | The owner's feedback on the mock: no *Bekijken* in the song list, a click shows the song; search, sort and filter chips above the list as in the app's songbook (GD-13). GQ-17 added. |
 | Draft 0.6 | 2026-11-06 | The owner's requests: identity buttons in the bottom bar to make, download and load a signing key (GD-14); an *Android-app* button with the official Google Play and F-Droid badges, the GitHub APK, the source code and the manuals of the app and the manager (GD-15). GQ-18 and GQ-19 added. |
 | Draft 0.7 | 2026-11-06 | Walk-through of the open questions with the owner (section 3.6): deleting a song (GD-16), language from the browser and the bottom bar (GD-17), sections plus ChordPro text (GD-18), the common ChordPro parts with the rest kept locked (GD-19), apply always with a validation panel (GD-20), sets as a tab (GD-21), library fields in the left bar (GD-22), *Downloaden* and *Sluiten* (GD-23), signing in the download dialog and read-only signed libraries (GD-24), filter cleared for a new song (GD-25), name (GD-26), 3-second splash (GD-27), *Bibliotheek openen* (GD-28), severity icons (GD-29), logo and splash photograph (GD-30), system font (GD-31), desktop only (GD-32). Up/down buttons as keyboard alternative (GD-33), widths, folding and language remembered on the computer (GD-34), *binnenkort* badges and the manager's manual on its GitHub wiki (GD-35). All open questions GQ-01 to GQ-19 resolved. |
+| Draft 0.8 | 2026-11-06 | The mock follows section 3.6 (GD-16 to GD-35); section 3.5 says how to use it. No decision changed. |
+| Draft 0.9 | 2026-11-06 | The owner's feedback on the mock: leaving the song editor asks what to do with the changes and names the song (GD-36), instead of *Pas eerst toe of annuleer*. |
+| Draft 0.10 | 2026-11-06 | Depends on FDS draft 0.6: the maintainer is required, the title at most 80 characters, and the terms *signed by* and *not signed* (GD-37); the mock follows. Equal spacing in the section editor (section 2.2). This draft is the design of version 0.1.0 (webappTDS TD-16). |

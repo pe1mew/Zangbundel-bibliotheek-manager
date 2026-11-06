@@ -1,0 +1,27 @@
+{
+  "description": "No songs and no sets; the view and the manifest agree. The shared findings are absent, since there are no songs.",
+  "app": {
+    "verdict": "accepted",
+    "codes": [],
+    "signed": false,
+    "song_format_warnings": [
+      "W013"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "STR-02",
+        "severity": "Warning"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "refused",
+    "codes": [
+      "L008"
+    ],
+    "note": "A snapshot without songs is refused, unless the user confirms an empty library (song format 11.3, L008)."
+  },
+  "sha256": "4b74d4f8c0bf063905991da27f11cf36be05904aa197ab2524292b7219aa25e1"
+}

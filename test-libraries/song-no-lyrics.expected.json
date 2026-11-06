@@ -1,0 +1,38 @@
+{
+  "description": "lorem-ipsum with its comments and metadata only: the whole body after {duration} removed.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SNG-09"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-09",
+        "severity": "Error",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S010",
+      "SL101"
+    ],
+    "note": "The song is skipped (no lyric lines); its entry in setlists/set-2.zbs is not found."
+  },
+  "sha256": "7ad780022b4dd4d3f95f2c5742ba73526d73fd1a9a87b369c6b7f3c017803642"
+}

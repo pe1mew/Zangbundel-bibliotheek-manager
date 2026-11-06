@@ -1,0 +1,38 @@
+{
+  "description": "lorem-ipsum has {key: F} and {key: G}; key is single-valued.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SNG-03"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-03",
+        "severity": "Error",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S006",
+      "SL101"
+    ],
+    "note": "The song is skipped (key twice); its entry in setlists/set-2.zbs is not found."
+  },
+  "sha256": "abada6b8248330a36ae69694a34bb243af9de5b1e5a8a1c750ab75036fcf5c98"
+}

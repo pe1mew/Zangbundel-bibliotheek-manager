@@ -1,0 +1,42 @@
+{
+  "description": "A file \"License\" next to \"LICENSE\" in the library folder, listed in the manifest. The names differ only in case (PKG-07); \"License\" is also not a file the library folder may hold (STR-01), which cannot be avoided: every second name in a folder is a file the format does not have.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "PKG-07",
+      "STR-01"
+    ],
+    "note": "An app that stops at the first refusing rule reports PKG-07, which its ZIP reader finds first."
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "PKG-07",
+        "severity": "Error",
+        "where": "LICENSE, License"
+      },
+      {
+        "code": "STR-01",
+        "severity": "Error",
+        "where": "License"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "refused",
+    "codes": [
+      "A006"
+    ]
+  },
+  "sha256": "7ac79557e8fe96e02e495951fa829dd013e067f977de38d934a1ffa8dac7d284"
+}

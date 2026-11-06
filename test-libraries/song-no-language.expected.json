@@ -1,0 +1,38 @@
+{
+  "description": "The {meta: language} line of lorem-ipsum removed.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SNG-11"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-11",
+        "severity": "Error",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S003",
+      "SL101"
+    ],
+    "note": "The song is skipped (no language); its entry in setlists/set-2.zbs is not found."
+  },
+  "sha256": "a712c1f10bd54ea0bb6902cd2cfe487ef577c7c5c20c3f322e5bf613e6084ffa"
+}

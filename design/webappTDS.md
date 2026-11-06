@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Document** | Technical Design Specification (TDS) of the web app |
-| **Status** | Draft 0.4 |
+| **Status** | Draft 0.5 |
 | **Date** | 2026-11-06 |
-| **Depends on** | `design/FDS.md` draft 0.4 |
+| **Depends on** | `design/FDS.md` draft 0.7 |
 | **Companion** | `design/webappGUI.md` (screens, colours, buttons, icons) |
 
 ---
@@ -43,6 +43,8 @@ This document records how the bibliotheek-manager is built as a web app: where t
 | TD-13 | 2026-11-06 | **The test instance is `test.zangbundel.nl`, behind a password.** HTTP basic authentication, so that testers do not mistake it for the real manager, and `noindex` so that search engines skip it. A script deploys `webapp/` to the test instance and promotes a tested version to `zangbundel.nl`. Resolves TQ-04, except who has access (owner and invited testers, to be listed when testing starts). |
 | TD-14 | 2026-11-06 | **The browser's own APIs first; a small library only where the browser lacks one.** Web Crypto, Compression Streams, `TextDecoder` and `String.prototype.normalize` are used where the supported browsers (TD-15) have them. Where they do not, a small free library may be used, pinned to a version and a checksum, served from `zangbundel.nl` itself (TD-08), and each recorded as a decision here. No UI framework. Resolves TQ-05. |
 | TD-15 | 2026-11-06 | **Supported browsers: desktop Chrome, Edge, Firefox and Safari up to about three years old.** Older browsers than the evergreen ones lack Ed25519 in Web Crypto and parts of Compression Streams, so under TD-14 signing and ZIP will need a library; which ones is a decision still to take. Resolves TQ-06. |
+| TD-16 | 2026-11-06 | **The mock lives in `webapp/mock/`** as static HTML, CSS and JavaScript without PHP, reviewed through the preview server `webapp-mock` (`.claude/launch.json`, `python -m http.server`). The mock as it stands on 2026-11-06 (webappGUI draft 0.10) is version **0.1.0** of this repository. Resolves TQ-03. |
+| TD-17 | 2026-11-06 | **Two small libraries, chosen under TD-14 for the browsers of TD-15.** *ZIP*: `fflate` 0.8.3 (MIT), reading and writing ZIP with deflate and CRC-32; the browsers of TD-15 have no ZIP reader of their own. *Ed25519*: `@noble/ed25519` 3.2.0 (MIT), key generation, signing and verification after RFC 8032, with raw 32-byte keys as FDS SG-05 requires; Web Crypto's own Ed25519 is missing in browsers of the last three years (TD-15). Its SHA-512 comes from Web Crypto (`crypto.subtle`), so `@noble/hashes` is not needed. Everything else is the browser's own: SHA-256 (Web Crypto), UTF-8 with `TextDecoder` in fatal mode, NFC with `String.prototype.normalize`, random UUIDs with `crypto.getRandomValues`. Both libraries are copied into `webapp/` (no CDN, TD-08), each with its version and SHA-256 recorded next to it and its licence named in `NOTICE`, in the change that adds them. A newer version is a new decision. |
 
 ---
 
@@ -68,6 +70,9 @@ These FDS requirements constrain every technical choice below; they are listed h
 | §3.5, PKG-01 to PKG-04 | Uploaded or opened ZIPs are untrusted: limits and path checks before any entry is read, wherever the ZIP is processed. |
 | §6.1, principle 2 | The validation rules must give the same result as the Songbook app's (shared test libraries, FDS O-04). |
 | EDT-59 | Saved libraries are offered as downloads with the MIME type `application/vnd.zangbundel.library+zip`. |
+| PF-40 to PF-46, EDT-52 | On every save the Editor generates the format 1.1 view (`zangbundel.json`, `LICENSE`, `setlists/set-<n>.zbs`) from the manifest, byte-exact as PF-42 and PF-43 describe, and lists it in `files`; it never reads the view of a library it opens. Songs live under `songs/`. |
+| SG-05, SG-20 | Keys are raw Ed25519 keys (32-byte public key, 32-byte seed), never X.509 or PKCS #8; the fingerprint is taken over the raw public key. The test key of RFC 8032 (`test-libraries/test-key-rfc8032.zbkey`) checks this. |
+| §6, O-04 | The validation must give the findings listed in `test-libraries/<case>.expected.json` for every shared test library. |
 | EDT-80 to EDT-83 | The interface is in Dutch, English and German. |
 
 ---
@@ -78,7 +83,7 @@ These FDS requirements constrain every technical choice below; they are listed h
 |---|---|---|
 | TQ-01 | 2026-11-05 | *Resolved 2026-11-05 by TD-06: in the browser.* Where is a library processed: in the browser or on the server? |
 | TQ-02 | 2026-11-05 | *Resolved 2026-11-06 by TD-12.* Which PHP version is the minimum? With TD-06 and TD-07, PHP needs no extensions for libraries; the question is what the host offers and what serving the pages needs. Is PHP needed at all for the first version, or can the server deliver static files only? *2026-11-06: contabo6 runs PHP 8.3 (native `php8.3-fpm`, see `contabo-vps-6/php/readme.md`); if PHP is used, 8.3 is the target.* |
-| TQ-03 | 2026-11-05 | Where does the mock live and how is it served for review: a folder of static HTML, CSS and JavaScript under `webapp/` (for example `webapp/mock/`), or under `design/`? Does it need PHP to run? *2026-11-06: the first mock is in `webapp/mock/`, static, without PHP, served for review by `python -m http.server` (`.claude/launch.json`, `webapp-mock`). To be confirmed by the owner.* |
+| TQ-03 | 2026-11-05 | *Resolved 2026-11-06 by TD-16.* Where does the mock live and how is it served for review: a folder of static HTML, CSS and JavaScript under `webapp/` (for example `webapp/mock/`), or under `design/`? Does it need PHP to run? *2026-11-06: the first mock is in `webapp/mock/`, static, without PHP, served for review by `python -m http.server` (`.claude/launch.json`, `webapp-mock`). To be confirmed by the owner.* |
 | TQ-04 | 2026-11-05 | *Resolved 2026-11-06 by TD-13.* *Partly resolved 2026-11-06 by TD-09 and TD-10: `zangbundel.nl` and a test instance, both on contabo6.* Still open: the address of the test instance (for example `test.zangbundel.nl`), whether it is open to everyone or protected (for example with a password, so that testers do not mistake it for the real manager), how a version is deployed to each instance and promoted from test to `zangbundel.nl` (copy, `git pull`, a script), and who has access. |
 | TQ-05 | 2026-11-05 | *Resolved 2026-11-06 by TD-14.* Are external libraries allowed in the web app (a ZIP library, an Ed25519 library, a UI framework), or is everything written for the project? If allowed: which, at which version, served from the project's own server rather than a CDN (TD-08), so that no third party sees who uses the manager. |
 | TQ-06 | 2026-11-05 | *Resolved 2026-11-06 by TD-15.* Which browsers and versions are supported? TD-06 needs, in the browser: reading and writing ZIP (deflate), SHA-256, Ed25519 key generation, signing and verification, UTF-8 decoding that reports invalid bytes, and Unicode NFC. Check what the chosen browsers provide natively (Web Crypto, Compression Streams, `TextDecoder` with `fatal`, `String.prototype.normalize`) before deciding what TQ-05 must supply. |
@@ -94,3 +99,4 @@ These FDS requirements constrain every technical choice below; they are listed h
 | Draft 0.2 | 2026-11-05 | The owner's answer to TQ-01: processing in the browser (TD-06); PHP has no part in library handling (TD-07); no request carries library data, enforced by a Content Security Policy (TD-08). TQ-01 resolved, TQ-02 reworded, TQ-06 added. |
 | Draft 0.3 | 2026-11-06 | The owner registered `zangbundel.nl` (TD-09); it is hosted on contabo6, which also runs a test instance (TD-10); what contabo6 runs today (section 2.1). TQ-02 and TQ-04 partly answered, TQ-07 added. |
 | Draft 0.4 | 2026-11-06 | The owner's answers: `zangbundel.nl` for the manager only (TD-11), static files first (TD-12), `test.zangbundel.nl` behind a password with a deploy script (TD-13), browser APIs first and small pinned libraries where needed (TD-14), browsers up to about three years old (TD-15). TQ-02, TQ-04 to TQ-07 resolved; TQ-03 (mock location) still to confirm. |
+| Draft 0.5 | 2026-11-06 | The mock confirmed in `webapp/mock/` and marked as version 0.1.0 (TD-16, resolves TQ-03); the ZIP and Ed25519 libraries chosen (TD-17); depends on FDS draft 0.6, with the 1.1 view, raw keys and the shared test libraries added to the FDS constraints. All open questions resolved. |

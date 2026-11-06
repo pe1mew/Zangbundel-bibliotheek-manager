@@ -1,0 +1,38 @@
+{
+  "description": "The song file of lorem-ipsum is named \"lorem-ipsm.cho\". The song ID is the folder name (section 1.3), so the set Demo still names a song of the library (SET-01 holds); the song rules apply to <song id>.cho only, so the misnamed file gives no song finding.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "STR-05"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "STR-05",
+        "severity": "Error",
+        "where": "songs/lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S004",
+      "SL101"
+    ],
+    "note": "The song is skipped: its id differs from its file name."
+  },
+  "sha256": "a52251980d8cb20111cf99791f5f74d6eeea382ccaf96da3c4af8dc59cc89763"
+}

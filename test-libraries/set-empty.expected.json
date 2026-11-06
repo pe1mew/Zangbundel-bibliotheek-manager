@@ -1,0 +1,39 @@
+{
+  "description": "The set Demo holds no songs; lorem-ipsum is then in no set. Its view file setlists/set-2.zbs holds the title and id lines only, in canonical form (no trailing empty line).",
+  "app": {
+    "verdict": "accepted",
+    "codes": [],
+    "signed": false,
+    "song_format_warnings": [
+      "W013"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SET-03",
+        "severity": "Warning",
+        "where": "Demo"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "SL005"
+    ],
+    "note": "The empty setlist is skipped; the library imports."
+  },
+  "sha256": "bf45a65c0acf7dc343c61c544b5934a48aa97cf01f7ebea3c3a9e26f90c9eb30"
+}

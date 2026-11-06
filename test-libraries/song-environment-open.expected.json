@@ -1,0 +1,38 @@
+{
+  "description": "The last {end_of_verse} of lorem-ipsum removed: the verse is still open at the end of the file.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SNG-06"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-06",
+        "severity": "Error",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S007",
+      "SL101"
+    ],
+    "note": "The song is skipped (environment not closed); its entry in setlists/set-2.zbs is not found."
+  },
+  "sha256": "1c05fcd810c8831758643183824711673187d54805648326d8e1411c0d785065"
+}

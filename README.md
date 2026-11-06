@@ -12,10 +12,10 @@ The process it supports:
 
 ## Status (4 November 2026)
 
-**Design phase.** The functional design specification, [design/FDS.md](design/FDS.md), is at draft 0.4. No code exists yet.
+**Version 0.1.0, design phase.** The functional design specification, [design/FDS.md](design/FDS.md), is at draft 0.7; the web app's design is in [design/webappGUI.md](design/webappGUI.md) and [design/webappTDS.md](design/webappTDS.md), with a clickable mock in `webapp/mock/`. The web app itself has no code yet.
 
-- The implementation technology is open. The manager may be a web app (run locally or hosted) or a native app for Windows, Linux or Android; every implementation must behave identically (FDS 1.4, D-01).
-- One item is still open (FDS section 11): a shared set of test libraries (O-04). The app repository has agreed how the app refers to songs of a library in this format and how it registers `.zbl` (D-29, D-30).
+- The manager is a web app at `zangbundel.nl`, hosted on the owner's server with a test instance; libraries and keys are processed in the browser and never sent to the server (webappTDS TD-01 to TD-17).
+- `test-libraries/` holds 56 shared test libraries, one invalid case for nearly every rule of FDS section 6, with a checker (O-04). Still open: confirming the readings those cases had to make where the rules leave room (O-11).
 - The import side of the specification (FDS section 8) is built in the Zangbundel app, not here.
 
 The [changelog](changelog.md) lists what changed and when.

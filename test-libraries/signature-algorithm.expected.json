@@ -1,0 +1,35 @@
+{
+  "description": "The signed reference library with \"algorithm\" \"Ed448\" in manifest.sig; the signature bytes are the valid Ed25519 ones. SIG-03 is not reached: the algorithm is not supported.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SIG-02"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SIG-02",
+        "severity": "Error",
+        "where": "manifest.sig"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ]
+  },
+  "sha256": "65cbfbe10037df966a286141c6251a51d420941d341a152605b5ea8c8267eb0a"
+}

@@ -1,0 +1,26 @@
+{
+  "description": "The reference library (unsigned) with the \"encrypted\" flag (general-purpose bit 0) set on songs/lorem-ipsum/lorem-ipsum.cho in the local and central headers. The data is not actually encrypted: the flag is what the rule looks at.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "PKG-04"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "PKG-04",
+        "severity": "Fatal",
+        "where": "Zangbundel testbibliotheek/songs/lorem-ipsum/lorem-ipsum.cho"
+      }
+    ],
+    "note": "Fatal: the Editor does not open the library, so no other rule is applied (EDT-20)."
+  },
+  "format_1_1": {
+    "verdict": "refused",
+    "codes": [
+      "A004"
+    ]
+  },
+  "sha256": "70158d05140d81d0497e1ba73c6cedf00c9f8767894c1a3ef6c9652f4536218f"
+}

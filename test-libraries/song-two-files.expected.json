@@ -1,0 +1,39 @@
+{
+  "description": "A second .cho file, \"lorem-ipsum-oud.cho\" (a copy of the song), in the folder of lorem-ipsum, listed in the manifest. STR-06, not STR-08: STR-08 is about files that are not song files (M-17).",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "STR-06"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "STR-06",
+        "severity": "Error",
+        "where": "songs/lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S004",
+      "S005",
+      "SL101"
+    ],
+    "note": "The copy's id differs from its file name and duplicates the song's id."
+  },
+  "sha256": "cf639c5c39dae1dd7f851628371168edd185517b3942dd24ff15b9867f24132b"
+}

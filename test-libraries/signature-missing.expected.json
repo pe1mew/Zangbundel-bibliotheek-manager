@@ -1,0 +1,35 @@
+{
+  "description": "The signed reference library without manifest.sig: author.publicKey is present, the signature is not.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SIG-01"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SIG-01",
+        "severity": "Error",
+        "where": "manifest.sig"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ]
+  },
+  "sha256": "0216566ee4be44b1681e60d012bc7f3bb8bce9e649539bcabfee33f33cdf0f18"
+}

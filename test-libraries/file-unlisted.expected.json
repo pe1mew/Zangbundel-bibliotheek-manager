@@ -1,0 +1,36 @@
+{
+  "description": "A valid song \"testlied\", in no set, added to the ZIP but not to the manifest's files list.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "MAN-05"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "MAN-05",
+        "severity": "Error",
+        "where": "songs/testlied/testlied.cho"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ],
+    "note": "An older app imports the added song."
+  },
+  "sha256": "8b574ba66743e32f3ebaf3052fcff27ec8214dd4c1ca33f0d296ebe9fc971358"
+}

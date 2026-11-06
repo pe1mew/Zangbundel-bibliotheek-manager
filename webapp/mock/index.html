@@ -1,40 +1,48 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- MOCK of design/webappGUI.md draft 0.6 (GD-03 to GD-15). Not the web app: no file is read or written. -->
-<html lang="nl">
+<!-- MOCK of design/webappGUI.md draft 0.10 (GD-03 to GD-37), version 0.1.0. Not the web app: no library or key is read, written or sent. -->
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Zangbundel bibliotheek-manager (mock)</title>
+  <title>Zangbundel library manager (mock)</title>
   <link rel="icon" href="img/zangbundel-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="mock.css">
 </head>
 <body>
   <div class="mockbar">
     <strong>MOCK</strong>
-    <span>webappGUI draft 0.6 · jump to:</span>
-    <button data-jump="splash">1 Opstarten</button>
-    <button data-jump="home">2 Hoofdpagina</button>
-    <button data-jump="view">3 Bibliotheek, lied bekijken</button>
-    <button data-jump="edit">4 Lied bewerken</button>
-    <button data-jump="check">5 Controle bij toepassen</button>
-    <label><input type="checkbox" id="badges" checked> show open questions (GQ)</label>
+    <span>v0.1.0 · webappGUI draft 0.10 · jump to:</span>
+    <button data-jump="splash">1 Splash</button>
+    <button data-jump="home">2 Home</button>
+    <button data-jump="view">3 Song</button>
+    <button data-jump="library">4 Library fields</button>
+    <button data-jump="edit">5 Edit</button>
+    <button data-jump="text">6 ChordPro text</button>
+    <button data-jump="check">7 Check</button>
+    <button data-jump="sets">8 Set</button>
+    <button data-jump="signed">9 Signed library</button>
+    <label><input type="checkbox" id="badges" checked> show design IDs</label>
   </div>
 
   <div class="app">
-    <aside class="left" id="left" aria-label="Liedgegevens"></aside>
+    <aside class="left" id="left"></aside>
     <main class="centre" id="centre"></main>
-    <aside class="right" id="right" aria-label="Liedjes"></aside>
-    <nav class="bottom" id="bottom" aria-label="Navigatie"></nav>
+    <aside class="right" id="right"></aside>
+    <nav class="bottom" id="bottom"></nav>
     <!-- GD-10: inner edges of the side bars, with a fold tab in the middle -->
-    <div class="edge edge-left" id="edge-left" role="separator" aria-orientation="vertical" aria-controls="left" aria-label="Breedte liedgegevens" tabindex="0">
-      <button class="foldtab" id="tab-left" aria-controls="left" aria-expanded="true" title="Liedgegevens inklappen"></button>
+    <div class="edge edge-left" id="edge-left" role="separator" aria-orientation="vertical" aria-controls="left" tabindex="0">
+      <button class="foldtab" id="tab-left" aria-controls="left" aria-expanded="true"></button>
     </div>
-    <div class="edge edge-right" id="edge-right" role="separator" aria-orientation="vertical" aria-controls="right" aria-label="Breedte liedjeslijst" tabindex="0">
-      <button class="foldtab" id="tab-right" aria-controls="right" aria-expanded="true" title="Liedjeslijst inklappen"></button>
+    <div class="edge edge-right" id="edge-right" role="separator" aria-orientation="vertical" aria-controls="right" tabindex="0">
+      <button class="foldtab" id="tab-right" aria-controls="right" aria-expanded="true"></button>
     </div>
   </div>
 
+  <!-- GD-32: shown instead of the app in a window narrower than 980 px -->
+  <div id="narrow" class="narrow"></div>
+
+  <script src="i18n.js"></script>
   <script src="mock.js"></script>
 </body>
 </html>

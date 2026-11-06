@@ -1,0 +1,38 @@
+{
+  "description": "The {meta: id} of lorem-ipsum is \"lorem-ipsum-oud\", not its folder name. Info in the Editor (corrected on save, EDT-36), an Error in the app.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SNG-12"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-12",
+        "severity": "Info",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S004",
+      "SL101"
+    ],
+    "note": "The song is skipped (id differs from the file name); its entry in setlists/set-2.zbs is not found."
+  },
+  "sha256": "73a77173634d6088eecd5030936a82134025afb77598ffd7564e55ae74032400"
+}

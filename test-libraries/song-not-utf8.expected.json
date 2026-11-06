@@ -1,0 +1,38 @@
+{
+  "description": "A comment line of lorem-ipsum holds \"Fr\\xe8re\", Latin-1 for \"Frère\": invalid UTF-8.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SNG-01"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-01",
+        "severity": "Error",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S001",
+      "SL101"
+    ],
+    "note": "The song is skipped (not valid UTF-8); its entry in setlists/set-2.zbs is not found."
+  },
+  "sha256": "33cee4278955af8d0075cb51e5c391498711f8d7aa1b9dca02c074335e836d82"
+}

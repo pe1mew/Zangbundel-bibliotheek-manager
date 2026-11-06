@@ -1,0 +1,26 @@
+{
+  "description": "The reference library (unsigned) plus an entry \"Zangbundel testbibliotheek/../../buiten.txt\", whose \"..\" segments lead out of the folder it is unpacked into (\"zip slip\").",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "PKG-03"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "PKG-03",
+        "severity": "Fatal",
+        "where": "Zangbundel testbibliotheek/../../buiten.txt"
+      }
+    ],
+    "note": "Fatal: the Editor does not open the library, so no other rule is applied (EDT-20)."
+  },
+  "format_1_1": {
+    "verdict": "refused",
+    "codes": [
+      "A006"
+    ]
+  },
+  "sha256": "02139c454aa344ed3a4999b62f5727507488e5f903e5d1bf870d59ff4b3a1522"
+}

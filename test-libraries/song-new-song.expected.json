@@ -1,0 +1,38 @@
+{
+  "description": "A {new_song} directive at the end of lorem-ipsum.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SNG-14"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-14",
+        "severity": "Error",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S009",
+      "SL101"
+    ],
+    "note": "The song is skipped ({new_song}); its entry in setlists/set-2.zbs is not found."
+  },
+  "sha256": "b563458d5bf544cf46c9e54f46b7bf4792462848c23f4d2d01210659542a62ec"
+}

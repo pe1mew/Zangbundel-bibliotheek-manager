@@ -1,0 +1,26 @@
+{
+  "description": "LICENSE is stored as a symbolic link (Unix mode 120777) to /etc/passwd; the manifest is that of the reference library (unsigned).",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "PKG-03"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "PKG-03",
+        "severity": "Fatal",
+        "where": "Zangbundel testbibliotheek/LICENSE"
+      }
+    ],
+    "note": "Fatal: the Editor does not open the library, so no other rule is applied (EDT-20)."
+  },
+  "format_1_1": {
+    "verdict": "refused",
+    "codes": [
+      "A005"
+    ]
+  },
+  "sha256": "28ce088cb0c882be1121529a9c6215139984124c289b24ae485867c45972aebf"
+}

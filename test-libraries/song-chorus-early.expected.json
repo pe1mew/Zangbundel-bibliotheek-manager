@@ -1,0 +1,38 @@
+{
+  "description": "A {chorus} in lorem-ipsum before the first chorus is defined.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SNG-13"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-13",
+        "severity": "Error",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S008",
+      "SL101"
+    ],
+    "note": "The song is skipped (chorus before its definition); its entry in setlists/set-2.zbs is not found."
+  },
+  "sha256": "d18b1330769bdc7c2fbc8b5fafda37ee0b585f0253f06af80f54a6d60d1287ce"
+}

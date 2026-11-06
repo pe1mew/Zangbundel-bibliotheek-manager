@@ -1,0 +1,37 @@
+{
+  "description": "The reference library (unsigned) plus \".DS_Store\" in the library folder and \"Thumbs.db\" in a song folder, not listed in the manifest (PF-31). They are ignored: no STR-01, STR-08 or MAN-05.",
+  "app": {
+    "verdict": "accepted",
+    "codes": [],
+    "signed": false,
+    "song_format_warnings": [
+      "W013"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "PKG-08",
+        "severity": "Info"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ],
+    "note": "M-40 with {count} 2; the Editor removes them (PF-30)."
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ]
+  },
+  "sha256": "334986468a0569fcf02720710cae46015a7f51a2581ecc214f73e8ea5876f95b"
+}

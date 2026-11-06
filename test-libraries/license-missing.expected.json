@@ -1,0 +1,47 @@
+{
+  "description": "\"license\" removed from the manifest, the view left as it was. The view then no longer agrees with the manifest (VIEW-02, once for zangbundel.json and once for LICENSE, one M-37 per file): no view can, since PF-41 and PF-42 copy the licence from the manifest.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "MAN-07",
+      "VIEW-02"
+    ],
+    "note": "The FDS makes MAN-07 \"part of MAN-02\" in the app; this case expects the app to name MAN-07, as it names MAN-08 (M-75). An app that stops at the first refusing rule reports MAN-07."
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "MAN-07",
+        "severity": "Error"
+      },
+      {
+        "code": "VIEW-02",
+        "severity": "Info",
+        "where": "zangbundel.json"
+      },
+      {
+        "code": "VIEW-02",
+        "severity": "Info",
+        "where": "LICENSE"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ],
+    "note": "An older app shows the licence of the view."
+  },
+  "sha256": "7377fae3fccab46d95346e197f1c6501c7c9c83f7d19a1148d748676ba87c028"
+}

@@ -1,0 +1,38 @@
+{
+  "description": "lorem-ipsum is titled \"Lorem Ipsum! Dolor sit amet, consectetur adipiscing elit, sed do eiusmod\", 72 characters; 60 is recommended.",
+  "app": {
+    "verdict": "accepted",
+    "codes": [],
+    "signed": false,
+    "song_format_warnings": [
+      "W013"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-17",
+        "severity": "Warning",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "W003"
+    ]
+  },
+  "sha256": "1b33c4056f9c87e42da86d85d571e8f562d9d97158b936846e020f2a56971459"
+}

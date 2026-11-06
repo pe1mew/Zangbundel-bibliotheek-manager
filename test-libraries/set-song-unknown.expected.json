@@ -1,0 +1,37 @@
+{
+  "description": "The set Demo also names \"testlied\", which is not a song of the library.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SET-01"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SET-01",
+        "severity": "Error",
+        "where": "Demo"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "SL101"
+    ],
+    "note": "The setlist entry is shown as not found."
+  },
+  "sha256": "4d04141ce14a5097c3028acf93106cba80b65e3e4be49aa21d8df4e8ddb8791d"
+}

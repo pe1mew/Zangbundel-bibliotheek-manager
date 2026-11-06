@@ -1,0 +1,37 @@
+{
+  "description": "A chord in lorem-ipsum lacks its closing bracket: \"[F]amet consec[Ctetur,\". Editor only (the profile treats chords as opaque), so the app accepts it.",
+  "app": {
+    "verdict": "accepted",
+    "codes": [],
+    "signed": false,
+    "song_format_warnings": [
+      "W013"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-05",
+        "severity": "Warning",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ]
+  },
+  "sha256": "60ea332d93f3a504c1912f4718a0fa2ab31306cda78255bf32a9e76431e87c00"
+}

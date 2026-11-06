@@ -6,7 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-06
+
+The first version: the functional design specification (FDS draft 0.7), the GUI and technical design of the web app (webappGUI draft 0.10, webappTDS draft 0.5), the clickable mock in `webapp/mock/`, and the shared test libraries. There is no web app code yet.
+
 ### Changed
+- The mock is version 0.1.0 and lives in `webapp/mock/` as static files (webappTDS draft 0.5, TD-16). The ZIP and Ed25519 libraries for the web app are chosen: `fflate` 0.8.3 and `@noble/ed25519` 3.2.0, both MIT, with SHA-256 and SHA-512 from the browser (TD-17). Both web documents depend on FDS draft 0.6; the mock and webappGUI draft 0.10 follow it: the maintainer is required (M-39), the title at most 80 characters, and the terms are *signed by* and *not signed* (GD-37).
+- The F-Droid badge's licence is checked: CC BY-SA 3.0, credit F-Droid (`license.md`, `NOTICE`).
+- FDS draft 0.7: open item O-04 records that every rule of section 6 has a test library except PKG-09, and new open item O-11 lists the readings the test libraries had to make where the rules leave room.
+- Mock: a block in the section editor has equal spacing below the text and at its sides (12 px); the empty hint line no longer takes space (webappGUI section 2.2).
+- `design/webappGUI.md` draft 0.9 and the mock: leaving the song editor (for example adding a song to a set) no longer shows *Pas eerst toe of annuleer* but a dialog that names the song and offers *Wijzigingen in "<titel>" toepassen*, *… weggooien* or *Verder bewerken*; after applying or discarding, the click is carried out (GD-36).
+- The mock follows the walk-through decisions (webappGUI draft 0.8): Dutch, English and German, taken from the browser and switched from the bottom bar, remembered with the bar widths; sections with verse, chorus, bridge, chorus repeat, labels and locked blocks, and a ChordPro text view that round-trips exactly; *Toepassen* always applies, problems marked in the song list and listed in the *Controle* panel; sets as a tab with ordering; library fields in the left bar; *Downloaden* keeps the library open, *Sluiten* separate, *Opslaan als kopie*; signing in the download dialog and a signed example library that is read-only until its key is loaded; the splash with the app's photograph for 3 seconds; severity icons; the narrow-window page; *binnenkort* badges. The app's background photograph is named in `NOTICE` and `license.md`.
 - Walk-through of all open questions with the owner. `design/webappGUI.md` draft 0.7 (section 3.6, GD-16 to GD-35): deleting a song, with a bin on each row; the interface follows the browser's language and switches from the bottom bar; sections plus a ChordPro text view; verse, chorus, bridge, chorus repeat and labels, with everything else kept as locked blocks; *Toepassen* always applies and a *Controle* panel lists the problems; sets as a tab in the right bar; library fields in the left bar; *Downloaden* keeps the library open and *Sluiten* is separate; signing in the download dialog and read-only signed libraries; name, 3-second splash with the app's photograph, *Bibliotheek openen*, severity icons, system font, desktop only; widths and language remembered; *binnenkort* badges. `design/webappTDS.md` draft 0.4 (TD-11 to TD-15): the domain for the manager only, static files first, `test.zangbundel.nl` behind a password, browser APIs first, browsers up to about three years old. The mock shows deleting a song; the other decisions are not in the mock yet.
 - `design/webappGUI.md` draft 0.6 and the mock: the bottom bar has an identity group, *Sleutel maken*, *Sleutel laden* and *Sleutel downloaden*, with the author's name and fingerprint, notice M-64 to acknowledge before the key file is saved, and a dot while a new key is not yet downloaded (GD-14). An *Android-app* button shows the official Google Play and F-Droid badges, the GitHub APK, the source code of the app and the manager, and the manuals of both (GD-15). Open: signing the library with the key (GQ-18), and the badges while the app is not yet public and the manager's manual (GQ-19). The two badges are named in `NOTICE` and `license.md`.
 - `design/webappGUI.md` draft 0.5 and the mock: the song list has no *Bekijken* button any more, a click on a song shows it; above the list are search (*Zoeken*, with *Ook in de tekst*), the *A–Z* / *Z–A* order, filter chips for language and tag, and *Wis filters*, all as in the app's songbook (GD-13). Open question GQ-17: a new song hidden by the filter.
@@ -19,16 +29,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   - The fixed terms are *signed by* and *not signed*, as in the app's glossary (EDT-83, APP-21, APP-22, D-43).
   - O-04: the first six test libraries exist. The app's package reader is the first implementation to run them, and passes all six on both sides.
   - After that run, PF-42 is byte-exact (trailing LFs removed, exactly one added). §6.2 gains an *Archive* column that maps PKG-01 to PKG-09 to the archive checks the app's ZIP reader shares. A library in this format is reported with FDS codes.
-
-### Added
-- `test-libraries/`: the first shared test libraries of FDS open item O-04, in the format of FDS draft 0.5. There are six cases:
-  - `valid-signed` and `valid-unsigned`;
-  - `view-missing` (VIEW-01) and `view-mismatch` (VIEW-02);
-  - `signature-invalid` (SIG-03) and `key-wrapped` (SG-05).
-
-  Each has an `expected.json` with the verdict for the app, the Editor and an app that reads only format 1.1. They are built by `make_test_libraries.py` (standard library only, deterministic, Ed25519 after RFC 8032, checked against the RFC's test vector) from four CC0 songs. They are signed with the published RFC 8032 test key, which is included as `test-key-rfc8032.zbkey` and marked as not for real use.
-
-  An independent check found every case failing exactly its expected rule, with signatures verified by the `cryptography` package. The library repository's `release.py` accepts all six as format 1.1 snapshots. No Editor or app implementation has run them yet.
 - FDS draft 0.5: libraries that Songbook apps from before this format can read, from the app repository's proposal `design/proposals/2026-11-06-backward-compatible-packages.md`, approved by the owner on 2026-11-06 (D-34 to D-39).
   - Every library carries a format 1.1 view (new §3.7, PF-40 to PF-46): `zangbundel.json`, `LICENSE` and `setlists/set-<n>.zbs`, generated on every save (EDT-52) and listed in the manifest.
   - Songs move under `songs/` (§3.2, PF-10, PF-12, STR-01, new STR-11).
@@ -62,6 +62,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   - New open items: the file extension (O-07) and a "what changed" note (O-08). O-03 now asks whether a set is a setlist, and O-05 whether the hand-zipped route stays.
 
 ### Added
+- `test-libraries/`: 50 more cases, 56 in all: an invalid library for every rule of FDS section 6 except PKG-09 (a ZIP over 16 MiB is too large for the repository) and some forms of PKG-02 and PKG-03, listed in the README. `check_test_libraries.py`, a checker that shares no code with the generator and verifies signatures with `cryptography`, gives every case exactly its expected findings (56 cases, 0 failed); the generator's output is byte-identical on a second run; the library repository's `release.py` gives the expected format 1.1 verdict for every case. The new test songs are two-line songs written for the tests (CC0).
+- `test-libraries/`: the first shared test libraries of FDS open item O-04, in the format of FDS draft 0.5. There are six cases:
+  - `valid-signed` and `valid-unsigned`;
+  - `view-missing` (VIEW-01) and `view-mismatch` (VIEW-02);
+  - `signature-invalid` (SIG-03) and `key-wrapped` (SG-05).
+
+  Each has an `expected.json` with the verdict for the app, the Editor and an app that reads only format 1.1. They are built by `make_test_libraries.py` (standard library only, deterministic, Ed25519 after RFC 8032, checked against the RFC's test vector) from four CC0 songs. They are signed with the published RFC 8032 test key, which is included as `test-key-rfc8032.zbkey` and marked as not for real use.
+
+  An independent check found every case failing exactly its expected rule, with signatures verified by the `cryptography` package. The library repository's `release.py` accepts all six as format 1.1 snapshots. No Editor or app implementation has run them yet.
 - `design/webappTDS.md`, the technical design of the web app, draft 0.1: the Editor is a web app (TD-01) in `webapp/` (TD-02), running on nginx or Apache with PHP (TD-03), every design verified in a mock before it goes to a test server (TD-04), HTTPS (TD-05). Open questions TQ-01 to TQ-05, first among them whether libraries are processed in the browser or on the server.
 - `design/webappGUI.md`, the GUI design of the web app, draft 0.1: screens and their behaviour (GD-02), with the colours, buttons and icons of the Zangbundel app (GD-01). Open questions GQ-01 to GQ-05.
 - `design/FDS.md`, the functional design specification, draft 0.1 (2026-11-04): the library package format (ZIP, manifest with SHA-256 hashes, optional Ed25519 signature), the validation rules shared with the Zangbundel app, the Editor's behaviour, the app's import, and the user messages.
