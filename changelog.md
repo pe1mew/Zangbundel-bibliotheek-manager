@@ -11,7 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   - New APP-06: a release archive, snapshot or `zangbundel.json` library with the ID of a library in this format is an unsigned copy of it. The app asks M-71 (without the version sentence) or M-72, never replaces it silently, and on accept records it as unsigned (D-41, the owner's decision on the app's assessment SP-39). A sentence below the §8.3 table points to it.
   - New M-75: how the app words a MAN-08 failure (D-42).
   - The fixed terms are *signed by* and *not signed*, as in the app's glossary (EDT-83, APP-21, APP-22, D-43).
-  - O-04: the first six test libraries exist.
+  - O-04: the first six test libraries exist. The app's package reader is the first implementation to run them, and passes all six on both sides.
+  - After that run, PF-42 is byte-exact (trailing LFs removed, exactly one added). §6.2 gains an *Archive* column that maps PKG-01 to PKG-09 to the archive checks the app's ZIP reader shares. A library in this format is reported with FDS codes.
 
 ### Added
 - `test-libraries/`: the first shared test libraries of FDS open item O-04, in the format of FDS draft 0.5. There are six cases:

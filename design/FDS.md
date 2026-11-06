@@ -164,7 +164,7 @@ Every library carries a copy of itself in the format that Songbook apps before l
 |---|---|
 | PF-40 | On every save the Editor writes the view from the manifest: `zangbundel.json`, `LICENSE` and, per set, `setlists/set-<n>.zbs`, `n` being the set's 1-based position in `sets`. The songs under `songs/` are shared by both formats. |
 | PF-41 | `zangbundel.json`: `format` `zangbundel-library`, `format_version` `1.1`, `id` = `libraryId`, `name` = `title`, `description` = `description` (or `title` when there is none), `maintainer` = `maintainer`, `license` = `{id: license.id, file: "LICENSE", summary: license.summary}`, `min_app_version` `0.1.0`. No other fields. UTF-8 without BOM, LF line ends. |
-| PF-42 | `LICENSE` holds `license.text`, or `license.summary` when there is no text, in UTF-8 with a final LF. |
+| PF-42 | `LICENSE` holds `license.text`, or `license.summary` when there is no text, encoded in UTF-8: the text with any trailing LFs removed, followed by exactly one LF. VIEW-02 compares these bytes exactly, so every implementation gives the same verdict. *Made exact in draft 0.6.* |
 | PF-43 | `setlists/set-<n>.zbs` holds `{title: <set name>}`, `{meta: id set-<n>}`, an empty line, and one line `<libraryId>/<song id>` per song of the set, in order, in the canonical form of the song format specification (§13 there). Without sets there is no `setlists/` folder. |
 | PF-44 | The view files are listed in `files` (MF-01) like the songs, so a signature covers them (SG-03). |
 | PF-45 | The Editor never reads the view of a library it opens: it reads the manifest and writes a new view on save. |
@@ -323,17 +323,19 @@ Both applications must apply the rules in this chapter identically. Implementati
 
 ### 6.2 Package rules (PKG)
 
-| Code | Rule | Severity | Message |
-|---|---|---|---|
-| PKG-01 | The file is a readable ZIP. | Fatal | M-01 |
-| PKG-02 | The limits of §3.5 are respected. | Fatal | M-02 |
-| PKG-03 | No entry has an absolute path, a drive letter, a `..` segment, a backslash, or is a symbolic link. | Fatal | M-03 |
-| PKG-04 | No entry is encrypted. | Fatal | M-04 |
-| PKG-05 | There is exactly one top-level folder. | Error | M-05 |
-| PKG-06 | Names follow PF-20, PF-21, PF-22. | Error | M-06 |
-| PKG-07 | No two names in one folder differ only in case (PF-23). | Error | M-07 |
-| PKG-08 | Ignored system files are present (§3.6). | Info | M-40 |
-| PKG-09 | The ZIP is not larger than the sharing threshold (§3.5). Editor only: checked on the opened ZIP and on save. | Warning | M-08 |
+The app's ZIP reader is shared with the release archive, whose checks have the song format's A-codes. For a library in this format, an implementation reports the FDS code; the column *Archive* only shows which archive check is the same. The shared test libraries name FDS codes (O-04). *Column added in draft 0.6.*
+
+| Code | Rule | Severity | Message | Archive |
+|---|---|---|---|---|
+| PKG-01 | The file is a readable ZIP. | Fatal | M-01 | A001 |
+| PKG-02 | The limits of §3.5 are respected. | Fatal | M-02 | A002, A003 |
+| PKG-03 | No entry has an absolute path, a drive letter, a `..` segment, a backslash, or is a symbolic link. | Fatal | M-03 | A005, A006 |
+| PKG-04 | No entry is encrypted. | Fatal | M-04 | A004 |
+| PKG-05 | There is exactly one top-level folder. | Error | M-05 | — |
+| PKG-06 | Names follow PF-20, PF-21, PF-22. | Error | M-06 | — |
+| PKG-07 | No two names in one folder differ only in case (PF-23). | Error | M-07 | A006 |
+| PKG-08 | Ignored system files are present (§3.6). | Info | M-40 | — |
+| PKG-09 | The ZIP is not larger than the sharing threshold (§3.5). Editor only: checked on the opened ZIP and on save. | Warning | M-08 | A101 |
 
 PKG-02 covers the ZIP size, uncompressed size, ratio and entry count of §3.5; the ChordPro file size is the song rule SNG-18, so that one oversized song does not stop the Editor from opening the library.
 
@@ -763,4 +765,4 @@ Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangb
 | Draft 0.3 | 2026-11-04 | Open items O-01 to O-03 and O-05 to O-08 resolved (D-22 to D-28); O-04 given a layout; O-09 and O-10 added for the app repository. Sets move from folders into the manifest (`sets`), songs sit in song-ID folders at library level (§3.2, PF-11 withdrawn, PF-14). No attachments (§3.4; STR-09, EDT-35 withdrawn). Limits from the app's release archive (§3.5); sharing threshold 16 MiB. Song rules follow the ChordPro profile (§6.6: SNG-03, SNG-07, SNG-09 changed severity, SNG-05 Warning, SNG-10 library-wide, SNG-11 to SNG-18 added). Set rules SET-01 to SET-04 (§6.7). STR-03, STR-04 withdrawn, STR-10 added. Editor: conversion of plain ZIPs and release archives (EDT-25, EDT-26), sets as ordered lists (EDT-31), stable song IDs (EDT-36), canonical form (EDT-57), change note (EDT-58), `.zbl` (EDT-54). App: format recognised by content (APP-02), sets as setlists (APP-23), change note (APP-24). Messages M-09, M-19, M-32 to M-34, M-41 to M-49 added; M-12, M-18 withdrawn; M-08, M-14, M-17, M-20, M-52, M-56, M-59 reworded. |
 | Draft 0.4 | 2026-11-04 | The app repository's proposal on O-09 and O-10, approved by the owner, and the owner's answers to the differences it found with the app's FRD. `libraryId` pattern exact (§4.1). MIME type (PF-04, EDT-59). Same-title check covers release archives and snapshots (§8.3). Set names at most 60 characters; SET-05, M-35. Manifest fields `license` (required) and `maintainer` (optional); EDT-13, EDT-14, MAN-07, M-29, APP-25, APP-26; EDT-26 and EDT-30 extended. APP-01: a library is accepted whole or not at all. Limitation 8. O-09 and O-10 resolved. Decisions D-29 to D-33. |
 | Draft 0.5 | 2026-11-06 | Libraries that Songbook apps before this format can read, from the app repository's proposal approved by the owner (D-34 to D-39). New §3.7: the format 1.1 view (PF-40 to PF-46), generated by the Editor, listed in the manifest. Songs move under `songs/` (§3.2, PF-10, PF-12, STR-01, new STR-11). New §6.8: view rules VIEW-01 to VIEW-03 with messages M-36 to M-38. `maintainer` required: §4.1, EDT-14, new MAN-08, M-39. `title` at most 80 characters (§4.1, EDT-10). Licence: a generated `LICENSE` in the view. EDT-52 writes the view; APP-02 recognises a library with a view as this format; APP-22 adds W013 for unsigned libraries. Limitation 9; O-04 extended. Keys: new SG-05 (raw Ed25519 keys), SG-20 refers to it, the `author.publicKey` example corrected from an X.509 wrapper to the RFC 8032 test key (D-40). D-29, D-31 and D-32 superseded in part. |
-| Draft 0.6 | 2026-11-06 | From the app session. New APP-06: a release archive, snapshot or `zangbundel.json` library with the ID of a library in this format is an unsigned copy of it; the app asks M-71 (without `{versionNote}`) or M-72, never silently (D-41, the owner's decision); a sentence below the §8.3 table points to it. New M-75, the app's wording of a MAN-08 failure (D-42). Fixed terms *signed by* and *not signed* (EDT-83, APP-21, APP-22, D-43). O-04: the first six test libraries exist in `test-libraries/`. |
+| Draft 0.6 | 2026-11-06 | From the app session. New APP-06: a release archive, snapshot or `zangbundel.json` library with the ID of a library in this format is an unsigned copy of it; the app asks M-71 (without `{versionNote}`) or M-72, never silently (D-41, the owner's decision); a sentence below the §8.3 table points to it. New M-75, the app's wording of a MAN-08 failure (D-42). Fixed terms *signed by* and *not signed* (EDT-83, APP-21, APP-22, D-43). O-04: the first six test libraries exist in `test-libraries/`. After the app's first run of them: PF-42 made byte-exact, and an *Archive* column in §6.2 mapping PKG-01 to PKG-09 to the shared archive checks, with FDS codes reported for packages. |
