@@ -1,0 +1,66 @@
+# Fire in the Night - example song for design/song-format.md
+# English variant of "Vuur in de nacht". Carries chords (P3) and line timing (P2);
+# a P1 app ignores both and shows plain lyrics.
+{title: Fire in the Night}
+{meta: id fire-in-the-night}
+{meta: language en}
+{lyricist: Zangbundel project}
+{composer: Percy Montrose}
+{meta: melody Oh My Darling, Clementine}
+{copyright: 2026 Zangbundel project}
+{meta: license CC0-1.0}
+{meta: source Written as an example for the song format specification}
+{meta: tag kampvuur}
+{meta: tag avond}
+{meta: variant-group vuur-in-de-nacht}
+{key: G}
+{tempo: 96}
+{duration: 1:00}
+
+{start_of_verse: Verse 1}
+The [G]sun is gone, the sky turns grey,
+the [D]first star rises, clear and [G]bright.
+We shuffle closer to the fire,
+no[D]body's getting lost to[G]night.
+{end_of_verse}
+
+{start_of_chorus: Chorus}
+[C]Fire in the night, [G]sparks up in the air,
+[D]sing along, sing a[G]long.
+[C]Fire in the night, the [G]day has gone somewhere,
+[D]and the night joins in our [G]song.
+{end_of_chorus}
+
+{start_of_verse: Verse 2}
+The [G]tea is hot, the biscuits gone,
+the [D]smoke has settled in your [G]coat.
+We carry on from song to song,
+un[D]til the last one clears their [G]throat.
+{end_of_verse}
+
+{start_of_bridge: Bridge}
+And [Em]when the fire burns [C]down to red,
+the [D]song is still inside our [G]head.
+{end_of_bridge}
+
+{chorus: Chorus (2x)}
+
+# Line timing (P2): canonical line number, start time in seconds.
+{x_zb_time: 1 2.0}
+{x_zb_time: 2 5.0}
+{x_zb_time: 3 8.0}
+{x_zb_time: 4 11.0}
+{x_zb_time: 5 14.5}
+{x_zb_time: 6 17.5}
+{x_zb_time: 7 20.5}
+{x_zb_time: 8 23.5}
+{x_zb_time: 9 27.0}
+{x_zb_time: 10 30.0}
+{x_zb_time: 11 33.0}
+{x_zb_time: 12 36.0}
+{x_zb_time: 13 39.5}
+{x_zb_time: 14 42.5}
+{x_zb_time: 15 46.0}
+{x_zb_time: 16 49.0}
+{x_zb_time: 17 52.0}
+{x_zb_time: 18 55.0}

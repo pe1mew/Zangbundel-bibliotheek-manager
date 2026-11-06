@@ -1,0 +1,32 @@
+{
+  "description": "The same library, not signed: accepted, with the song format warning W013 (APP-22).",
+  "app": {
+    "verdict": "accepted",
+    "codes": [],
+    "signed": false,
+    "song_format_warnings": [
+      "W013"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ]
+  },
+  "sha256": "992d13d4caa34dc28f15b93fae270b7e169950142ee35cddb01e546858344a86"
+}

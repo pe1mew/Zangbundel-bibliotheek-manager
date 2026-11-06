@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Functional Design Specification (FDS) |
-| **Status** | Draft 0.5 |
+| **Status** | Draft 0.6 |
 | **Date** | 2026-11-06 |
 | **Scope** | Library package format, Editor, Songbook app import |
 
@@ -364,7 +364,7 @@ PKG-02 covers the ZIP size, uncompressed size, ratio and entry count of §3.5; t
 | MAN-05 | Every file is listed (MF-01). | Error | M-24 |
 | MAN-06 | Size and hash of every file match (MF-02). | Error | M-25 |
 | MAN-07 | The library has a licence (`license.id` and `license.summary`). In the Editor checked before every save; in the app part of MAN-02. | Error | M-29 |
-| MAN-08 | The library has a maintainer with a name and an e-mail address or URL (§4.1). In the Editor checked before every save; in the app part of MAN-02. *Added in draft 0.5* (D-36). | Error | M-39 |
+| MAN-08 | The library has a maintainer with a name and an e-mail address or URL (§4.1). In the Editor checked before every save; in the app part of MAN-02. *Added in draft 0.5* (D-36). | Error | Editor: M-39. App: M-75 (D-42). |
 
 ### 6.5 Signature rules (SIG)
 
@@ -519,7 +519,7 @@ The view (§3.7) is generated, so an Editor-saved library never fails these rule
 | EDT-80 | The Editor's interface and messages are available in at least the languages of the Songbook app: Dutch, English and German (D-20). |
 | EDT-81 | The Editor starts in the language of the operating system or browser, or in English when that language is not available. The user can change it at any time. |
 | EDT-82 | The language choice is not tied to a library and may be remembered between sessions (EDT-02). |
-| EDT-83 | Fixed terms (library, set, song, signed, unsigned, fingerprint) follow the Songbook app's glossary, so the user sees the same word in both applications. |
+| EDT-83 | Fixed terms (library, set, song, *signed by*, *not signed*, fingerprint) follow the Songbook app's glossary, so the user sees the same word in both applications. The app's glossary uses *signed by* and *not signed*, never a bare *signed*, which would clash with the app's own *signed in* (D-43). *Changed in draft 0.6*. |
 
 ---
 
@@ -534,6 +534,7 @@ The view (§3.7) is generated, so an Editor-saved library never fails these rule
 | APP-03 | A library with a higher `formatVersion` than supported is rejected (M-22). |
 | APP-04 | After validation, the app compares the library with its device memory (§8.2) and its installed libraries, and acts according to §8.3. |
 | APP-05 | The app asks at most one question per import. |
+| APP-06 | A release archive, repository snapshot or `zangbundel.json` library whose library id equals the `libraryId` of a library in this format is an **unsigned copy** of it. That holds when the library is installed, and also when it is only in the device memory. It is never refused for its id and never replaces the library silently. When the device memory has a key, the app asks M-71 with `{versionNote}` left empty, because such a library has no version to compare. When it records "unsigned", the app asks M-72. On accept the copy replaces the library and the device memory records "unsigned"; on cancel the library stays as it is. This matches the app's song format 4.3 and 12.11 (v0.21). *Added in draft 0.6* (D-41). |
 
 ### 8.2 Device memory
 
@@ -568,13 +569,15 @@ Replacing a library with an older version is always possible; the app warns but 
 
 When the device memory knows the library ID but the library is no longer installed (APP-12), the comparison with the remembered key and version still applies; "replace" then means "import".
 
+The table is for libraries in this format. A release archive, snapshot or `zangbundel.json` library with the ID of a library in this format follows APP-06.
+
 ### 8.4 Display
 
 | ID | Requirement |
 |---|---|
 | APP-20 | The library screen shows title, version, `modified` date and signing status. |
-| APP-21 | A signed library shows the author name and fingerprint (SG-20). |
-| APP-22 | An unsigned library shows the label **Unsigned**. On import it gets the song format's warning W013 (not signed), as release archives and repository snapshots do; it never blocks the import (D-39). |
+| APP-21 | A signed library shows **signed by** with the author name and fingerprint (SG-20). |
+| APP-22 | An unsigned library shows the label **not signed** (D-43; *Unsigned* until draft 0.5). On import it gets the song format's warning W013 (not signed), as release archives and repository snapshots do; it never blocks the import (D-39). |
 | APP-23 | The sets of a library are offered as setlists of that library, in the order of `sets`; the songs of a set in the order of `sets[].songs`. Songs outside any set are in the library's songbook only. |
 | APP-24 | When an update carries `changes`, the app shows the note once after the update and keeps it on the library screen until the next version. |
 | APP-25 | The app shows the licence (`license.summary`, and `license.text` when present) when a library is first imported and on request afterwards (FR-LIB-21). |
@@ -659,6 +662,7 @@ The texts are given in English and are the reference for their translations; bot
 | M-72 | You already have version {current} of this library. Replace it with this copy? |
 | M-73 | You already have a library called "{title}", but this is a different library. Add it as a separate library, or replace the one you have? |
 | M-74 | This is an older version of the library than the one you have: version {new} instead of {current}. Replace it anyway? |
+| M-75 | This library names nobody who looks after it (a name and an e-mail address or website). Save it again in the Editor. *App wording of MAN-08, added in draft 0.6* (D-42). |
 
 ---
 
@@ -685,7 +689,7 @@ These limitations are accepted and must be stated in the user documentation.
 | O-01 | *Resolved in draft 0.3* (D-26): the directives and metadata are those of the ChordPro profile; required are title, language and song ID (SNG-02, SNG-11, SNG-12). |
 | O-02 | *Resolved in draft 0.3* (D-24): no attachments in format version 1. Library-level files (cover image) come, if wanted, with a later format version. |
 | O-03 | *Resolved in draft 0.3* (D-22): a set is a setlist, kept in the manifest; a song is stored once; sets and their songs are shown in manifest order. |
-| O-04 | Create the shared set of test libraries (valid and invalid) that every Editor implementation and the Songbook app must pass. Layout as the app's conformance vectors (`android/core/testing/src/main/resources/conformance/` in the app repository): per case a `<case>.zbl` and a `<case>.expected.json` listing the expected rule codes and severities, under `test-libraries/` in this repository. At least one invalid case per rule of §6, and one valid library with sets. The cases still have to be written. Since draft 0.5 they include libraries with a 1.1 view: a valid one, which a format 1.1 app also accepts as a snapshot, and one invalid case each for VIEW-01 to VIEW-03. The app repository's prototype `design/proposals/2026-11-06-dual-package-prototype.py` shows the layout. |
+| O-04 | Create the shared set of test libraries (valid and invalid) that every Editor implementation and the Songbook app must pass. Layout as the app's conformance vectors (`android/core/testing/src/main/resources/conformance/` in the app repository): per case a `<case>.zbl` and a `<case>.expected.json` listing the expected rule codes and severities, under `test-libraries/` in this repository. At least one invalid case per rule of §6, and one valid library with sets. Since draft 0.5 the cases include libraries with a 1.1 view: a valid one, which a format 1.1 app also accepts as a snapshot, and one invalid case each for VIEW-01 to VIEW-03. *Partly done in draft 0.6:* `test-libraries/` holds six cases, built by `make_test_libraries.py`: `valid-signed`, `valid-unsigned`, `view-missing` (VIEW-01), `view-mismatch` (VIEW-02), `signature-invalid` (SIG-03) and `key-wrapped` (SG-05), with the RFC 8032 test key. Still to write: the other rules of §6, VIEW-03, and a `zangbundel.json` library that is an unsigned copy (APP-06). |
 | O-05 | *Resolved in draft 0.3* (D-23): the app keeps reading release archives and repository snapshots; the Editor converts them (EDT-26). |
 | O-06 | *Resolved in draft 0.3* (D-26, D-28): the limits are the app's (§3.5); sharing threshold 16 MiB. |
 | O-07 | *Resolved in draft 0.3* (D-25): `.zbl`, recognised by content. |
@@ -742,8 +746,11 @@ These limitations are accepted and must be stated in the user documentation.
 | D-38 | `title` is at most 80 characters, the limit of `name` in the view. |
 | D-39 | An unsigned library gets the song format's warning W013 (not signed) on import, as release archives and repository snapshots do (APP-22). |
 | D-40 | Keys are raw Ed25519 keys (SG-05). The draft 0.4 example of `author.publicKey` was an X.509 SubjectPublicKeyInfo, while every rule already said raw; the fingerprint (SG-20) differs between the two, so the example is corrected. |
+| D-41 | A release archive, snapshot or `zangbundel.json` library carrying the ID of a library in this format is an unsigned copy of it (APP-06). The app asks M-71 (without the version sentence) or M-72, and never replaces silently. Refusing it with L006 was the alternative; the owner chose the question (2026-11-06, the app's assessment SP-39). |
+| D-42 | The app shows a MAN-08 failure as M-75, worded for someone importing; M-39 is the Editor's wording for someone saving. |
+| D-43 | The fixed terms are *signed by* and *not signed*, as in the app's glossary, which keeps a bare *signed* apart from *signed in* (EDT-83, APP-21, APP-22). |
 
-Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangbundel-bibliotheek#1 (2026-11-04). Decisions D-22 to D-28 are the owner's (2026-11-04). Decisions D-29 and D-30 come from the app repository's proposal `design/proposals/2026-11-04-library-package-id-and-file-type.md`, approved by the owner; D-31 to D-33 are the owner's answers to the differences that proposal found between this specification and the app's FRD (2026-11-04). Decisions D-34 to D-39 come from the app repository's proposal `design/proposals/2026-11-06-backward-compatible-packages.md`, approved by the owner on 2026-11-06. D-40 answers a question from the app's implementation on the same day.
+Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangbundel-bibliotheek#1 (2026-11-04). Decisions D-22 to D-28 are the owner's (2026-11-04). Decisions D-29 and D-30 come from the app repository's proposal `design/proposals/2026-11-04-library-package-id-and-file-type.md`, approved by the owner; D-31 to D-33 are the owner's answers to the differences that proposal found between this specification and the app's FRD (2026-11-04). Decisions D-34 to D-39 come from the app repository's proposal `design/proposals/2026-11-06-backward-compatible-packages.md`, approved by the owner on 2026-11-06. D-40 answers a question from the app's implementation on the same day. D-41 to D-43 come from the app session on 2026-11-06: D-41 is the owner's decision on that session's assessment SP-39, and D-42 and D-43 follow from writing the app's import questions (GUI design D-88).
 
 ---
 
@@ -756,3 +763,4 @@ Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangb
 | Draft 0.3 | 2026-11-04 | Open items O-01 to O-03 and O-05 to O-08 resolved (D-22 to D-28); O-04 given a layout; O-09 and O-10 added for the app repository. Sets move from folders into the manifest (`sets`), songs sit in song-ID folders at library level (§3.2, PF-11 withdrawn, PF-14). No attachments (§3.4; STR-09, EDT-35 withdrawn). Limits from the app's release archive (§3.5); sharing threshold 16 MiB. Song rules follow the ChordPro profile (§6.6: SNG-03, SNG-07, SNG-09 changed severity, SNG-05 Warning, SNG-10 library-wide, SNG-11 to SNG-18 added). Set rules SET-01 to SET-04 (§6.7). STR-03, STR-04 withdrawn, STR-10 added. Editor: conversion of plain ZIPs and release archives (EDT-25, EDT-26), sets as ordered lists (EDT-31), stable song IDs (EDT-36), canonical form (EDT-57), change note (EDT-58), `.zbl` (EDT-54). App: format recognised by content (APP-02), sets as setlists (APP-23), change note (APP-24). Messages M-09, M-19, M-32 to M-34, M-41 to M-49 added; M-12, M-18 withdrawn; M-08, M-14, M-17, M-20, M-52, M-56, M-59 reworded. |
 | Draft 0.4 | 2026-11-04 | The app repository's proposal on O-09 and O-10, approved by the owner, and the owner's answers to the differences it found with the app's FRD. `libraryId` pattern exact (§4.1). MIME type (PF-04, EDT-59). Same-title check covers release archives and snapshots (§8.3). Set names at most 60 characters; SET-05, M-35. Manifest fields `license` (required) and `maintainer` (optional); EDT-13, EDT-14, MAN-07, M-29, APP-25, APP-26; EDT-26 and EDT-30 extended. APP-01: a library is accepted whole or not at all. Limitation 8. O-09 and O-10 resolved. Decisions D-29 to D-33. |
 | Draft 0.5 | 2026-11-06 | Libraries that Songbook apps before this format can read, from the app repository's proposal approved by the owner (D-34 to D-39). New §3.7: the format 1.1 view (PF-40 to PF-46), generated by the Editor, listed in the manifest. Songs move under `songs/` (§3.2, PF-10, PF-12, STR-01, new STR-11). New §6.8: view rules VIEW-01 to VIEW-03 with messages M-36 to M-38. `maintainer` required: §4.1, EDT-14, new MAN-08, M-39. `title` at most 80 characters (§4.1, EDT-10). Licence: a generated `LICENSE` in the view. EDT-52 writes the view; APP-02 recognises a library with a view as this format; APP-22 adds W013 for unsigned libraries. Limitation 9; O-04 extended. Keys: new SG-05 (raw Ed25519 keys), SG-20 refers to it, the `author.publicKey` example corrected from an X.509 wrapper to the RFC 8032 test key (D-40). D-29, D-31 and D-32 superseded in part. |
+| Draft 0.6 | 2026-11-06 | From the app session. New APP-06: a release archive, snapshot or `zangbundel.json` library with the ID of a library in this format is an unsigned copy of it; the app asks M-71 (without `{versionNote}`) or M-72, never silently (D-41, the owner's decision); a sentence below the §8.3 table points to it. New M-75, the app's wording of a MAN-08 failure (D-42). Fixed terms *signed by* and *not signed* (EDT-83, APP-21, APP-22, D-43). O-04: the first six test libraries exist in `test-libraries/`. |

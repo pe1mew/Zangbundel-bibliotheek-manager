@@ -1,0 +1,35 @@
+{
+  "description": "The view lacks setlists/set-2.zbs; manifest and files agree, so only VIEW-01 fails.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "VIEW-01"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "VIEW-01",
+        "severity": "Info"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ],
+    "note": "An older app imports it, with one setlist fewer."
+  },
+  "sha256": "64cda5960f0e128b374732c2a2b5064107d49713ab1f95a20e9f7802d044e6f3"
+}

@@ -1,0 +1,9 @@
+{
+  "type": "songbook-signing-key",
+  "formatVersion": 1,
+  "algorithm": "Ed25519",
+  "name": "RFC 8032 test key (not for real use)",
+  "privateKey": "nWGxne/9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A=",
+  "publicKey": "11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=",
+  "created": "2026-11-06T12:00:00Z"
+}

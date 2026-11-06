@@ -1,0 +1,36 @@
+{
+  "description": "A song was changed after signing and its hash updated in the manifest; the signature no longer matches.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SIG-03"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SIG-03",
+        "severity": "Error"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ],
+    "note": "Opens read-only (EDT-23)."
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ],
+    "note": "An older app cannot see the change: FDS limitation 9."
+  },
+  "sha256": "e21c172fefb3920b6343a4576e05fd3a394f3bfea84d727e55dc91708168c073"
+}

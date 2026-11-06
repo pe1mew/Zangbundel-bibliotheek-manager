@@ -7,6 +7,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- FDS draft 0.6, from the app session:
+  - New APP-06: a release archive, snapshot or `zangbundel.json` library with the ID of a library in this format is an unsigned copy of it. The app asks M-71 (without the version sentence) or M-72, never replaces it silently, and on accept records it as unsigned (D-41, the owner's decision on the app's assessment SP-39). A sentence below the §8.3 table points to it.
+  - New M-75: how the app words a MAN-08 failure (D-42).
+  - The fixed terms are *signed by* and *not signed*, as in the app's glossary (EDT-83, APP-21, APP-22, D-43).
+  - O-04: the first six test libraries exist.
+
+### Added
+- `test-libraries/`: the first shared test libraries of FDS open item O-04, in the format of FDS draft 0.5. There are six cases:
+  - `valid-signed` and `valid-unsigned`;
+  - `view-missing` (VIEW-01) and `view-mismatch` (VIEW-02);
+  - `signature-invalid` (SIG-03) and `key-wrapped` (SG-05).
+
+  Each has an `expected.json` with the verdict for the app, the Editor and an app that reads only format 1.1. They are built by `make_test_libraries.py` (standard library only, deterministic, Ed25519 after RFC 8032, checked against the RFC's test vector) from four CC0 songs. They are signed with the published RFC 8032 test key, which is included as `test-key-rfc8032.zbkey` and marked as not for real use.
+
+  An independent check found every case failing exactly its expected rule, with signatures verified by the `cryptography` package. The library repository's `release.py` accepts all six as format 1.1 snapshots. No Editor or app implementation has run them yet.
 - FDS draft 0.5: libraries that Songbook apps from before this format can read, from the app repository's proposal `design/proposals/2026-11-06-backward-compatible-packages.md`, approved by the owner on 2026-11-06 (D-34 to D-39).
   - Every library carries a format 1.1 view (new §3.7, PF-40 to PF-46): `zangbundel.json`, `LICENSE` and `setlists/set-<n>.zbs`, generated on every save (EDT-52) and listed in the manifest.
   - Songs move under `songs/` (§3.2, PF-10, PF-12, STR-01, new STR-11).

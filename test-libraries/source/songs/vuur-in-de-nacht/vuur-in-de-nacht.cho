@@ -1,0 +1,41 @@
+# Vuur in de nacht - voorbeeldlied bij design/song-format.md
+{title: Vuur in de nacht}
+{meta: id vuur-in-de-nacht}
+{meta: language nl}
+{lyricist: Zangbundel-project}
+{composer: Percy Montrose}
+{meta: melody Oh My Darling, Clementine}
+{copyright: 2026 Zangbundel-project}
+{meta: license CC0-1.0}
+{meta: source Geschreven als voorbeeld bij de formaatspecificatie}
+{meta: tag kampvuur}
+{meta: tag avond}
+{meta: variant-group vuur-in-de-nacht}
+
+{start_of_verse}
+De zon is weg, de lucht wordt grijs,
+de eerste ster staat al te stralen.
+We schuiven dichter om het vuur,
+hier kan vanavond niemand verdwalen.
+{end_of_verse}
+
+{start_of_chorus}
+Vuur in de nacht, vonken in de lucht,
+zing maar mee, zing maar mee.
+Vuur in de nacht, de dag is op de vlucht,
+en de nacht zingt met ons mee.
+{end_of_chorus}
+
+{start_of_verse}
+De thee is heet, de koek is op,
+de rook trekt langzaam in je jas.
+We zingen door, we houden niet op,
+alsof het nog maar zeven uur was.
+{end_of_verse}
+
+{start_of_bridge}
+En als het vuur straks langzaam dooft,
+dan blijft het lied nog in ons hoofd.
+{end_of_bridge}
+
+{chorus}

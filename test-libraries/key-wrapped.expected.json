@@ -1,0 +1,35 @@
+{
+  "description": "author.publicKey is the SubjectPublicKeyInfo form (60 base64 characters) instead of the raw 32 bytes (SG-05).",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "MAN-02"
+    ],
+    "note": "The manifest does not match 4.1. The wrapped key would give fingerprint 06E3-FD8F-DA29-BB60 instead of 21FE-31DF-A154-A261."
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "MAN-02",
+        "severity": "Error"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ]
+  },
+  "sha256": "343eb9a0869214a6a23642db799ae1075f0abef9cfb06c8a6e4281753bcb8edd"
+}

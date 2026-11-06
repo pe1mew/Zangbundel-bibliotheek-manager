@@ -1,0 +1,35 @@
+{
+  "description": "LICENSE no longer matches license.text; the files list was updated, so only VIEW-02 fails.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "VIEW-02"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "VIEW-02",
+        "severity": "Info"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ],
+    "note": "An older app shows the altered licence: FDS limitation 9."
+  },
+  "sha256": "ca27346d654680946ee654f1af93d8c3857e9344815a5c5ab02ed7d4b8bfe9e0"
+}
