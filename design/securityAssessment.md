@@ -1,0 +1,469 @@
+# Security and Privacy Assessment — Bibliotheek-manager web app
+
+| | |
+|---|---|
+| **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
+| **Status** | Draft 0.1 |
+| **Date** | 2026-11-06 |
+| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.11, `design/webappTDS.md` draft 0.5 |
+| **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
+
+---
+
+## 1. Introduction
+
+### 1.1 Purpose
+
+The bibliotheek-manager is a web app in which scout leaders create, check, edit and sign song libraries (FDS). Libraries and signing keys are processed in the user's browser and never reach the server (webappTDS TD-06 to TD-08). This document assesses the design for security and privacy risks, and specifies what the final implementation must do so that:
+
+- the **site is authentic**: a user reaches the real manager, delivered unaltered;
+- the **code and libraries the site sends to the browser have integrity**: nothing is changed on the way or on the server without it being noticed or refused;
+- the site is **available** and recovers quickly;
+- the **user's privacy** is respected, and the **data handled** (libraries, signing keys, the maintainer's contact) stays under the user's control;
+- the site is **hardened against known classes of attack**.
+
+It follows the method of the app's own assessment (`../Zangbundel/design/security-privacy-assessment.md`): what the design already does well, findings with a rating, then requirements. Requirements here are binding for the implementation (TD-18); a change to one is recorded in this document first.
+
+### 1.2 Notation
+
+- **SF-nn**: a finding. **SR-nn**: a requirement, with RFC 2119 key words. **SC-nn**: a check in the release gate (section 8). **SQ-nn**: an open question for the owner.
+- Ratings: **High** (likely enough and harmful enough to block going live), **Medium** (to be fixed before going live unless accepted in writing), **Low** (fix when convenient, or accept).
+- FDS, GUI and TDS IDs refer to `design/FDS.md`, `design/webappGUI.md` and `design/webappTDS.md`.
+
+### 1.3 Method and sources
+
+The assessment walks the data flows of section 2 with STRIDE (spoofing, tampering, repudiation, information disclosure, denial of service, elevation of privilege) per asset and trust boundary, and adds privacy (data minimisation, purpose, retention). Facts were checked on 2026-11-06:
+
+- the designs and the mock in this repository, and the test libraries (`test-libraries/`, 56 cases);
+- the host's configuration in `../contabo-vps-6` (nginx vhosts, ufw rules, PHP notes, open items);
+- the domain's live state: DNS over `dns.google`, registry data over SIDN's RDAP;
+- public sources on the chosen libraries and browser features, listed in section 11.
+
+---
+
+## 2. System, assets and trust boundaries
+
+### 2.1 Data flows
+
+```
+ ┌──────────── user's computer ─────────────────────────────────────────────┐
+ │  Browser tab: https://zangbundel.nl                                       │
+ │   ├─ page + scripts + styles + images  ◀── (1) HTTPS GET, static only ────┼──┐
+ │   ├─ main thread: UI, rendering (no library parsing, no keys)             │  │
+ │   ├─ worker "library": ZIP, manifest, ChordPro, validation (untrusted in) │  │
+ │   └─ worker "crypto": Ed25519 keys, signing, hashing                      │  │
+ │  Local files:  library .zbl  ──(2) file picker──▶ worker "library"        │  │
+ │                key .zbkey    ──(3) file picker──▶ worker "crypto"         │  │
+ │  Downloads:    ◀──(4) generated .zbl / .zbkey (Blob, never via server)    │  │
+ │  localStorage: language, bar widths only (GD-34)                          │  │
+ └───────────────────────────────────────────────────────────────────────────┘  │
+                                                                                 │
+ ┌──── contabo6 (shared VPS) ───────────────┐      ┌── DNS (Openprovider, DNSSEC) ┐
+ │  nginx :443  zangbundel.nl, test.…       │◀─────┤  A/AAAA, CAA, MX, TXT         │
+ │  webroot (read-only to nginx)            │      └───────────────────────────────┘
+ │  other sites and services (section 4)    │      ┌── Let's Encrypt (ACME) ───────┐
+ └───────────────▲──────────────────────────┘      └───────────────────────────────┘
+                 │ (5) deploy over SSH, signed release
+ ┌───────────────┴──────────────┐
+ │  GitHub repository, tags     │◀── owner's account
+ └──────────────────────────────┘
+```
+
+Flows (2) to (4) never cross the network: that is the core privacy property of the design (TD-06). Flow (1) is the only thing the site does, and it is the most valuable target: whoever controls what (1) delivers controls the code that sees every library and key.
+
+### 2.2 Assets
+
+| ID | Asset | Why it matters | Properties |
+|---|---|---|---|
+| AS-01 | The web app's code as the browser receives it (HTML, JS, CSS, libraries) | Runs with full access to the user's libraries and private key | Integrity, authenticity |
+| AS-02 | The user's private signing key (`.zbkey`, FDS §5.3) | Whoever has it signs as the user; it cannot be revoked (FDS limitation 4) | Confidentiality, integrity |
+| AS-03 | The user's library (songs, sets, maintainer contact) while it is open | The maintainer contact is personal data; the songs are the user's work | Confidentiality, integrity |
+| AS-04 | The libraries the manager writes | Every Songbook app trusts their manifest and signature (FDS §4, §5) | Integrity, correctness |
+| AS-05 | The site's identity: domain, DNS, certificates | Lets users tell the real manager from a copy | Authenticity |
+| AS-06 | The site's availability | Users depend on it to maintain their libraries | Availability |
+| AS-07 | Visitors' metadata (IP address, user agent, time) | Personal data under the GDPR (AVG) | Confidentiality, minimisation |
+| AS-08 | The release pipeline: repository, tags, deploy credentials, server webroot | Controls AS-01 | Integrity, authenticity |
+| AS-09 | The test instance and its access credentials | A weaker copy of AS-01 next to the real one | Integrity, confidentiality |
+
+### 2.3 Attackers considered
+
+| ID | Attacker | Capability |
+|---|---|---|
+| AT-1 | Anyone on the internet | Sends requests, crafts library files, hosts look-alike sites, sends mail and messages |
+| AT-2 | Someone who hands a user a library | A crafted `.zbl` reaches the user's browser through the file picker (flow 2) |
+| AT-3 | A network attacker | On the user's path (public Wi-Fi); can intercept anything not protected by TLS and HSTS |
+| AT-4 | An attacker in another service on contabo6 | Gains code execution in a neighbouring site or container (section 4) |
+| AT-5 | An attacker with the owner's GitHub, registrar or DNS credentials | Changes code, tags, DNS or the domain |
+| AT-6 | Malicious or compromised third-party code | A tampered or vulnerable library version |
+| AT-7 | A script or extension in the user's own browser | Out of the site's control; considered only for what the site can limit |
+
+Out of scope: a fully compromised user device, physical access, and the Songbook app's import (assessed in the app repository).
+
+---
+
+## 3. What the design already does well
+
+| Design choice | Effect |
+|---|---|
+| Libraries and keys are processed only in the browser; PHP plays no part; the server receives nothing (TD-06, TD-07) | No server-side data to steal, leak or retain. EDT-04 and EDT-65 (server deletion, in-memory keys on a server) are met by construction. |
+| Every request stays on the site's own origin; no CDN, fonts, analytics or badges from elsewhere (TD-08, GD-15) | No third party learns who uses the manager; a CSP can forbid everything else. |
+| Static files only in version 0.1 (TD-12) | The server's attack surface is nginx serving files; no application server, database or upload endpoint. |
+| No accounts, no login, no cookies | Nothing to phish from the site itself, no session to hijack, no consent banner needed for the app. |
+| Strict input rules in the FDS: limits checked before decompression (§3.5), path rules (PKG-03), whole-or-nothing import (APP-01) | The untrusted-input surface is specified, and 56 shared test libraries exercise it (O-04). |
+| Signed libraries with raw Ed25519 keys and a manifest of SHA-256 hashes (FDS §4, §5, SG-05) | Tampering with a library after it leaves the manager is detectable. |
+| Nothing kept between sessions except two preferences (EDT-02, EDT-64, GD-34) | A shared computer keeps no library or key after the page closes. |
+| DNSSEC already active for `zangbundel.nl` (checked 2026-11-06: DS record at SIDN, validated `AD` answers) | Forged DNS answers are rejected by validating resolvers. |
+
+---
+
+## 4. The host as found (contabo6, 2026-11-06)
+
+From `../contabo-vps-6`. These facts drive several findings.
+
+| Item | Found | Relevance |
+|---|---|---|
+| Firewall | ufw armed 2026-07-31, default deny; SSH rate-limited | Good baseline. Docker-published ports bypass ufw (its readme). |
+| Neighbours | ChirpStack, Node-RED (public dashboard by decision), MQTT, NTRIP caster, EchoLink proxy, Uptime Kuma, a PHP web app, and **four legacy CMSimple sites on end-of-life PHP 7.4.33 and 5.6.40 that nobody patches** (`php/readme.md`) | A compromise of any neighbour is a step towards the webroot of `zangbundel.nl` (SF-02). |
+| nginx vhosts | No `add_header` security headers in any vhost; one vhost sets `ssl_protocols`; certificates by `certbot --nginx` | The defaults must not be copied for `zangbundel.nl` (SF-09). |
+| Monitoring | Uptime Kuma runs on the same host | It cannot report the host being down (SF-12). |
+
+---
+
+## 5. Findings
+
+| ID | Finding | Attacker | Rating | Requirements |
+|---|---|---|---|---|
+| SF-01 | **Code delivered by the site is the root of trust.** A web app is fetched anew on every visit. Whoever changes the files on the server, or in the release on the way there, gets code that reads every library and key the user opens. Neither TLS nor SRI helps against an attacker who controls the server, since they can change the page and its hashes together. | AT-4, AT-5, AT-6 | High | SR-10 to SR-16, SR-70 to SR-75, SR-90, SR-64 |
+| SF-02 | **Shared host with unpatched neighbours.** The site is to run on contabo6 next to four end-of-life PHP sites and many other services (section 4). Container boundaries are not a security boundary against a kernel or Docker escape, and a shared nginx means one configuration error affects all vhosts. | AT-4 | High | SR-70, SR-71, SR-73, SQ-01, SQ-02 |
+| SF-03 | **Third-party libraries.** `fflate` up to 0.8.2 has CVE-2026-45820 (an infinite loop in `unzipSync` on a crafted ZIP64 archive, CVSS 7.5); 0.8.3 fixes it. `@noble/ed25519` v3 states that it "has not been independently audited"; its predecessor v1 was audited by Cure53 in February 2022. A tampered package version (supply-chain attack) would run with full access (SF-01). | AT-2, AT-6 | High | SR-12 to SR-17 |
+| SF-04 | **DOM injection from library content.** Titles, set names, labels, ChordPro text, the maintainer, file names and error messages all come from untrusted files. The mock builds HTML with `innerHTML` and an escape function; one missed escape in the real app is a script running with the key in reach. | AT-2 | High | SR-24, SR-32, SR-33 |
+| SF-05 | **Hostile library files.** A crafted `.zbl` can aim at memory or time exhaustion (ZIP bomb, ZIP64 tricks as in SF-03, millions of entries, deeply nested or huge ChordPro text, pathological regular expressions), or at the paths the code builds from entry names. The effect is a frozen tab or, combined with SF-04, worse. | AT-2 | Medium | SR-30, SR-31, SR-34, SR-35 |
+| SF-06 | **Private key exposure in the browser.** The key file is not encrypted (FDS SG-10). In the page it could leak through an accidental store (local storage, an autosave), a log, a crash report, the main thread's reach of injected code, or a key file left in the Downloads folder of a shared computer. | AT-2, AT-7 | High | SR-40 to SR-47, SQ-04, SQ-08 |
+| SF-07 | **Impersonation and phishing.** A look-alike site can offer to "check" a library or "restore" a key, collecting key files. Mail from `@zangbundel.nl` can be forged today: the domain has an MX record but no SPF or DMARC record. | AT-1 | Medium | SR-05, SR-06, SR-07, SR-08, SR-44 |
+| SF-08 | **Domain, DNS and certificates.** The domain was registered on 2026-11-06 at Openprovider; its registry status is `active` with no transfer or update lock. There is no CAA record, so any public CA may issue a certificate for it. Nobody watches Certificate Transparency for unexpected certificates. | AT-5, AT-1 | Medium | SR-03 to SR-06 |
+| SF-09 | **No browser security headers yet.** Without CSP, HSTS, framing, MIME-sniffing and isolation headers the browser enforces none of the design's promises (no third-party requests, no framing, no injected script). contabo6's existing vhosts set none. | AT-1, AT-2, AT-3 | High | SR-01, SR-02, SR-20 to SR-27 |
+| SF-10 | **Framing and UI redress.** Another site could embed the manager in a frame and trick a user into clicking *Sleutelbestand downloaden* or *Downloaden*. | AT-1 | Medium | SR-21, SR-22 |
+| SF-11 | **Visitor privacy.** nginx logs the IP address and user agent of every request by default, with no stated purpose or retention. Links to GitHub, Google Play and F-Droid can pass the page address as referrer. There is no privacy statement for the site yet. | AT-1 (and the operator's duty) | Medium | SR-50 to SR-55 |
+| SF-12 | **Availability.** One VPS, no failover; a denial-of-service attack, a provider outage, an expired certificate or a host compromise takes the site down, and the monitoring on the same host would not report it. | AT-1, AT-4 | Medium | SR-60 to SR-65 |
+| SF-13 | **Test instance.** `test.zangbundel.nl` will run untested code next to the real site, behind a shared password. If indexed, mistaken for the real site, or used with real keys, it becomes a weaker path to the same users. | AT-1, AT-4 | Medium | SR-80 to SR-84 |
+| SF-14 | **Repository and account takeover.** The release starts from GitHub. A stolen GitHub, registrar or SSH credential lets an attacker publish code or move the domain. | AT-5 | High | SR-90, SR-10, SR-11, SR-05 |
+| SF-15 | **Stale or mixed files.** Caches can serve an old script with a new page; a service worker would keep serving compromised code after the server is fixed. | AT-1, AT-4 | Low | SR-61, SR-65 |
+| SF-16 | **Generated downloads.** File names come from the library title and the author's name; a crafted title could produce a misleading or unsafe file name (`.exe`, path characters, right-to-left override). | AT-2 | Low | SR-36 |
+| SF-17 | **Cross-origin side channels.** Without cross-origin isolation, another site in the same browser process could in theory read memory through Spectre-type side channels while a key is loaded. | AT-1 | Low | SR-23 |
+| SF-18 | **Timing side channels in JavaScript cryptography.** `@noble/ed25519` targets "algorithmic constant time"; the JIT and garbage collector make true constant-time execution unattainable in JavaScript. Exploiting this needs local, repeated measurements of signing. | AT-7 | Low | SR-15, accepted (section 9) |
+| SF-19 | **Incorrect output.** A library the manager writes with a wrong hash, view or signature is refused by every Songbook app, or worse, accepted with content the user did not intend. | — | Medium | SR-34, SR-37 |
+| SF-20 | **No way to report a vulnerability or learn of an incident.** No `security.txt`, no stated contact, no incident procedure. | — | Low | SR-92, SR-93 |
+
+---
+
+## 6. Requirements
+
+Every requirement applies to the production site and, unless stated, to the test instance. "MUST" requirements block going live (section 8).
+
+### 6.1 Site authenticity and transport (SF-07, SF-08, SF-09)
+
+| ID | Requirement |
+|---|---|
+| SR-01 | The site MUST be served only over HTTPS with TLS 1.3 and TLS 1.2 (no older protocols), with forward-secret cipher suites only. Port 80 MUST only answer ACME challenges and redirect everything else to `https://` with a 301. |
+| SR-02 | Every HTTPS response MUST carry `Strict-Transport-Security: max-age=31536000; includeSubDomains`, rolled out as hstspreload.org advises (5 minutes, 1 week, 1 month, then 1 year). Submitting the domain to the HSTS preload list is SQ-03. |
+| SR-03 | The DNS MUST carry CAA records that allow only Let's Encrypt, bound to the owner's ACME account (`accounturi`), with an `iodef` contact: `0 issue "letsencrypt.org; accounturi=<account URL>"`, `0 issuewild ";"`, `0 iodef "mailto:<security contact>"`. |
+| SR-04 | DNSSEC MUST stay enabled (it is today); a key roll-over at the DNS provider MUST be checked for a working chain afterwards. |
+| SR-05 | The domain MUST have the registrar's transfer lock (`clientTransferProhibited`) and, where the registrar offers it, the update and delete locks; the registrar and DNS accounts MUST use two-factor authentication. |
+| SR-06 | Certificates issued for `zangbundel.nl` and its subdomains MUST be watched in Certificate Transparency logs (for example a crt.sh or provider alert), with an alert to the owner for any certificate the owner did not request. |
+| SR-07 | Mail authenticity: if the domain sends no mail, it MUST publish a null MX (`0 .`), `v=spf1 -all` and `v=DMARC1; p=reject`; if it does send mail, SPF, DKIM and DMARC with `p=reject` MUST cover every sender (SQ-06). |
+| SR-08 | The canonical address `https://zangbundel.nl` MUST be stated in the repository's README, in the app's About screen and manual, and on the site's own About dialog, so users have independent places to check it. The site MUST NOT ask users to send, upload or mail a key file anywhere, and its texts say so (SR-44). |
+
+### 6.2 Code integrity and supply chain (SF-01, SF-03, SF-14)
+
+| ID | Requirement |
+|---|---|
+| SR-10 | A release MUST be built only from a signed git tag on `main` in this repository, with a build that needs no network and gives byte-identical output on a second run (as the test libraries do). |
+| SR-11 | Each release MUST have a manifest of the SHA-256 of every file it deploys, signed with the owner's release key (for example an SSH or minisign Ed25519 key kept off the server). The deploy MUST verify the signature and every hash before the release becomes live, and MUST switch releases atomically (a new directory and one symlink change). |
+| SR-12 | Third-party code MUST be vendored: copied into the repository at an exact version, never fetched at build or run time. For each package the vendoring step MUST verify the tarball against the npm registry's `dist.integrity` (SHA-512) and the package's published provenance, record version, source URL and SHA-256 next to the file, and name its licence in `NOTICE`. |
+| SR-13 | Every `<script>` and stylesheet MUST carry a Subresource Integrity attribute (`integrity="sha384-…"`), generated by the build from the vendored files. The page MUST send `Integrity-Policy: blocked-destinations=(script)`, so a script without a valid integrity attribute is refused in browsers that support it. SRI protects against a partly changed or stale file; it does not protect against a fully compromised server (SF-01), which SR-11 and SR-73 address. |
+| SR-14 | `fflate` MUST be at least 0.8.3 (CVE-2026-45820). Before every release, each vendored package MUST be checked against the GitHub and GitLab advisory databases; a known vulnerability in a reachable function blocks the release. |
+| SR-15 | Before the first use of a key in a session, the crypto worker MUST run a known-answer self-test: RFC 8032 section 7.1 test 1 (key derivation, signature, verification) and a SHA-256 test vector. If any test fails, signing and key loading MUST be refused with a message. Where the browser offers Web Crypto Ed25519, the self-test SHOULD also cross-check `@noble/ed25519` against it. |
+| SR-16 | Signing MUST use one implementation everywhere (`@noble/ed25519`, TD-17) so all browsers give identical results; replacing it, or adopting Web Crypto's Ed25519 instead, is a new TDS decision with this assessment updated (SQ-05). The audit status of the version in use MUST be recorded in TDS TD-17. |
+| SR-17 | No tool on the server installs or builds anything: the server receives only release files and their signed manifest. |
+
+### 6.3 Browser hardening (SF-04, SF-09, SF-10, SF-17)
+
+| ID | Requirement |
+|---|---|
+| SR-20 | Every HTML response MUST carry this Content Security Policy, with no `unsafe-inline`, no `unsafe-eval` and no external source: `default-src 'none'; script-src 'self'; worker-src 'self'; style-src 'self'; img-src 'self' data: blob:; manifest-src 'self'; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; child-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests; require-trusted-types-for 'script'; trusted-types zbm-download`. A source added to it is a decision in this document. |
+| SR-21 | Every response MUST carry `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` (for browsers without `frame-ancestors`), and `Cross-Origin-Resource-Policy: same-origin`. |
+| SR-22 | Every response MUST carry a `Permissions-Policy` that disables what the manager never uses: `accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), screen-wake-lock=(), serial=(), usb=(), xr-spatial-tracking=()`. |
+| SR-23 | HTML responses MUST carry `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`, so the page runs cross-origin isolated (SF-17). Every resource is same-origin, so this costs nothing. |
+| SR-24 | The page MUST NOT contain inline scripts, inline event handlers, `javascript:` URLs, or inline `style` attributes (the CSP forbids them). The mock does use `innerHTML` and `style` attributes; the implementation MUST NOT copy that (section 7.3). |
+| SR-25 | nginx MUST answer only `GET` and `HEAD` (405 for anything else), set `server_tokens off`, list no directories, refuse dot-files and backup files (`~`, `.bak`, `.orig`, `.swp`), and send correct `Content-Type` headers with `charset=utf-8` for text. |
+| SR-26 | The site MUST NOT set cookies, and MUST NOT use a service worker in version 0.x (SQ-07). |
+| SR-27 | Headers MUST be identical for the production site and the test instance, apart from those in SR-80 and SR-81. |
+
+### 6.4 Untrusted input (SF-04, SF-05, SF-16, SF-19)
+
+| ID | Requirement |
+|---|---|
+| SR-30 | All reading of library files, key files and ChordPro text MUST run in a dedicated Web Worker (`library`) without DOM access. The main thread receives only structured data (plain objects, strings), never HTML. |
+| SR-31 | The FDS limits (§3.5) MUST be checked from the ZIP's central directory before any entry is decompressed, and enforced again while decompressing: decompression MUST stop at the declared size and at the global limits, whatever the archive claims. The worker MUST be terminated, with message M-02, when reading one file takes longer than 20 s. |
+| SR-32 | Text from a library or key file MUST reach the page only through `textContent`, attribute setters, or DOM construction; never through `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, or URL attributes built from it. Trusted Types (SR-20) MUST enforce this: the only policy, `zbm-download`, creates `blob:` URLs for downloads. |
+| SR-33 | Parsers of untrusted input MUST run in time linear in the input: no regular expression with nested quantifiers or backtracking on untrusted text, no recursion depth that depends on the input. |
+| SR-34 | The implementation MUST give the findings of every shared test library (`test-libraries/<case>.expected.json`) exactly, in an automated test that runs before every release (SC-04). |
+| SR-35 | The ZIP and ChordPro readers MUST be fuzzed before the first release and after each change to them, starting from the test libraries as corpus, with no crash, hang over the time limit, or unbounded memory growth (SC-11). |
+| SR-36 | Names of generated files MUST be built from the title or author name with FDS PF-20 to PF-22 applied, Unicode controls and bidirectional overrides removed, and the extension fixed by the manager (`.zbl`, `.zbkey`). Downloads MUST use a `blob:` URL with the right MIME type (`application/vnd.zangbundel.library+zip`, `application/json`), revoked after use. |
+| SR-37 | Every library the manager writes MUST be validated by the same validator before it is offered for download, and a library with an Error MUST NOT be offered (EDT-50). |
+
+### 6.5 The signing key in the browser (SF-06)
+
+| ID | Requirement |
+|---|---|
+| SR-40 | Private keys MUST live only in a dedicated Web Worker (`crypto`), as `Uint8Array`, never as a string except while the worker builds the bytes of a key file for an explicit download. The main thread MUST NOT receive the private key; it sends data to sign and receives signatures, the public key and the fingerprint. |
+| SR-41 | The private key MUST be overwritten with zeros in the worker when the user replaces or forgets it (SR-46), when the library session ends, and on `pagehide`; the worker is then terminated. |
+| SR-42 | Nothing about a key or a library MUST be written to local storage, session storage, IndexedDB, the Cache API, cookies, the URL or the history. An automated test MUST inspect all storage after making, loading and using a key (SC-06). Local storage MAY hold only the keys `zbm.lang` and `zbm.bars` (GD-34), enforced by an allow-list in the code. |
+| SR-43 | The production build MUST NOT write library content, key material or file names to the console, and MUST NOT send error reports anywhere. |
+| SR-44 | Key-related texts MUST say, besides M-64: keep the key file outside shared folders and off shared computers; the manager and its makers never ask for your key file; only `https://zangbundel.nl` is the manager. |
+| SR-45 | Fields for the author's name have `autocomplete="off"`; a key file is read only through the file picker or drag-and-drop, never from a URL or the clipboard. |
+| SR-46 | The identity group of the bottom bar MUST offer *Sleutel vergeten* (*forget key*), which removes the key from memory at once (GUI follow-up, SQ-08). |
+| SR-47 | Key files stay unencrypted as FDS SG-10 specifies, until SQ-04 decides otherwise; the risk is accepted in section 9. |
+
+### 6.6 Privacy (SF-11)
+
+| ID | Requirement |
+|---|---|
+| SR-50 | The site MUST NOT use analytics, tracking, fingerprinting, third-party requests, or cookies. `connect-src 'none'` in the CSP (SR-20) MUST stay, so the code cannot send data anywhere even by mistake. |
+| SR-51 | nginx access logs MUST NOT store full IP addresses: the last octet of IPv4 and the last 80 bits of IPv6 are zeroed before writing, the user agent is not logged, and access and error logs are deleted after 14 days. The purpose (security and fault finding) is stated in the privacy statement. |
+| SR-52 | The site MUST publish a privacy statement in Dutch, English and German (EDT-80), reachable from the *Over* dialog and the narrow-window page, stating: what the server logs and for how long; that libraries and keys never leave the browser; what local storage holds; which external pages the links lead to; the operator and a contact. |
+| SR-53 | Links to other sites MUST use `rel="noopener noreferrer"` (SR-21 sets the referrer policy too). |
+| SR-54 | The test instance follows SR-50 to SR-53; its basic-authentication user names are not personal. |
+| SR-55 | The maintainer contact (personal data inside a library) is handled only in the browser and appears only where the FDS puts it; the Editor MUST NOT prefill it from anything the browser knows. |
+
+### 6.7 Availability (SF-12, SF-15)
+
+| ID | Requirement |
+|---|---|
+| SR-60 | nginx MUST limit requests per IP address (for example 20 requests/s with a burst of 40 for the whole site) and concurrent connections per IP, and MUST set short timeouts for request headers and bodies (no request has a body). |
+| SR-61 | File names of scripts, styles and images MUST include a content hash and be served with `Cache-Control: public, max-age=31536000, immutable`; the HTML MUST be served with `Cache-Control: no-cache` so a new release reaches users on their next visit. |
+| SR-62 | The site MUST be monitored from outside contabo6 (for example from the owner's other server or a free external monitor) for availability, for the certificate's expiry date (alert at 14 days), and for the headers of SR-20 to SR-23 (SC-01). |
+| SR-63 | Restoring the site MUST need only this repository's signed tag, the nginx configuration in `contabo-vps-6`, and the release key; the procedure is written in a runbook and tried once before going live. |
+| SR-64 | A signed offline package of each release SHOULD be offered (the release files as a ZIP with the signed manifest of SR-11), which a user can verify and open from their own disk when the site is down or when they prefer not to load code from a server (SQ-07). |
+| SR-65 | A service worker, if ever added, MUST be a TDS decision with this assessment updated, and MUST check the signed manifest before caching, with a server-side way to remove it. |
+
+### 6.8 Hosting and server (SF-01, SF-02)
+
+| ID | Requirement |
+|---|---|
+| SR-70 | `zangbundel.nl` MUST be served from an isolated environment: at least its own nginx container (or vhost) with a read-only filesystem, no PHP or other interpreter, running as a non-root user, with only the release directory mounted read-only. Moving it to its own small VPS is SQ-01. |
+| SR-71 | Before `zangbundel.nl` goes live, the end-of-life PHP sites on contabo6 MUST be retired, moved to another host, or isolated so that their compromise cannot reach the files or configuration of `zangbundel.nl` (SQ-02). |
+| SR-72 | The host MUST keep receiving security updates automatically (unattended upgrades for the OS, rebuilt containers for nginx), SSH MUST accept keys only, and root login over SSH MUST be off. |
+| SR-73 | A check outside the web server's account MUST compare, at least hourly, the SHA-256 of every live file with the signed manifest of the live release, and alert the owner on any difference (SC-09). |
+| SR-74 | The deploy account MUST be a separate user without a login shell, allowed only to upload a release into a staging directory (a forced command), with its own SSH key used for nothing else. Activating a release (SR-11) runs as a different, local step. |
+| SR-75 | The nginx configuration of the site MUST be kept in `contabo-vps-6` and reviewed with this document's requirements as the checklist. |
+
+### 6.9 Test instance (SF-13)
+
+| ID | Requirement |
+|---|---|
+| SR-80 | `test.zangbundel.nl` MUST require HTTP basic authentication over HTTPS (TD-13), with bcrypt password hashes in a file outside any repository, one account per tester, removed when testing ends. |
+| SR-81 | The test instance MUST send `X-Robots-Tag: noindex, nofollow` and show a fixed banner *TESTVERSIE — niet voor echte bibliotheken of sleutels* in every language. |
+| SR-82 | Testers MUST use only the test key of RFC 8032 (`test-libraries/test-key-rfc8032.zbkey`) and test libraries; the banner and the tester instructions say so. |
+| SR-83 | The test instance MUST run in its own webroot and container (SR-70), so a test release can never replace production files. |
+| SR-84 | Promotion to production (TD-13) MUST deploy the same signed release that was tested, verified again by its manifest (SR-11). |
+
+### 6.10 Process (SF-14, SF-20)
+
+| ID | Requirement |
+|---|---|
+| SR-90 | The owner's GitHub, registrar, DNS and server accounts MUST use two-factor authentication, preferably a hardware key; release tags MUST be signed, and the deploy MUST refuse an unsigned tag; `main` MUST be protected against force pushes. |
+| SR-91 | This assessment MUST be repeated before each release that adds a feature touching keys, files, the network or a dependency, and at least once a year. |
+| SR-92 | The site MUST serve `/.well-known/security.txt` (RFC 9116) with a contact, the preferred languages (nl, en, de) and an expiry date at most one year ahead. |
+| SR-93 | An incident runbook MUST describe how to take the site offline within minutes (a maintenance page served by nginx), how to verify and restore a release, and what to tell users. Users who used a key during a compromise window are advised to continue under a new key through *Opslaan als kopie* (FDS limitation 4, EDT-72). |
+
+---
+
+## 7. Implementation specification
+
+The rules below make the requirements concrete. They are a starting point for the final implementation; a deviation is recorded here with its reason.
+
+### 7.1 nginx (SR-01, SR-02, SR-20 to SR-25, SR-51, SR-60, SR-61, SR-80, SR-81)
+
+```nginx
+# /etc/nginx/sites-available/zangbundel.nl  (kept in contabo-vps-6, SR-75)
+map $remote_addr $zbm_ip_anon {                      # SR-51: IPv4 /24, IPv6 /48
+    ~^(?<p>\d+\.\d+\.\d+)\.\d+$        $p.0;
+    ~^(?<p>[0-9a-f]*:[0-9a-f]*:[0-9a-f]*):  $p::;
+    default                              0.0.0.0;
+}
+log_format zbm_anon '$zbm_ip_anon [$time_local] "$request" $status $body_bytes_sent';
+limit_req_zone  $binary_remote_addr zone=zbm_req:10m rate=20r/s;  # SR-60
+limit_conn_zone $binary_remote_addr zone=zbm_conn:10m;
+
+server {
+    listen 80; listen [::]:80;
+    server_name zangbundel.nl;
+    location /.well-known/acme-challenge/ { root /var/www/acme; }
+    location / { return 301 https://zangbundel.nl$request_uri; }
+}
+
+server {
+    listen 443 ssl; listen [::]:443 ssl;
+    http2 on;
+    server_name zangbundel.nl;
+    root /srv/zangbundel/live;                         # symlink to a verified release, SR-11
+    server_tokens off;
+    autoindex off;
+    access_log /var/log/nginx/zangbundel.access.log zbm_anon;   # rotated, 14 days, SR-51
+    client_max_body_size 1k;  client_body_timeout 5s;  client_header_timeout 5s;
+    limit_req zone=zbm_req burst=40 nodelay;  limit_conn zbm_conn 20;
+
+    ssl_protocols TLSv1.2 TLSv1.3;                     # SR-01
+    ssl_prefer_server_ciphers off;                     # TLS 1.2 suites: Mozilla "intermediate"
+    ssl_session_tickets off;
+
+    if ($request_method !~ ^(GET|HEAD)$) { return 405; }        # SR-25
+    location ~ (^|/)\.(?!well-known/) { return 404; }
+    location ~ (~|\.bak|\.orig|\.swp)$  { return 404; }
+
+    # Headers for every response (SR-02, SR-21, SR-22). 'always' adds them to errors too.
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Cross-Origin-Resource-Policy "same-origin" always;
+    add_header Permissions-Policy "accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), screen-wake-lock=(), serial=(), usb=(), xr-spatial-tracking=()" always;
+
+    location = / { try_files /index.html =404; include snippets/zbm-html-headers.conf; }
+    location ~ \.html$ { include snippets/zbm-html-headers.conf; }
+    location /assets/ {                                # hashed names only, SR-61
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        # nginx does not inherit add_header into a block that has its own; repeat the common set:
+        include snippets/zbm-common-headers.conf;
+    }
+}
+```
+
+`snippets/zbm-html-headers.conf` adds, besides the common set, `Cache-Control: no-cache`, the CSP of SR-20, `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: require-corp` and `Integrity-Policy: blocked-destinations=(script)`. The trap to avoid: in nginx, a `location` with any `add_header` drops all `add_header` lines of the server block, so every location includes the common set explicitly, and SC-01 checks every file type.
+
+The test instance (`test.zangbundel.nl`) uses the same file with `root /srv/zangbundel-test/live`, `auth_basic` with its own `auth_basic_user_file` (SR-80), and `add_header X-Robots-Tag "noindex, nofollow" always;` (SR-81). Certificates come from `certbot` as for the other sites; certbot's edits are reviewed so that it does not remove the headers.
+
+### 7.2 DNS records (SR-03, SR-05, SR-07)
+
+```
+zangbundel.nl.        CAA  0 issue     "letsencrypt.org; accounturi=https://acme-v02.api.letsencrypt.org/acme/acct/<id>"
+zangbundel.nl.        CAA  0 issuewild ";"
+zangbundel.nl.        CAA  0 iodef     "mailto:<security contact>"
+; when the domain sends no mail (SQ-06):
+zangbundel.nl.        MX   0 .
+zangbundel.nl.        TXT  "v=spf1 -all"
+_dmarc.zangbundel.nl. TXT  "v=DMARC1; p=reject; adkim=s; aspf=s"
+*._domainkey.zangbundel.nl. TXT "v=DKIM1; p="
+```
+
+The A record (now `127.0.0.1`) and an AAAA record point at contabo6 when the site goes live; `test.zangbundel.nl` gets its own records at the same time. At the registrar: transfer lock on, two-factor authentication on (SR-05).
+
+### 7.3 Application structure (SR-30, SR-32, SR-40 to SR-43)
+
+```
+index.html                      no inline script or style; <script type="module" src="/assets/app.<hash>.js" integrity="sha384-…">
+assets/app.<hash>.js            main thread: UI only; renders with DOM APIs (createElement, textContent)
+assets/library-worker.<hash>.js worker "library": fflate, manifest, ChordPro, FDS §6 validation
+assets/crypto-worker.<hash>.js  worker "crypto": @noble/ed25519, SHA-256/512 via crypto.subtle, keys
+assets/vendor/fflate-0.8.3.<hash>.js, ed25519-3.2.0.<hash>.js   vendored, SR-12
+assets/app.<hash>.css           all styles; no style attributes anywhere
+```
+
+- **Messages between threads** carry plain data only. The library worker returns, for example, `{ songs: [{ id, title, … }], findings: [{ code, severity, where, params }] }`; the main thread builds messages from the code and the translated text with `textContent`.
+- **Rendering**: a small helper builds elements (`el('li', { class: 'song' }, [text(title)])`); there is no HTML string anywhere. The Trusted Types policy `zbm-download` only wraps `URL.createObjectURL` for download links; with `require-trusted-types-for 'script'` any accidental `innerHTML` throws.
+- **Dynamic styles** (the side-bar widths of GD-10) are set through `element.style.setProperty`, which CSP allows, never through `style` attributes in markup.
+- **The crypto worker** exposes `makeKey(name)`, `loadKey(bytes)`, `sign(manifestBytes)`, `publicKey()`, `fingerprint()`, `exportKeyFile()` (only after the M-64 acknowledgement in the UI) and `forget()`. Its self-test (SR-15) runs on start.
+- **Storage**: one module wraps `localStorage` with an allow-list of `zbm.lang` and `zbm.bars`; no other code touches storage (SR-42).
+
+### 7.4 Releases and deployment (SR-10 to SR-13, SR-17, SR-73, SR-74, SR-84)
+
+1. On the owner's computer: `git tag -s vX.Y.Z`, then the build script (no network) writes `dist/` with hashed file names, SRI attributes and `release-manifest.json` (path, size, SHA-256 of every file).
+2. The owner signs the manifest with the release key (`ssh-keygen -Y sign -n zangbundel-release` or minisign); the public key is in this repository (`webapp/release-key.pub`) and on the server.
+3. Upload to `test.zangbundel.nl`'s staging directory as the deploy user (forced command, SR-74).
+4. On the server, an activation script (run by the owner, not by the deploy user) verifies the signature and every hash, copies the release to `/srv/zangbundel-test/releases/<version>/` read-only, and switches the `live` symlink.
+5. After testing, the same signed release is activated for `zangbundel.nl` by the same script (SR-84).
+6. A timer job checks the live files against the signed manifest hourly (SR-73) and reports to the owner.
+7. Vendoring a package (SR-12): `npm pack <name>@<version>`, compare the tarball's SHA-512 with `npm view <name>@<version> dist.integrity`, check the provenance with `npm audit signatures` in a scratch project, copy the built file into `webapp/vendor/`, and record `name, version, source, sha256, licence` in `webapp/vendor/VENDOR.md`.
+
+### 7.5 Privacy statement (SR-52)
+
+A page `privacy.html` in the three languages, with: who runs the site; that the manager processes libraries and keys only in the browser, and nothing is sent to the server; which server logs exist (shortened IP address, time, requested file, status) for security and fault finding, kept 14 days; that local storage holds only the language and the bar widths; that there are no cookies, no analytics, no third parties; which external sites the links lead to; contact and the right to complain to the Autoriteit Persoonsgegevens.
+
+---
+
+## 8. Release gate
+
+No release goes live, on the test instance or in production, unless these checks pass. Results go into `design/test-results/` (a new folder in this repository, one file per run, as in the app repository).
+
+| ID | Check | Covers |
+|---|---|---|
+| SC-01 | A script fetches every file type of the live site (HTML, JS, CSS, images, 404, 405) and compares every header with SR-01, SR-02, SR-20 to SR-25 | SF-09, SF-10 |
+| SC-02 | TLS scan of the host name (for example `testssl.sh`): TLS 1.2 and 1.3 only, no weak suites, valid chain, HSTS present | SF-09 |
+| SC-03 | A browser run through every screen with the CSP and Integrity-Policy in force reports no violation | SF-04, SF-09 |
+| SC-04 | All 56 shared test libraries give exactly their `expected.json` findings in the web app's own test runner | SF-05, SF-19 |
+| SC-05 | The crypto self-test passes in every supported browser (TD-15) | SF-03, SF-18 |
+| SC-06 | After making, loading, using and forgetting a key, local storage holds only `zbm.lang` and `zbm.bars`, and session storage, IndexedDB, Cache Storage and cookies are empty | SF-06 |
+| SC-07 | A recorded browser session (HAR) of a full edit-sign-download cycle shows requests only to the site's own static files | SF-11 |
+| SC-08 | The SRI attributes in the HTML match the deployed files | SF-01 |
+| SC-09 | The signed manifest verifies on the server and every live file matches it | SF-01, SF-14 |
+| SC-10 | No vendored package has a known advisory affecting a used function (SR-14) | SF-03 |
+| SC-11 | The ZIP and ChordPro readers have been fuzzed since their last change, without crash, hang or unbounded memory (SR-35) | SF-05 |
+| SC-12 | DNS: CAA, DNSSEC chain, SPF, DMARC and null MX (or mail authentication) as in section 7.2; registrar lock set | SF-07, SF-08 |
+| SC-13 | `security.txt` present and not expired; privacy statement matches the actual logging | SF-11, SF-20 |
+
+---
+
+## 9. Accepted risks
+
+| Risk | Why accepted | Mitigation that remains |
+|---|---|---|
+| A compromised user device or browser extension can read the page, the library and the key (AT-7) | Outside the site's control | Workers keep the key out of the main thread (SR-40); SR-44 advises a trusted computer; the offline package (SR-64) can be used in a clean browser profile |
+| Every visit loads code from the server, so a server compromise reaches users until it is noticed (SF-01, trust on each visit) | Inherent to web apps | SR-11, SR-70, SR-73 shorten the window; SR-64 gives cautious users a verified offline copy |
+| JavaScript cryptography is not constant-time in practice (SF-18) | Exploitation needs local, repeated measurements, which equals AT-7 | SR-15 self-test; keys are used only briefly |
+| Key files are not encrypted (FDS SG-10, D-07) | Decided in the FDS for simplicity | SR-44 texts; SQ-04 may change it |
+| One server, no failover (SF-12) | Proportionate for a volunteer project | SR-62 monitoring, SR-63 restore, SR-64 offline package |
+| `@noble/ed25519` v3 is not independently audited (SF-03) | Its v1 was audited and v3 is cross-tested against the audited noble-curves; no audited alternative works in all browsers of TD-15 | SR-15 known-answer test and cross-check, SR-16 single implementation, SQ-05 |
+
+---
+
+## 10. Open questions
+
+| ID | Question | Recommendation |
+|---|---|---|
+| SQ-01 | Isolated container on contabo6 (SR-70 minimum) or a separate small VPS for `zangbundel.nl`? | A separate small VPS once the site is used beyond testing: it removes SF-02 instead of reducing it, at a few euros a month. The container is acceptable for the test instance. |
+| SQ-02 | Retire, move or isolate the end-of-life PHP sites on contabo6 before going live (SR-71)? | Retire or move them; isolation of unpatched PHP 5.6 is fragile. |
+| SQ-03 | Submit `zangbundel.nl` to the HSTS preload list? | Yes, after three months without problems at one year `max-age`; removal takes months, so only once subdomain plans are settled. |
+| SQ-04 | Encrypt key files with a passphrase (an FDS change to §5.3 and SG-10)? | Recommended: a key file that leaks from a Downloads folder or a chat is then not usable on its own. It costs a passphrase prompt per load and a format version. |
+| SQ-05 | `@noble/ed25519` everywhere, or Web Crypto's Ed25519 where the browser has it? | `@noble/ed25519` everywhere for identical behaviour (TD-15 includes browsers without Web Crypto Ed25519), with Web Crypto as a cross-check in the self-test (SR-15). Revisit when TD-15's oldest browsers all have it. |
+| SQ-06 | Does `zangbundel.nl` send or receive mail? The domain has an MX record today. | If not: null MX, `spf -all`, DMARC `reject` (section 7.2). If yes: a separate decision with SPF, DKIM and DMARC. |
+| SQ-07 | Offer a signed offline package (SR-64), and keep "no service worker" (SR-26)? | Yes to both for 0.x. |
+| SQ-08 | *Sleutel vergeten* in the identity group (SR-46), and forget the key automatically after inactivity (for example 30 minutes, with a warning)? | Both; the GUI design gets a decision for each. |
+
+---
+
+## 11. Sources
+
+Checked on 2026-11-06.
+
+- noble-ed25519, README (audit status, constant-time statement, release provenance): <https://github.com/paulmillr/noble-ed25519>
+- Cure53, pentest report of noble-ed25519 v1 (February 2022): <https://cure53.de/pentest-report_ed25519.pdf>
+- fflate CVE-2026-45820 (infinite loop in `unzipSync`, fixed in 0.8.3): <https://advisories.gitlab.com/npm/fflate/CVE-2026-45820/>, <https://access.redhat.com/security/cve/cve-2026-45820>; fflate changelog: <https://github.com/101arrowz/fflate/blob/master/CHANGELOG.md>
+- Web Crypto Ed25519 support across browsers: <https://blog.ipfs.tech/2025-08-ed25519/>, <https://github.com/web-platform-dx/web-features/pull/1577/files>
+- Trusted Types in all major engines (Firefox 148, Safari 26): <https://dev.to/grimicorn/trusted-types-is-baseline-dom-xss-is-now-a-type-error-1k1h>, <https://web-platform-dx.github.io/web-features-explorer/newly-available>
+- Subresource Integrity: <https://www.w3.org/TR/sri/>, <https://developer.mozilla.org/docs/web/Security/Subresource_Integrity>; Integrity-Policy header: <https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/Integrity-Policy>
+- Cross-origin isolation (COOP, COEP): <https://web.dev/articles/why-coop-coep>
+- HSTS preload rules: <https://hstspreload.org/>
+- Let's Encrypt ending OCSP (CRLs instead; OCSP stapling no longer applies): <https://www.abetterinternet.org/post/ending-ocsp>
+- F-Droid badge licence: <https://f-droid.org/docs/Badges/>
+- Domain state: `dns.google` DNS-over-HTTPS answers and SIDN RDAP (`rdap.sidn.nl/domain/zangbundel.nl`), 2026-11-06.
+
+The GDPR points (IP addresses as personal data, purpose and retention of server logs) follow general GDPR practice; the Autoriteit Persoonsgegevens' own guidance was not found in this research and should be checked before the privacy statement is published.
+
+---
+
+## 12. Change history
+
+| Version | Date | Change |
+|---|---|---|
+| Draft 0.1 | 2026-11-06 | First assessment of the web app design: assets, attackers, findings SF-01 to SF-20, requirements SR-01 to SR-93, implementation specification, release gate SC-01 to SC-13, accepted risks, open questions SQ-01 to SQ-08. |

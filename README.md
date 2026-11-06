@@ -50,6 +50,7 @@ The manager is built as a web app that runs on nginx or Apache with PHP. Each sc
 | [design/FDS.md](design/FDS.md) | You want to know what the manager must do: the library package format, the manifest, signing, the validation rules, the Editor's behaviour, the app's import, and every user message. Requirements are numbered (`PF-nn`, `EDT-nn`, `APP-nn`, …) and rules carry codes (`PKG-nn`, `SNG-nn`, …). |
 | [design/webappGUI.md](design/webappGUI.md) | You design or review a screen of the web app: what it shows, what happens on each action, and its colours, buttons and icons, which come from the Zangbundel app. |
 | [design/webappTDS.md](design/webappTDS.md) | You build, serve or deploy the web app: server (nginx or Apache with PHP), the mock, the test server. |
+| [design/securityAssessment.md](design/securityAssessment.md) | You touch keys, files, the network, a dependency, the server or the deployment: the threats, and the requirements and release checks the implementation must meet. |
 
 The library format and the import rules in the FDS are shared with the [Zangbundel app](https://github.com/pe1mew/Zangbundel); the app and the manager must apply the same validation rules.
 

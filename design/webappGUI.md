@@ -304,6 +304,8 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 
 **GD-38 — Two named editing modes: *Blokken* and *Code (ChordPro)*.** *(Owner, 2026-11-06, feedback on the mock.)* The switch *ChordPro-tekst* of GD-18 was not recognised as a choice between two ways of editing. Above the song, *Bewerken als* is followed by a segmented control with two options, *Blokken* (the section editor, the default) and *Code (ChordPro)* (the song as raw ChordPro code, editable, with line checks while typing). The current mode is filled orange. The user switches at any moment during an edit; every change made in one mode is in the other, and switching without changes leaves the song exactly as it was. *Toepassen* applies the song in whichever mode is open. Keyboard: the control is a radio group, reachable with Tab. This replaces the switch of GD-18; the rest of GD-18 stands.
 
+**Follow-ups from the security assessment** (`design/securityAssessment.md`, 2026-11-06), not yet decided here: *Sleutel vergeten* in the identity group (SR-46, SQ-08) and an automatic forget after inactivity (SQ-08); the extra key texts of SR-44; the privacy statement page reachable from *Over* and the narrow-window page (SR-52); the test instance's fixed *TESTVERSIE* banner (SR-81). The implementation renders without `innerHTML` and without `style` attributes (SR-24, SR-32), unlike the mock.
+
 ---
 
 ## 4. Open questions

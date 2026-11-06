@@ -15,7 +15,7 @@ HIGH; add their paths here when the implementation technology is chosen.
 
 | Tier | File patterns | Depth |
 |------|-------------|-------|
-| **HIGH** | `design/FDS.md`, `CLAUDE.md`, `.claude/review-profile.md`, `scripts/**`, `.gitignore`, `.gitattributes`, `LICENSE`, `license.md`, `NOTICE`, `.github/workflows/**`, `test-libraries/**` | Full battery (3-4 lenses) |
+| **HIGH** | `design/FDS.md`, `design/securityAssessment.md`, `webapp/**` (once it holds the implementation), `CLAUDE.md`, `.claude/review-profile.md`, `scripts/**`, `.gitignore`, `.gitattributes`, `LICENSE`, `license.md`, `NOTICE`, `.github/workflows/**`, `test-libraries/**` | Full battery (3-4 lenses) |
 | **MEDIUM** | `design/**` (anything else under design), `README.md`, `contributing.md` | Two lenses (adversarial + doc-accuracy) |
 | **LOW** | `memory/**`, `changelog.md`, `code_of_conduct.md` | One lens (adversarial) |
 
