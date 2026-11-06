@@ -86,6 +86,16 @@
 **Root cause**: The regexes assumed one spelling of HTML; browsers tokenize many.
 **Fix**: Check with `html.parser`, and after rewriting verify the output: every local reference resolves and every stylesheet and script has the right SRI. A form the rewrite misses then fails the build instead of shipping.
 
+### `exec N>file 2>/dev/null` silences the whole script (2026-11-06)
+**Problem**: After the round-2 fix, every refusal of `zbm-receive` printed nothing; the uploads were still refused, so only a test asserting the message noticed (8 checks in `run.sh`).
+**Root cause**: In bash, a redirection on a bare `exec` is permanent: `2>/dev/null` there closes stderr for the rest of the script, not just for the open.
+**Fix**: Put the redirect on a brace group: `{ exec 9>>"$f"; } 2>/dev/null || refuse ...`. Rule: a test of a refusal asserts its message, not only the exit code.
+
+### A stock logrotate stanza with `notifempty` keeps quiet logs indefinitely (2026-11-06)
+**Problem**: The privacy statement promised deletion after 14 days; Ubuntu's `/etc/logrotate.d/nginx` (`daily`, `rotate 14`, `notifempty`) never rotates an empty log, so a quiet error log kept full IP addresses for as long as it stayed quiet.
+**Root cause**: Old rotations are only deleted when a rotation happens; `notifempty` skips it.
+**Fix**: Own folder and stanza (`webapp/server/logrotate/zangbundel`: `ifempty`, `rotate 13`, `maxage 14`), tested by forcing 16 rotations in `run.sh`. Rule: a retention promise is checked against the rotation config, not against "daily, 14 kept".
+
 ## Promoted
 
 <!-- Track gotchas that have been promoted to topic files or the memory index.
@@ -125,9 +135,11 @@
 
 | Date | Finding shape | Check | Status | Occurrences |
 |------|---------------|-------|--------|-------------|
+| 2026-11-06 | Quiet log kept past the promised retention | `webapp/server/test/run.sh` "16 forced rotations leave the log and 13 old copies" | proposed | 0 |
+| 2026-11-06 | Refusal message lost, exit code still right | `webapp/server/test/run.sh` `refused` helper asserts the message; it went red on all 8 `zbm-receive` refusals when stderr was silenced | live | 0 |
 | 2026-11-06 | Integrity check blind to unreadable directories | `webapp/server/test/run.sh` "verify: file hidden in an unreadable dir" | proposed | 0 |
 | 2026-11-06 | nginx error page (401/404/405) without CSP, COOP or COEP | `webapp/tools/check_headers.py` (error responses checked against the file CSP and the common set); seeded: COEP removed, 24 checks went red | live | 0 |
-| 2026-11-06 | HTML check evaded (attribute spelling, quoting) | `webapp/tests/test_build.py` <!-- placeholder --> from the scratch case list (10 evasions + 1 valid page) | proposed | 0 |
+| 2026-11-06 | HTML check evaded (attribute spelling, quoting, parser divergence) | `webapp/tests/test_build.py` (22 unsafe pages, 1 valid page; run by `webapp/server/test/run.sh`); five of its cases passed the f089ab0 build (round-2 review) | live | 1 (2026-11-06, round 2: comment/CDATA divergence) |
 | 2026-11-06 | Release built without a signed tag | `webapp/server/test/run.sh` "build without a signed tag", "trial build to zangbundel.nl" | proposed | 0 |
 | 2026-11-06 | Upload limits checked without a lock | `webapp/server/test/run.sh` "second upload while one runs" | proposed | 0 |
 | 2026-11-06 | Test step printed PASS but never counted a failure | `webapp/server/test/run.sh` uses only `check`/`refused`; a grep for `&& ok` without `bad` in `webapp/server/test/` <!-- placeholder --> | proposed | 0 |

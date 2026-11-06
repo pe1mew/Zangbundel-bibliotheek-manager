@@ -40,14 +40,17 @@ git config --global gpg.ssh.allowedSignersFile $W/rk/tag-signers
 cp /repo/webapp/tools/build.py /repo/webapp/tools/sign-release.sh $W/tools/
 cp $W/rk/test-release.pub $W/tools/release-key.pub
 
+check "build.py refuses unsafe pages, builds a valid one" python3 /repo/webapp/tests/test_build.py /repo/webapp/tools/build.py
+
 # --- build: placeholder from a signed tag (SR-10, SR-90), holding page as a trial build ---
-mkdir -p $W/src/webapp && cp -r /repo/webapp/placeholder /repo/webapp/test-holding $W/src/webapp/
-git -C $W/src init -q && git -C $W/src add -A && git -C $W/src commit -q -m 'test source'
+mkdir -p $W/src/webapp && cp -r /repo/webapp/placeholder /repo/webapp/test-holding /repo/webapp/tools $W/src/webapp/
+rm -f $W/src/webapp/tools/release-key.pub
+git -C $W/src init -q -b main && git -C $W/src add -A && git -C $W/src commit -q -m 'test source'
 refused "build without a signed tag" "no tag with a valid signature" \
-  python3 /repo/webapp/tools/build.py build --src $W/src/webapp/placeholder --name placeholder --version 0.1.0 --out $W/dist/x
+  python3 $W/src/webapp/tools/build.py build --src $W/src/webapp/placeholder --name placeholder --version 0.1.0 --out $W/dist/x
 git -C $W/src tag -s v0.1.0 -m 'test tag'
 check "build placeholder from signed tag" \
-  python3 /repo/webapp/tools/build.py build --src $W/src/webapp/placeholder --name placeholder --version 0.1.0 --out $W/dist/placeholder-0.1.0
+  python3 $W/src/webapp/tools/build.py build --src $W/src/webapp/placeholder --name placeholder --version 0.1.0 --out $W/dist/placeholder-0.1.0
 check "manifest names the tag" grep -q '"source_tag": "v0.1.0"' $W/dist/placeholder-0.1.0/release-manifest.json
 check "trial build of test-holding" \
   python3 /repo/webapp/tools/build.py build --src /repo/webapp/test-holding --name test-holding --version 0.1.0 --out $W/dist/test-holding-0.1.0 --allow-dirty
@@ -62,6 +65,8 @@ install -m 0644 $S/nginx/sites-available/*.conf /etc/nginx/sites-available/
 for f in zangbundel-http.conf zangbundel.nl.conf test.zangbundel.nl.conf; do ln -sf ../sites-available/$f /etc/nginx/sites-enabled/$f; done
 install -m 0755 $S/bin/zbm-receive /usr/local/bin/zbm-receive
 install -m 0755 $S/bin/zbm-release /usr/local/sbin/zbm-release
+install -m 0644 $S/logrotate/zangbundel /etc/logrotate.d/zangbundel
+install -d -m 0755 -o root -g adm /var/log/nginx/zangbundel
 mkdir -p /var/www/acme /etc/zangbundel /srv/zangbundel/releases /srv/zangbundel-test/releases /srv/zangbundel-staging/incoming
 useradd --system --create-home --shell /bin/bash zbm-deploy
 useradd --system --no-create-home --shell /usr/sbin/nologin zbm-verify
@@ -142,11 +147,42 @@ check "live unchanged after the refusals" test "$(readlink /srv/zangbundel-test/
 
 # --- the forced command's limits ---
 refused "oversize upload" "larger than" sh -c "head -c $((50*1024*1024 + 10)) /dev/zero | su zbm-deploy -c /usr/local/bin/zbm-receive"
-refused "truncated upload" "not a complete tar" sh -c "head -c 3000 $W/dist/placeholder-0.1.0.tar | su zbm-deploy -c /usr/local/bin/zbm-receive"
+I=/srv/zangbundel-staging/incoming
+rx() { su zbm-deploy -c /usr/local/bin/zbm-receive; }
+refused "truncated upload" "cut short" sh -c "head -c 3000 $W/dist/placeholder-0.1.0.tar | su zbm-deploy -c /usr/local/bin/zbm-receive"
+python3 -c "
+import io, tarfile
+b = io.BytesIO()
+with tarfile.open(fileobj=b, mode='w', format=tarfile.USTAR_FORMAT) as t:
+    for n in ('a', 'b', 'c'):
+        d = n.encode() * 600; i = tarfile.TarInfo(n); i.size = len(d); t.addfile(i, io.BytesIO(d))
+open('/tmp/cut.tar', 'wb').write(b.getvalue()[:2048])   # header + data of 'a' only: lists fine, no end marker
+"
+refused "tar cut at a member boundary" "cut short" sh -c "su zbm-deploy -c /usr/local/bin/zbm-receive < /tmp/cut.tar"
+refused "compressed upload" "not an uncompressed tar" sh -c "gzip -c $W/dist/placeholder-0.1.0.tar | su zbm-deploy -c /usr/local/bin/zbm-receive"
+refused "zbm-receive run as root" "not as root" sh -c "/usr/local/bin/zbm-receive < $W/dist/placeholder-0.1.0.tar"
+mkdir -p /tmp/held && mv $I/upload-*.tar /tmp/held/          # quota tests start from an empty staging dir
+for i in $(seq 1 20); do su zbm-deploy -c "touch $I/upload-q$i.tar"; done
+refused "20 uploads waiting" "uploads are waiting" sh -c "su zbm-deploy -c /usr/local/bin/zbm-receive < $W/dist/placeholder-0.1.0.tar"
+rm -f $I/upload-q*.tar
+su zbm-deploy -c "truncate -s 200M $I/upload-big.tar"
+refused "200 MB waiting" "bytes are waiting" sh -c "su zbm-deploy -c /usr/local/bin/zbm-receive < $W/dist/placeholder-0.1.0.tar"
+su zbm-deploy -c "truncate -s $((200*1024*1024 - 50*1024)) $I/upload-big.tar"
+refused "upload would pass 200 MB" "would hold more" sh -c "su zbm-deploy -c /usr/local/bin/zbm-receive < $W/dist/placeholder-0.1.0.tar"
+rm -f $I/upload-big.tar
+mv /tmp/held/upload-*.tar $I/
 ( { sleep 2; cat $W/dist/placeholder-0.1.0.tar; } | su zbm-deploy -c /usr/local/bin/zbm-receive >/tmp/slow.out 2>&1 ) &
-slow=$!; sleep 0.5
+slow=$!
+check "the slow upload holds the lock" wait_for sh -c "! flock -n $I/.lock true"
 refused "second upload while one runs" "another upload is in progress" sh -c "su zbm-deploy -c /usr/local/bin/zbm-receive < $W/dist/placeholder-0.1.0.tar"
 wait $slow; check "the slow upload completed" grep -q '^received' /tmp/slow.out
+
+# --- root's umask does not matter (round-2 review) ---
+rm -rf /srv/zangbundel-test/releases/test-holding-0.1.0 /srv/zangbundel-test/live
+check "activate with root umask 002" sh -c "umask 002; zbm-release activate --trial test.zangbundel.nl $W/dist/test-holding-0.1.0.tar"
+rm -rf /srv/zangbundel-test/releases /srv/zangbundel-test/live
+check "activate with root umask 077" sh -c "umask 077; zbm-release activate --trial test.zangbundel.nl $W/dist/test-holding-0.1.0.tar"
+check "release dirs readable after umask 077" test "$(stat -c %a /srv/zangbundel-test/releases)" = 755
 
 # --- integrity check as its own user (SR-73), with the push to a stand-in for Uptime Kuma ---
 python3 -c "
@@ -182,7 +218,7 @@ check "verify: intact again after restore" as_verify zbm-release verify
 # --- nginx ---
 check "nginx -t" nginx -t
 nginx
-check "nginx answers" wait_for curl -sk --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/nl/
+check "nginx answers" wait_for curl -fsk --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/nl/
 echo; echo "=== SC-01 zangbundel.nl ==="
 check "SC-01 zangbundel.nl" python3 /repo/webapp/tools/check_headers.py zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure
 grep -E '^(PASS|FAIL)|^        -' /tmp/out | grep -v '^PASS' | head -20
@@ -194,15 +230,20 @@ curl -skI --http2 --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/nl
 check "HTTP/2 on the shared socket, headers intact" sh -c "grep -q '^HTTP/2 200' /tmp/h2.txt && grep -qi '^content-security-policy: default-src' /tmp/h2.txt && grep -qi '^cross-origin-embedder-policy: require-corp' /tmp/h2.txt"
 code=$(curl -sk -o /dev/null -w '%{http_code}' -u tester:wrong --resolve test.zangbundel.nl:443:127.0.0.1 https://test.zangbundel.nl/)
 check "wrong password: 401" test "$code" = 401
-check "a failed login is in the error log (privacy statement says so)" grep -q 'password mismatch' /var/log/nginx/zangbundel-test.error.log
-code=$(curl -sk -o /dev/null -w '%{http_code}' --resolve other.example:443:127.0.0.1 https://other.example/ || true)
-check "unknown name goes to the default server (444, no answer)" test "$code" = 000
+check "a failed login is in the error log (privacy statement says so)" grep -q 'password mismatch' /var/log/nginx/zangbundel/test.error.log
+curl -sk -o /dev/null --resolve other.example:443:127.0.0.1 https://other.example/; rc=$?
+check "unknown name: default server closes (444), nginx still up" sh -c "case $rc in 52|92|16) pgrep -x nginx >/dev/null ;; *) echo curl exit $rc; exit 1 ;; esac"
 codes=$(for i in $(seq 1 80); do curl -sk -o /dev/null -w '%{http_code}\n' --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/nl/ & done; wait)
 check "rate limit answers 429 under 80 parallel requests" test "$(echo "$codes" | grep -c 429)" -gt 0
-check "access log written" test -s /var/log/nginx/zangbundel.access.log
-check "access log shortens the address" grep -qE '^127\.0\.0\.0 ' /var/log/nginx/zangbundel.access.log
-check "no full address in the access log" sh -c "! grep -q '127\.0\.0\.1' /var/log/nginx/zangbundel.access.log"
-check "no user agent in the access log" sh -c "! grep -qE 'curl|zbm-check-headers|python' /var/log/nginx/zangbundel.access.log"
+check "access log written" test -s /var/log/nginx/zangbundel/access.log
+check "access log shortens the address" grep -qE '^127\.0\.0\.0 ' /var/log/nginx/zangbundel/access.log
+check "no full address in the access log" sh -c "! grep -q '127\.0\.0\.1' /var/log/nginx/zangbundel/access.log"
+check "no user agent in the access log" sh -c "! grep -qE 'curl|zbm-check-headers|python' /var/log/nginx/zangbundel/access.log"
+
+# --- logrotate keeps 14 days, quiet logs included (SR-51) ---
+check "logrotate stanza parses" logrotate -d /etc/logrotate.d/zangbundel
+for i in $(seq 1 16); do logrotate -f -s /tmp/lr.state /etc/logrotate.d/zangbundel >/dev/null 2>&1; done
+check "16 forced rotations leave the log and 13 old copies" test "$(ls /var/log/nginx/zangbundel/ | grep -c '^access\.log')" -eq 14
 
 echo; echo "TOTAL: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

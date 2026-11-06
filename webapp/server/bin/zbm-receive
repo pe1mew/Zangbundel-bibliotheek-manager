@@ -15,16 +15,20 @@ umask 027
 
 dir=/srv/zangbundel-staging/incoming
 max=$((50 * 1024 * 1024))    # 50 MB per upload
-total=$((200 * 1024 * 1024)) # 200 MB waiting in staging at most
+total=$((200 * 1024 * 1024)) # 200 MB waiting in staging at most, this upload included
 keep=20                      # at most this many waiting uploads
 
 refuse() { echo "refused: $*" >&2; exit 1; }
 
+# The deploy user owns the staging directory and could plant links in it; run as root, this
+# script would follow them. It is meant for the deploy user only.
+[ "$(id -u)" -ne 0 ] || refuse "run as the deploy user, not as root"
 [ -d "$dir" ] || refuse "no staging directory $dir"
 
-# One upload at a time: the limits below are checked and the file stored under one lock, so
-# parallel sessions cannot each pass the check and together exceed it.
-exec 9>"$dir/.lock"
+# One upload at a time: the limits are checked and the file stored under one lock, so parallel
+# sessions cannot each pass the check and together exceed it. '>>' never truncates the lock file.
+# (The braces keep 2>/dev/null to this one open; on a bare exec it would silence the whole script.)
+{ exec 9>>"$dir/.lock"; } 2>/dev/null || refuse "cannot open $dir/.lock"
 flock -n 9 || refuse "another upload is in progress"
 
 count=$(find "$dir" -maxdepth 1 -type f -name 'upload-*.tar' | wc -l)
@@ -34,15 +38,21 @@ used=$(find "$dir" -maxdepth 1 -type f -name 'upload-*.tar' -printf '%s\n' | awk
 
 name="upload-$(date -u +%Y%m%dT%H%M%SZ)-$$.tar"
 tmp="$dir/.partial-$$"
-rm -f "$dir"/.partial-*                       # left by a killed session; we hold the lock
+find "$dir" -maxdepth 1 -type f -name '.partial-*' -delete   # left by a killed session; we hold the lock
 trap 'rm -f "$tmp"' EXIT
 
 head -c $((max + 1)) > "$tmp"
 size=$(stat -c %s "$tmp")
 [ "$size" -le "$max" ] || refuse "larger than $max bytes"
 [ "$size" -gt 0 ] || refuse "nothing received"
-# A dropped connection ends the stream early; a tar that does not list completely is not stored.
-tar -tf "$tmp" >/dev/null 2>&1 || refuse "not a complete tar file ($size bytes received)"
+[ $((used + size)) -le "$total" ] || refuse "staging would hold more than $total bytes; ask the owner to clear $dir"
+# Only an uncompressed POSIX tar: the 'ustar' magic at offset 257 (tar would otherwise unpack a
+# compressed stream to list it, which a small bomb turns into minutes of CPU under the lock) ...
+[ "$(dd if="$tmp" bs=1 skip=257 count=5 2>/dev/null)" = ustar ] || refuse "not an uncompressed tar file"
+# ... that ends in the end-of-archive marker (zero blocks), so a stream cut short is not stored ...
+[ "$(tail -c 1024 "$tmp" | tr -d '\000' | wc -c)" -eq 0 ] || refuse "the tar file is cut short ($size bytes received)"
+# ... and that lists without error. zbm-release activate checks every file it holds.
+tar -tf "$tmp" >/dev/null 2>&1 || refuse "the tar file does not list ($size bytes received)"
 
 [ ! -e "$dir/$name" ] || refuse "name in use, try again: $name"
 mv -T "$tmp" "$dir/$name"

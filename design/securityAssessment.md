@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.6 |
+| **Status** | Draft 0.7 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.11, `design/webappTDS.md` draft 0.5 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
@@ -350,9 +350,10 @@ The test instance (`test.zangbundel.nl`) uses the same file with `root /srv/zang
 - **One set of files for both hosts.** The common headers are a snippet that the server block and every location with its own headers include. The values that differ per host (the HTML CSP, `X-Robots-Tag`) come from maps keyed on `$server_name`, not on the client's `Host`.
 - **Responses that are not HTML pages** carry `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; sandbox`, because an SVG opened on its own is a document that could run script.
 - **nginx's own error pages** (401, 403, 404, 405, 429) are HTML too. They carry that same sandboxing CSP (SR-20) and, like every response, `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` (SR-23). The server block includes the file-header set for that reason.
-- **The error log** cannot shorten addresses (SR-51 covers the access log). `log_not_found off` and rate-limit events at `warn` keep it to real faults. On the test instance, nginx also logs a failed basic-auth login there, at error level, with the user name entered. The privacy statement says so (7.5).
+- **The error log** cannot shorten addresses (SR-51 covers the access log). `log_not_found off` and rate-limit events at `warn` keep it to real faults. On the test instance, nginx also logs a failed basic-auth login there (unknown user or wrong password), at error level, with the user name entered. The privacy statement says so (7.5).
 - **IPv6 addresses** arrive compressed. The map keeps at most the groups before a `::` within the first three, so nothing beyond the /48 is logged (SR-51).
-- **Retention.** Ubuntu's logrotate rotates `/var/log/nginx/*.log` daily and keeps 14 old files. SR-51's "deleted after 14 days" therefore holds to within a day: an entry is gone after at most 15 days, which is what the privacy statement says.
+- **Retention (SR-51).** Our logs live in `/var/log/nginx/zangbundel/`, outside Ubuntu's `/var/log/nginx/*.log` stanza. That stanza has `notifempty`, which never rotates a quiet log, so a quiet error log would keep full addresses indefinitely. Our own stanza (`webapp/server/logrotate/zangbundel`) rotates daily, also when empty, and keeps 13 old files plus `maxage 14`, so no entry is older than 14 days.
+- **Byte ranges are off** (`max_ranges 0`). On a 416 answer nginx 1.24 sends every `always` header twice; a Range header is now ignored and the whole file sent.
 - **TLS versions** are fixed by the default server of the 443 socket before SNI selects ours. The cipher list of `zbm-tls.conf` does apply. On contabo6 the default server (snakeoil certificate, `return 444`) sets no protocols. Ubuntu's OpenSSL 3 refused TLS 1.0 and 1.1 in the container test even where `nginx.conf` lists them. SC-02 checks what the real host offers.
 - **Certificates** come from `certbot certonly --webroot`, so certbot never edits our files. A separate port-80 server answers ACME challenges and redirects everything else.
 - **`release-manifest.json` and its signature** stay on disk for the integrity check, but nginx does not serve them.
@@ -402,18 +403,28 @@ assets/app.<hash>.css           all styles; no style attributes anywhere
 
 **As implemented (M0).** The runbook is `webapp/server/README.md`.
 
-- **Build** (`webapp/tools/build.py`). It refuses uncommitted, untracked or ignored source files and a HEAD without a tag that `git verify-tag` accepts. It records that tag in the manifest (SR-10, SR-90).
-  - With `--allow-dirty` it makes a trial build instead, which `zbm-release` accepts only on the test instance and only with `--trial`.
-  - It checks the HTML with a parser: no inline script or style, no event handlers, no script URLs (SR-24, SR-32). After rewriting, it checks that every local reference resolves and that every stylesheet and script carries the right SRI (SR-13).
+- **Build** (`webapp/tools/build.py`). A release build needs all of these (SR-10, SR-90), and records the tag in the manifest:
+  - HEAD on `main`;
+  - a tag on HEAD that `git verify-tag` accepts;
+  - no uncommitted, untracked or ignored files in the source or in `webapp/tools/`.
+
+  **Trial builds deviate from SR-10.** With `--allow-dirty`, `build.py` makes a trial build without those checks. `zbm-release` accepts one only on the test instance, and only with `--trial`, so testers can see work in progress. A trial build never reaches `zangbundel.nl`.
+
+  The build also checks content:
+  - HTML is checked with a parser: no inline script or style, no event handlers, no script URLs (SR-24, SR-32).
+  - Markup the parser could read differently from a browser is refused outright: CDATA, abrupt or `--!>` comments, comments holding `<` or `>`, and end tags with extra characters.
+  - So are `<base>`, `<meta http-equiv>`, frames, objects, `srcdoc` and external resources (SR-12), and SVG files with script or event handlers.
+  - After rewriting, every local reference must resolve, and every stylesheet and script must carry the right SRI (SR-13).
+  - JavaScript and web manifests are refused until M1.1 rewrites the references inside them.
 - **Signing and packing** (`webapp/tools/sign-release.sh`).
-- **Upload.** The release travels as one tar file piped over SSH to the deploy user. Its forced command `zbm-receive` stores it, one upload at a time, within 50 MB per upload and 200 MB or 20 uploads waiting, and only if it is a complete tar.
-- **The deploy user** keeps `/bin/bash` as its shell, because sshd runs a forced command through the user's shell. That is a deviation from SR-74's "without a login shell": a locked password and `restrict` in `authorized_keys` keep it from logging in.
-- **Activation.** As root, `zbm-release activate` unpacks only listed regular files and checks the signature and every hash. It installs the release root-owned and read-only and switches `live` atomically.
+- **Upload.** The release travels as one tar file piped over SSH to the deploy user. Its forced command `zbm-receive` refuses to run as root. It stores the upload, one at a time, within these limits: 50 MB per upload, 20 uploads waiting, and 200 MB in staging including this one. It stores only an uncompressed tar (`ustar` magic) that ends in its end-of-archive marker and lists without error.
+- **The deploy user** keeps `/bin/bash` as its shell, because sshd runs a forced command through the user's shell. That is a deviation from SR-74's "without a login shell". What denies the user a shell is `command=` in `authorized_keys`: sshd runs `zbm-receive` whatever the client asks. `restrict` removes the terminal and forwarding, and the locked password rules out password logins.
+- **Activation.** As root (whatever root's umask), `zbm-release activate` unpacks only listed regular files and checks the signature and every hash. It installs the release root-owned and read-only and switches `live` atomically.
 - **Hourly check.** `zbm-release verify` (`zbm-verify.timer`) runs as its own user `zbm-verify`. It checks the signature, every hash and every file's owner and mode, and fails on a directory it cannot read. It pushes the result to Uptime Kuma.
 
 ### 7.5 Privacy statement (SR-52)
 
-A page `privacy.html` in the three languages, with: who runs the site; that the manager processes libraries and keys only in the browser, and nothing is sent to the server; which server logs exist (shortened IP address, time, requested file, status) for security and fault finding, and that they are deleted after at most 15 days (daily rotation, 14 old files kept); that only a server fault, or on the test instance a failed login (with the user name entered), puts a full address in the separate error log, deleted on the same schedule; that local storage holds only the language and the bar widths; that there are no cookies, no analytics, no third parties; which external sites the links lead to; contact and the right to complain to the Autoriteit Persoonsgegevens.
+A page `privacy.html` in the three languages, with: who runs the site; that the manager processes libraries and keys only in the browser, and nothing is sent to the server; which server logs exist (shortened IP address, time, requested file, status) for security and fault finding, and that they are deleted after 14 days; that only a server fault, or on the test instance a failed login (unknown user or wrong password, with the user name entered), puts a full address in the separate error log, deleted on the same schedule; that local storage holds only the language and the bar widths; that there are no cookies, no analytics, no third parties; which external sites the links lead to; contact and the right to complain to the Autoriteit Persoonsgegevens.
 
 ---
 
@@ -578,3 +589,4 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 | Draft 0.4 | 2026-11-06 | SQ-01 decided: the host nginx serves `zangbundel.nl` natively (SR-70, SR-83). All open questions are decided. |
 | Draft 0.5 | 2026-11-06 | M0 implemented: sections 7.1 and 7.4 record the implementation in `webapp/server/` and `webapp/tools/` and its deviations from the sketch (no `http2`, per-host maps, CSP and sandbox on non-HTML responses, error-log handling, `certonly --webroot`); the release public key is at `webapp/tools/release-key.pub`; 7.5 names the error log. |
 | Draft 0.6 | 2026-11-06 | Review of the M0 implementation (7.1, 7.4, 7.5). nginx's own error pages carry a CSP, COOP and COEP. IPv6 is shortened correctly for compressed addresses. TLS and HTTP/2 are described as on contabo6. Log retention is stated as at most 15 days, and failed test logins are named. The build enforces a signed tag (SR-10, SR-90) and checks HTML with a parser. The hourly check runs as its own user and checks owner, mode and unreadable directories. `zbm-receive` takes one upload at a time. SR-74's shell deviation is recorded. |
+| Draft 0.7 | 2026-11-06 | Second review round of M0 (7.1, 7.4, 7.5). Logs move to their own folder and logrotate stanza, because Ubuntu's `notifempty` kept quiet logs indefinitely; retention is again 14 days. Byte ranges are off, because a 416 doubled the headers. The build is tied to `main` and to a clean `webapp/tools/`. It refuses parser-divergent markup, frames, `<base>`, `<meta http-equiv>`, external resources, SVG script, and (until M1.1) JavaScript and web manifests. The trial-build deviation from SR-10 is recorded. `zbm-receive` refuses root, compressed uploads and tars without an end marker, and counts the upload itself in the 200 MB. Activation no longer depends on root's umask. SR-74's protection is described precisely. |

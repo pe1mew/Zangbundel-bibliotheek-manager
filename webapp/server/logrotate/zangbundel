@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Install as /etc/logrotate.d/zangbundel (root, 0644). SR-51: logs deleted after 14 days.
+# The logs live in their own folder, so Ubuntu's /etc/logrotate.d/nginx (/var/log/nginx/*.log) does
+# not also rotate them. Unlike that file: 'ifempty', so a quiet log still rotates every day and old
+# rotations are still deleted on time ('notifempty' would keep a quiet log, full addresses and all,
+# indefinitely), and 13 old files, so no entry is older than 14 days.
+/var/log/nginx/zangbundel/*.log {
+	daily
+	missingok
+	rotate 13
+	maxage 14
+	ifempty
+	compress
+	delaycompress
+	create 0640 www-data adm
+	sharedscripts
+	postrotate
+		invoke-rc.d nginx rotate >/dev/null 2>&1
+	endscript
+}

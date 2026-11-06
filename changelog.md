@@ -19,6 +19,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - `design/securityAssessment.md` draft 0.1: a security and privacy assessment of the web app's design. It names the assets, attackers and 20 findings (among them: the site's code as the root of trust, the shared host with end-of-life PHP sites, CVE-2026-45820 in `fflate` before 0.8.3, the unaudited `@noble/ed25519` v3, DOM injection from library content, missing security headers, no CAA, registrar lock, SPF or DMARC on the new domain), and specifies 67 binding requirements (SR-01 to SR-93), the nginx, DNS, application and release implementation, a release gate of 13 checks, accepted risks and eight open questions. webappTDS draft 0.6 makes it binding (TD-18).
 
 ### Changed
+- Second review round of M0 (`/review-changes`, three lenses on f089ab0), with fixes (`design/securityAssessment.md` draft 0.7, `design/implementationPlan.md` draft 0.5):
+  - **Logs.** They move to `/var/log/nginx/zangbundel/` with their own logrotate stanza (`webapp/server/logrotate/zangbundel`), because Ubuntu's `notifempty` kept quiet logs, full addresses and all, indefinitely. Retention is again 14 days.
+  - **Byte ranges off.** A 416 answer doubled every header.
+  - **Build.** It refuses markup that Python's parser reads differently from a browser (CDATA, abrupt comments, odd end tags), plus frames, `<base>`, `<meta http-equiv>`, external resources and SVG script. It refuses JavaScript and web manifests until M1.1, and checks `webapp/tools/` and `main` as well. Former false positives (`./`, `../`, `data-src`, CSS comments) now build. The cases are kept as `webapp/tests/test_build.py`.
+  - **`zbm-receive`.** It refuses root, compressed uploads and tars without an end marker, counts the upload itself in the 200 MB, and opens its lock without truncating.
+  - **Activation** works whatever root's umask.
+  - **`sign-release.sh`** finds Python before asking for the passphrase.
+  - **Privacy statements** name unknown-user logins too.
+  - **Container test:** 68 of 68.
 - Review of M0 (`/review-changes`, four lenses), with fixes (`design/securityAssessment.md` draft 0.6, `design/implementationPlan.md` draft 0.4):
   - **Hourly integrity check.** It no longer passes when files hide in a directory it cannot read. It also checks every file's owner and mode, and runs as its own `zbm-verify` user, not a dynamic one, whose uid ssh-keygen could not resolve.
   - **Build.** It checks the HTML with a parser; the regexes could be evaded. It verifies that every reference resolves and carries the right SRI, keeps fragments, and refuses `@import` and ignored files. A release build needs a signed tag (SR-10, SR-90); trial builds go only to the test instance.

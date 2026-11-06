@@ -98,7 +98,7 @@ class Checker:
         self.rows, self.failed = [], 0
         self.csp_html = CSP_APP if a.app else CSP_STATIC
 
-    def fetch(self, path, method='GET', auth=True):
+    def fetch(self, path, method='GET', auth=True, req=None):
         c = Conn(self.host, self.addr, self.ctx)
         headers = {'Host': self.host, 'User-Agent': 'zbm-check-headers'}
         lang = getattr(self, 'lang', None)
@@ -106,16 +106,17 @@ class Checker:
             headers['Accept-Language'] = lang or 'nl-NL,nl;q=0.9,en;q=0.5'
         if auth and self.a.auth:
             headers['Authorization'] = 'Basic ' + base64.b64encode(self.a.auth.encode()).decode()
+        headers.update(req or {})
         c.request(method, path, body=b'' if method == 'POST' else None, headers=headers)
         r = c.getresponse()
         body = r.read()
         c.close()
         return r.status, {k.lower(): v for k, v in r.getheaders()}, body, r.getheaders()
 
-    def check(self, label, path, status, kind, method='GET', auth=True, ctype=None, extra=None):
+    def check(self, label, path, status, kind, method='GET', auth=True, ctype=None, extra=None, req=None):
         problems = []
         try:
-            got, h, body, raw = self.fetch(path, method, auth)
+            got, h, body, raw = self.fetch(path, method, auth, req)
         except (OSError, http.client.HTTPException) as e:
             self.record(label, path, [f'request failed: {e}'])
             return None
@@ -226,6 +227,8 @@ class Checker:
                 for ref in re.findall(r'''url\(\s*["']?([^"')?#]+)''', body.decode('utf-8', 'replace')):
                     if '://' not in ref and not ref.startswith('data:'):
                         assets.add(ref if ref.startswith('/') else normpath(base + ref))
+        page = '/' if self.test else '/nl/'
+        self.check('range ignored, headers once', page, 200, 'html', req={'Range': 'bytes=999999-'})
         self.check('not found', '/no-such-page', 404, 'common')
         self.check('POST refused', '/', 405, 'common', method='POST')
         self.check('PUT refused', '/x', 405, 'common', method='PUT')

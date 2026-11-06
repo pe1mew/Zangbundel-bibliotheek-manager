@@ -214,8 +214,14 @@ def site_dir(site):
 
 def live_release(site):
     live = os.path.join(site_dir(site), 'live')
-    if not os.path.islink(live):
+    try:
+        st = os.lstat(live)
+    except FileNotFoundError:
         return None
+    except PermissionError as e:                       # e.g. a site dir root left at mode 0700
+        raise Refused(f'cannot read {e.filename}: {e.strerror}')
+    if not stat.S_ISLNK(st.st_mode):
+        raise Refused(f'{live} is not a symbolic link')
     target = os.readlink(live)
     parts = target.replace('\\', '/').split('/')
     if len(parts) != 2 or parts[0] != 'releases' or not SEGMENT_RE.match(parts[1]):
@@ -244,11 +250,14 @@ def cmd_activate(a):
     base = site_dir(a.site)
     releases = os.path.join(base, 'releases')
     os.makedirs(releases, exist_ok=True)
+    for d in (base, releases):                         # whatever root's umask, nginx and zbm-verify read them
+        os.chmod(d, 0o755)
     work = os.path.join(releases, f'.incoming-{os.getpid()}')
     shutil.rmtree(work, ignore_errors=True)
     os.makedirs(work)
     try:
         unpack(a.upload, work)
+        make_read_only(work)                           # owner and modes fixed before they are checked
         m = check_tree(work)
         # SR-10, SR-90: a release comes from a signed tag on a clean tree. A trial build may go
         # to the test instance only, and only when the owner says so.
@@ -264,7 +273,6 @@ def cmd_activate(a):
                     raise Refused(f'{release} is already installed with different content; raise the version')
             print(f'{release} is already installed with the same manifest')
         else:
-            make_read_only(work)
             os.rename(work, target)
         before = switch_to(a.site, release)
     finally:
@@ -340,6 +348,7 @@ def main():
     p = sub.add_parser('list'); p.add_argument('sites', nargs='*')
     p = sub.add_parser('verify'); p.add_argument('sites', nargs='*'); p.add_argument('--push-url-file')
     a = ap.parse_args()
+    os.umask(0o022)
     if a.cmd == 'verify' and a.push_url_file is None and os.environ.get('CREDENTIALS_DIRECTORY'):
         cand = os.path.join(os.environ['CREDENTIALS_DIRECTORY'], 'kuma-push-url')
         a.push_url_file = cand if os.path.exists(cand) else None

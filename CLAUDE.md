@@ -93,6 +93,9 @@ python -m http.server 8771 --directory webapp/mock --bind 127.0.0.1
 # Trial build of a static site (a real release needs a clean, tagged tree: drop --allow-dirty)
 python webapp/tools/build.py build --src webapp/placeholder --name placeholder --version 0.1.0 --allow-dirty --force
 
+# Build checks: unsafe pages refused, a valid page built
+python webapp/tests/test_build.py
+
 # SC-01 header check against a host (see webapp/server/README.md for --connect/--insecure/--auth)
 python webapp/tools/check_headers.py zangbundel.nl
 

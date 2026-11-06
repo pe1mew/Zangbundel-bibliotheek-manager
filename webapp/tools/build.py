@@ -29,7 +29,9 @@ import sys
 import tarfile
 from html.parser import HTMLParser
 
-ALLOWED_EXT = {'.html', '.css', '.js', '.svg', '.png', '.webp', '.ico', '.txt', '.json', '.webmanifest'}
+# .js and .webmanifest come with M1.1, which rewrites the references inside them; until then the
+# build refuses them rather than ship references to files it renamed.
+ALLOWED_EXT = {'.html', '.css', '.svg', '.png', '.webp', '.ico', '.txt', '.json'}
 TEXT_EXT = {'.html', '.css', '.js', '.svg', '.txt', '.json', '.webmanifest'}
 MANIFEST = 'release-manifest.json'
 SIGNATURE = MANIFEST + '.sig'
@@ -39,9 +41,23 @@ NAME_RE = re.compile(r'^[a-z][a-z0-9-]{0,31}$')
 # References are rewritten with these regexes; every result is then checked again with a real
 # HTML parser (check_html, check_output), so a form the regexes miss fails the build instead of
 # slipping through.
-RE_REF = re.compile(r'''(?P<attr>\b(?:href|src))\s*=\s*"(?P<url>[^"]*)"''', re.I)
+RE_REF = re.compile(r'''(?P<attr>(?<![-\w])(?:href|src))\s*=\s*"(?P<url>[^"]*)"''', re.I)
 RE_CSS_URL = re.compile(r'''url\(\s*(?P<q>["']?)(?P<url>[^"')]+)(?P=q)\s*\)''')
 RE_TAG = re.compile(r'<(?P<name>link|script)\b(?P<attrs>[^>]*)>', re.I)
+RE_CSS_COMMENT = re.compile(r'/\*.*?\*/', re.S)
+
+# Markup that Python's HTMLParser reads differently from a browser (comment and CDATA edge cases,
+# end tags with attributes), or that can run or load something the checks do not follow. Refused
+# outright; the CSP would block most of it, but the build promises not to ship it (SR-24, SR-32).
+RE_HTML_TRAPS = [
+    (re.compile(r'<!\[CDATA\[', re.I), 'a CDATA section'),
+    (re.compile(r'--!>'), 'a "--!>" comment end'),
+    (re.compile(r'<!---?>'), 'an abrupt comment (<!--> or <!--->)'),
+    (re.compile(r'</[a-zA-Z][a-zA-Z0-9]*[^a-zA-Z0-9>\s]'), 'an end tag with extra characters'),
+    (re.compile(r'</[a-zA-Z][a-zA-Z0-9]*\s+[^>\s]'), 'an end tag with attributes'),
+    (re.compile(r'<!(?!--|doctype\s)', re.I), 'markup declaration other than a comment or doctype'),
+]
+REFUSED_TAGS = {'base', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'template'}
 
 
 def fail(msg):
@@ -127,9 +143,21 @@ def parse(text):
 
 def check_html(path, text):
     """SR-24, SR-32: no inline style, no inline script, no event handlers, no script URLs."""
-    t = parse(text)
     problems = set()
+    for rx, what in RE_HTML_TRAPS:
+        if rx.search(text):
+            problems.add(what)
+    for m in re.finditer(r'<!--(.*?)-->', text, re.S):
+        if '<' in m.group(1) or '>' in m.group(1):
+            problems.add('a comment containing < or >')
+    t = parse(text)
     for tag, attrs in t.tags:
+        a = dict(attrs)
+        if tag in REFUSED_TAGS or (tag == 'meta' and a.get('http-equiv')):
+            problems.add(f'a <{tag}> element' + (' with http-equiv' if tag == 'meta' else ''))
+        if tag in ('img', 'script', 'link', 'source', 'audio', 'video', 'track', 'input') and \
+                re.match(r'^\s*(https?:)?//', a.get('src') or (a.get('href') if tag == 'link' else '') or ''):
+            problems.add(f'an external resource in <{tag}> (SR-12)')
         if tag == 'style':
             problems.add('a <style> element')
         if tag == 'script' and not dict(attrs).get('src'):
@@ -141,8 +169,8 @@ def check_html(path, text):
                 problems.add(f'an event-handler attribute ({name})')
             elif name == 'integrity':
                 problems.add('an integrity attribute (the build adds it)')
-            elif name == 'srcset':
-                problems.add('a srcset attribute (not rewritten by the build)')
+            elif name in ('srcset', 'srcdoc', 'formaction', 'xlink:href', 'ping'):
+                problems.add(f'a {name} attribute')
             if value and re.sub(r'[\s\x00-\x1f]', '', value).lower().startswith(('javascript:', 'vbscript:', 'data:text/html')):
                 problems.add(f'a script URL in {name}')
     if t.script_text:
@@ -177,13 +205,22 @@ def check_output(out_data):
                     if a.get('integrity') != sri(out_data[target]):
                         fail(f'{p}: {url} has no or a wrong integrity attribute (write rel, href and src in double quotes)')
         elif p.endswith('.css'):
-            text = body.decode('utf-8')
+            text = RE_CSS_COMMENT.sub('', body.decode('utf-8'))
             if re.search(r'@import', text, re.I):
                 fail(f'{p}: @import is not supported; link each stylesheet from the HTML')
             for m in RE_CSS_URL.finditer(text):
-                target = resolve(base, m.group('url'))
-                if target is not None and target not in out_data:
-                    fail(f'{p}: url({m.group("url")}) does not resolve to a file of the release')
+                url = m.group('url').strip()
+                if url.startswith('data:'):
+                    continue
+                target = resolve(base, url)
+                if target is None:
+                    fail(f'{p}: url({url}) is not a file of this site (SR-12)')
+                if target not in out_data:
+                    fail(f'{p}: url({url}) does not resolve to a file of the release')
+        elif p.endswith('.svg'):
+            text = body.decode('utf-8')
+            if re.search(r'<script|\son[a-z]+\s*=|javascript:|<foreignObject', text, re.I):
+                fail(f'{p}: an SVG with script, event handlers or foreignObject (SR-24)')
 
 
 def git(src, *args):
@@ -191,11 +228,13 @@ def git(src, *args):
 
 
 def git_state(src, files):
-    """(commit, dirty, tag). Dirty also when a file to be released is not tracked by git, for
-    example an ignored file (SR-10). tag: a tag on HEAD whose signature git verifies (SR-90)."""
+    """(commit, dirty, tag, on_main). Dirty when the source or this build tool has uncommitted
+    changes, or a file to be released is not tracked by git, for example an ignored file (SR-10).
+    tag: a tag on HEAD whose signature git verifies (SR-90). on_main: HEAD is on main (SR-10)."""
     try:
         commit = git(src, 'rev-parse', 'HEAD').strip()
-        dirty = git(src, 'status', '--porcelain', '--', '.').strip() != ''
+        tools = os.path.dirname(os.path.abspath(__file__))
+        dirty = git(src, 'status', '--porcelain', '--', '.', tools).strip() != ''
         tracked = set(git(src, '-c', 'core.quotePath=false', 'ls-files', '--', '.').splitlines())
         if set(files) - tracked:
             dirty = True
@@ -204,9 +243,12 @@ def git_state(src, files):
             if subprocess.run(['git', 'verify-tag', t], cwd=src, capture_output=True).returncode == 0:
                 tag = t
                 break
-        return commit, dirty, tag
+        on_main = any(subprocess.run(['git', 'merge-base', '--is-ancestor', 'HEAD', ref], cwd=src,
+                                     capture_output=True).returncode == 0
+                      for ref in ('refs/heads/main', 'refs/remotes/origin/main'))
+        return commit, dirty, tag, on_main
     except (OSError, subprocess.CalledProcessError):
-        return None, True, None
+        return None, True, None, False
 
 
 def build(args):
@@ -218,8 +260,13 @@ def build(args):
     if not VERSION_RE.match(args.version):
         fail('version: X.Y.Z')
     files = walk(src)
-    commit, dirty, tag = git_state(src, files)
+    commit, dirty, tag, on_main = git_state(src, files)
     if not args.allow_dirty:
+        if commit is None:
+            fail('cannot read the git state of the source and of this build tool; both must be in the same '
+                 'git checkout (or pass --allow-dirty for a trial build)')
+        if not on_main:
+            fail('HEAD is not on main (SR-10); or pass --allow-dirty for a trial build')
         if dirty:
             fail('the source has uncommitted, untracked or ignored files; commit and tag first, '
                  'or pass --allow-dirty for a trial build')
@@ -284,14 +331,15 @@ def build(args):
                 return m.group(0)
             if target in rename:
                 return f'{m.group("attr")}="{renamed_url(m.group("url"), rename[target])}"'
-            if target not in data and not target.endswith('/') and posixpath.join(target, 'index.html') not in data:
+            if target not in data and posixpath.join(target, 'index.html') not in data \
+                    and not (target in ('', '.') and 'index.html' in data):
                 fail(f'{p} refers to a missing file: {m.group("url")}')
             return m.group(0)
         text = RE_REF.sub(ref_sub, text)
 
         def tag_sub(m):
             name, attrs = m.group('name').lower(), m.group('attrs')
-            is_css = name == 'link' and re.search(r'\brel\s*=\s*"stylesheet"', attrs, re.I)
+            is_css = name == 'link' and re.search(r'\brel\s*=\s*"[^"]*\bstylesheet\b[^"]*"', attrs, re.I)
             if not (is_css or name == 'script'):
                 return m.group(0)
             um = re.search(r'\b(?:href|src)\s*=\s*"([^"]*)"', attrs, re.I)
