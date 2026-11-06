@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.11 |
+| **Status** | Draft 0.12 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
@@ -407,7 +407,7 @@ assets/app.<hash>.css           all styles; no style attributes anywhere
 - **It checks:** the tarball's SHA-512 against `dist.integrity`; the registry signatures and provenance (`npm audit signatures`, in a scratch project installed with `--ignore-scripts`); and `npm audit` (SR-14, GitHub's advisory database).
 - **It records** every file in `webapp/vendor/VENDOR.md`, with the licence file next to it.
 - **The build re-checks.** `vendor.py check`, and `build.py` whenever a bundle contains vendored code, compare every file with its recorded SHA-256.
-- **Deviation from SR-12: fflate has no provenance.** `fflate` 0.8.3 is published without a provenance attestation, so for it SR-12's provenance check has nothing to verify; it is vendored with `--accept-missing-provenance`, as VENDOR.md says. `@noble/ed25519` 3.2.0 has a verified SLSA provenance.
+- **Deviation from SR-12: fflate has no provenance.** `fflate` 0.8.3 is published without a provenance attestation, so for it SR-12's provenance check has nothing to verify; it is vendored with `--accept-missing-provenance`, as VENDOR.md says, and the owner accepted that risk on 2026-11-06 (section 9). `@noble/ed25519` 3.2.0 has a verified SLSA provenance.
 - **SR-14's GitLab advisory database is a manual step.** `npm audit` covers only GitHub's database, so GitLab's has to be searched by hand before a release.
 
 **As implemented (M0).** The runbook is `webapp/server/README.md`.
@@ -469,6 +469,7 @@ No release goes live, on the test instance or in production, unless these checks
 | Key files are not encrypted (FDS SG-10, D-07) | The owner's decision (SQ-04, 2026-11-06): passphrases would make an already demanding process harder, and the project does not aim to be proof against a leaked key file | SR-44 texts; a leaked key is handled as a lost one: continue under a new key through *Opslaan als kopie* (FDS limitation 4) |
 | One server, no failover (SF-12) | Proportionate for a volunteer project | SR-62 monitoring, SR-63 restore |
 | `@noble/ed25519` v3 is not independently audited (SF-03) | Its v1 was audited and v3 is cross-tested against the audited noble-curves; it is used only in browsers without Web Crypto Ed25519 (SR-16) | SR-15 known-answer test and cross-check |
+| `fflate` 0.8.3 is published without a provenance attestation (SR-12) | The owner's decision (2026-11-06): it is the version that fixes CVE-2026-45820 (SR-14), chosen in webappTDS TD-17; no attested build of it exists | The tarball matches the registry's `dist.integrity` and its registry signature verifies; the file is vendored unchanged with its SHA-256 in `VENDOR.md`, checked by every build; a later release with provenance replaces it through `vendor.py add` |
 
 ---
 
@@ -603,3 +604,4 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 | Draft 0.9 | 2026-11-06 | After the review of M1 part 1: 7.3 names the main bundle `main.<hash>.js`, says SRI covers bundles and how SR-12 still holds, and points at webappTDS TQ-08 (the workers' Trusted Types policy). 7.1 records the one header that differs between the hosts until go-live (SR-27). The app's test banner is the fixed Dutch text of SR-81 in every language. |
 | Draft 0.10 | 2026-11-06 | The owner's decision on webappTDS TQ-08 (TD-23): SR-20's CSP lists a second Trusted Types policy, `zbm-worker`, for starting the two workers; SR-32 and 7.3 say what each policy accepts. |
 | Draft 0.11 | 2026-11-06 | 7.4 records the vendoring of M1.2 (`vendor.py`): SR-12 checks as run, fflate 0.8.3 without published provenance (accepted, recorded), SR-14's GitLab check by hand. |
+| Draft 0.12 | 2026-11-06 | The owner keeps `fflate` 0.8.3 although it publishes no provenance: an accepted risk in section 9, noted in 7.4. |
