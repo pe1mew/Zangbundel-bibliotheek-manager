@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Technical Design Specification (TDS) of the web app |
-| **Status** | Draft 0.9 |
+| **Status** | Draft 0.10 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7 |
 | **Companion** | `design/webappGUI.md` (screens, colours, buttons, icons) |
@@ -48,6 +48,7 @@ This document records how the bibliotheek-manager is built as a web app: where t
 | TD-18 | 2026-11-06 | **The security requirements are binding.** `design/securityAssessment.md` specifies the requirements SR-01 to SR-93 and the release gate SC-01 to SC-13 for the final implementation: site authenticity (TLS, HSTS, CAA, DNSSEC, registrar lock), code integrity (signed releases, vendored and verified libraries, SRI, Integrity-Policy, file-integrity monitoring), browser hardening (CSP with Trusted Types, isolation headers), untrusted input in a worker, keys only in a crypto worker, privacy (no third parties, shortened IP logs for 14 days, a privacy statement), availability, server isolation and the test instance. A change to one of them is made in that document first. |
 | TD-19 | 2026-11-06 | **The host nginx serves the site natively.** `zangbundel.nl` and `test.zangbundel.nl` are vhosts of the host nginx on contabo6, each serving its own read-only release directory, with no container and no interpreter (securityAssessment SQ-01, SR-70, SR-83). Unlike the other sites on the host, which nginx proxies to containers; the assessment found no security gain in a container here, and native has fewer parts to patch and configure. |
 | TD-20 | 2026-11-06 | **Until going live, `zangbundel.nl` shows a static placeholder and the manager runs on `test.zangbundel.nl`.** The placeholder is HTML and CSS only, in Dutch, English and German, with the name and logo, a line that the manager is being built, the Android links of GD-15 and GD-35, the privacy statement and `security.txt`; its CSP forbids all script (`script-src 'none'`). It meets the same transport, header and logging requirements as the manager. Replacing it with the manager is a later decision (`design/implementationPlan.md` M8). |
+| TD-21 | 2026-11-06 | **Node.js LTS is a development tool, never part of the site.** It runs the unit and conformance tests with its built-in test runner (`node --test`, no test framework) and the npm checks of the vendored libraries (securityAssessment SR-12: `npm pack`, `npm view … dist.integrity`, `npm audit signatures`). The site contains no npm package except the two vendored files of TD-17. Browser checks start as a written checklist (implementationPlan IQ-03). |
 
 ---
 
@@ -107,3 +108,4 @@ These FDS requirements constrain every technical choice below; they are listed h
 | Draft 0.7 | 2026-11-06 | TD-17 amended: Web Crypto Ed25519 with non-extractable keys where available, `@noble/ed25519` elsewhere (securityAssessment SQ-05). |
 | Draft 0.8 | 2026-11-06 | TD-19: the host nginx serves the site natively. |
 | Draft 0.9 | 2026-11-06 | TD-20: a static placeholder on `zangbundel.nl` while the manager runs on the test instance; the implementation plan is `design/implementationPlan.md`. |
+| Draft 0.10 | 2026-11-06 | TD-21: Node.js LTS as a development-only tool. |

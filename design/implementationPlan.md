@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.1 |
+| **Status** | Draft 0.2 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.8, `design/securityAssessment.md` draft 0.4, `test-libraries/` (56 cases) |
 
@@ -15,7 +15,7 @@
 
 Build the bibliotheek-manager as specified, and run it on **`test.zangbundel.nl`** for testers, while **`zangbundel.nl`** shows a static **placeholder** until the owner decides to go live (milestone M8, outside this plan's scope).
 
-The request named `test.zangbundel.net`. The registered domain is `zangbundel.nl` (webappTDS TD-09), so this plan uses `test.zangbundel.nl`. A `.net` domain would be a separate registration with its own DNS, certificates and security measures (IQ-01).
+The request named `test.zangbundel.net`; the owner confirmed `test.zangbundel.nl`, a subdomain of the registered domain (IQ-01, webappTDS TD-09).
 
 ### 1.2 What "done" means
 
@@ -33,7 +33,7 @@ The manager on `test.zangbundel.nl` does everything the FDS asks of the Editor (
 |---|---|
 | `design/FDS.md` | What the Editor does: format, rules (§6), behaviour (§7), messages (§9) |
 | `design/webappGUI.md` | Screens and behaviour, GD-01 to GD-40 |
-| `design/webappTDS.md` | Technology, hosting, libraries, TD-01 to TD-20 |
+| `design/webappTDS.md` | Technology, hosting, libraries, TD-01 to TD-21 |
 | `design/securityAssessment.md` | Binding security requirements SR-nn and the release gate SC-nn (TD-18) |
 | `test-libraries/` | The expected findings for 56 libraries, the conformance test of the validator |
 | `webapp/mock/` | Reference for look and behaviour only. Its code is not reused: it builds HTML with `innerHTML`, uses `style` attributes and keeps keys on the main thread, which SR-24, SR-32 and SR-40 forbid |
@@ -65,7 +65,7 @@ Where the plan and a governing document differ, the document wins and the plan i
 | Element | Content |
 |---|---|
 | Name and logo | *Zangbundel bibliotheek-manager* (GD-26) with the app icon (GD-30), on the app's black background (GD-12) |
-| Text | One short paragraph: the manager for making song libraries for the Zangbundel app is being built; it will run here. No date promised. |
+| Text | One short paragraph: the manager for making song libraries for the Zangbundel app is being built; it will run here. No date (IQ-06). |
 | Links | The Android panel's content of GD-15 and GD-35 (badges marked *binnenkort*, the GitHub APK, both repositories, both manuals) |
 | Privacy | Link to `/privacy/` |
 | Languages | Dutch, English and German as separate static pages. nginx sends `/` to the first matching language in `Accept-Language`, else English; each page links to the other two |
@@ -131,8 +131,8 @@ The library worker computes hashes and builds the manifest; the main thread send
 | Tool | Use | State |
 |---|---|---|
 | Python 3.11 (standard library) | `build.py`, `vendor.py` support, the test libraries | Installed |
-| Node.js LTS with npm | Unit and conformance tests (`node --test`), vendoring checks (`npm pack`, `npm view`, `npm audit signatures`). Development only: nothing from npm reaches the site except the two vendored files | **Not installed** (IQ-02) |
-| A headless browser | End-to-end checks SC-03, SC-06, SC-07 | Open (IQ-03) |
+| Node.js LTS with npm | Unit and conformance tests (`node --test`, no test framework), vendoring checks (`npm pack`, `npm view`, `npm audit signatures`). Development only: nothing from npm reaches the site except the two vendored files (TD-21) | To install (IQ-02, decided) |
+| A written browser checklist | SC-03, SC-06, SC-07 by hand in M4 to M6; a headless browser only if the checklist proves error-prone (IQ-03, decided) | `webapp/tests/browser-checklist.md`, to write in M4 |
 | `testssl.sh` | SC-02 | On the owner's machine or the server |
 
 ---
@@ -239,10 +239,10 @@ Each milestone ends with its exit checks passing and the result written to `desi
 | M7.2 | Browser matrix of TD-15 (Chrome, Edge, Firefox, Safari, about three years back) | TD-15 |
 | M7.3 | Accessibility pass: keyboard paths, focus, contrast, labels | GD-10, GD-33 |
 | M7.4 | Security assessment repeated for the implementation | SR-91 |
-| M7.5 | Testers: accounts on the test instance (SR-80), the RFC 8032 test key and test libraries (SR-82), a short tester guide; first round with the requester (Pepe) and two or three leaders | — |
+| M7.5 | Testers: the requester (Pepe) and two or three scout leaders, one basic-auth account each (SR-80); the RFC 8032 test key and test libraries (SR-82); a short tester guide; findings as GitHub issues in this repository (IQ-05) | SR-80, SR-82 |
 | M7.6 | First draft of the manager's manual on the repository's wiki | GD-35 |
 
-**Exit:** a tagged release (for example `v0.2.0`) on `test.zangbundel.nl`, with the gate's results in `design/test-results/`, and the testers' findings recorded as issues.
+**Exit:** the tagged release `v0.2.0` (IQ-04) on `test.zangbundel.nl`, with the gate's results in `design/test-results/`, and the testers' findings recorded as issues.
 
 ### M8 — Go live on zangbundel.nl (outside this plan)
 
@@ -275,7 +275,7 @@ M0 ──▶ M1 ──▶ M2 ──┬──▶ M5 ──▶ M6 ──▶ M7
 | Round trip | Open and save unchanged gives identical bytes; blocks to text and back gives identical songs | `node --test` | Every change to `core/` |
 | Crypto | Known-answer tests, cross-check, `valid-signed` reproduction | `node --test` and every browser | SC-05 |
 | Fuzz | ZIP and ChordPro readers with the test libraries as corpus | A fuzz harness under `node` | SC-11, before each release |
-| Browser | CSP and Trusted Types clean, storage empty of keys, no third-party requests | Headless browser (IQ-03) or a written manual checklist | SC-03, SC-06, SC-07 |
+| Browser | CSP and Trusted Types clean, storage empty of keys, no third-party requests | The written browser checklist, in every browser of TD-15 (IQ-03) | SC-03, SC-06, SC-07 |
 | Server | Headers, TLS, DNS, integrity | `check-headers.py`, `testssl.sh`, the integrity timer | SC-01, SC-02, SC-09, SC-12 |
 | People | Testers on the test instance | `test.zangbundel.nl` | M7 |
 
@@ -305,21 +305,21 @@ The placeholder and the manager have separate release directories and separate m
 | R-04 | `@noble/ed25519` v3 unaudited (securityAssessment SF-03) | Accepted risk | Known-answer tests; used only where Web Crypto lacks Ed25519 |
 | R-05 | A dependency gets a new advisory | Blocks a release (SR-14) | Advisory check in SC-10 before every release |
 | R-06 | Testers use real keys or libraries on the test instance | Real keys on a less-checked build | SR-81 banner, SR-82 test key, tester guide |
-| R-07 | The development tools (Node, a headless browser) are not available | Tests not automated | IQ-02, IQ-03; a manual checklist as fallback |
+| R-07 | Manual browser checks are skipped or done carelessly | A CSP violation or a key in storage goes unnoticed | The checklist's result is written to `design/test-results/` for every release; automate in M7 if a check was missed (IQ-03) |
 | R-08 | Certbot or a manual edit removes the security headers | Silent weakening | SC-01 after every certificate renewal (monitor, M0.9) |
 
 ---
 
-## 9. Open questions
+## 9. Questions and decisions
 
-| ID | Question | Recommendation |
+| ID | Question | Decision |
 |---|---|---|
-| IQ-01 | The request said `test.zangbundel.net`. Is that `test.zangbundel.nl`, or should `zangbundel.net` be registered too? | `test.zangbundel.nl`; a second domain doubles DNS, certificates and checks. If `zangbundel.net` is wanted against look-alikes (securityAssessment SF-07), register it and redirect it to `zangbundel.nl`, with the same CAA, SPF and DMARC records |
-| IQ-02 | Install Node.js LTS as a development-only tool? | Yes: it runs the JavaScript tests and the npm checks of SR-12; nothing from npm reaches the site except the two vendored files. Record as a TDS decision |
-| IQ-03 | Automate the browser checks (SC-03, SC-06, SC-07) with a headless browser such as Playwright, or keep a manual checklist? | Start with a written manual checklist for M4 to M6; automate in M7 if the checklist proves error-prone. A browser-automation tool is a development dependency to record in the TDS |
-| IQ-04 | Version numbers of the web app: continue from 0.1.0 (the mock) with 0.2.0 for the first test release? | Yes, semantic versioning as in the changelog; `v0.2.0` at the end of M7 |
-| IQ-05 | Who tests in M7, and how are findings collected? | The requester (Pepe) and two or three leaders, findings as GitHub issues in this repository |
-| IQ-06 | Does the placeholder name a planned date? | No date; "being built" only |
+| IQ-01 | The request said `test.zangbundel.net`. Is that `test.zangbundel.nl`, or should `zangbundel.net` be registered too? | Decided 2026-11-06: `test.zangbundel.nl`; no second domain |
+| IQ-02 | Install Node.js LTS as a development-only tool? | Decided 2026-11-06: yes (TD-21) |
+| IQ-03 | Automate the browser checks (SC-03, SC-06, SC-07), or keep a manual checklist? | Decided 2026-11-06: a written checklist first; automate in M7 if it proves error-prone |
+| IQ-04 | Version numbers of the web app? | Decided 2026-11-06: `v0.2.0` for the first test release at the end of M7, semantic versioning after that |
+| IQ-05 | Who tests in M7, and how are findings collected? | Decided 2026-11-06: the requester (Pepe) and two or three leaders; GitHub issues in this repository |
+| IQ-06 | Does the placeholder name a planned date? | Decided 2026-11-06: no date |
 
 ---
 
@@ -328,3 +328,4 @@ The placeholder and the manager have separate release directories and separate m
 | Version | Date | Change |
 |---|---|---|
 | Draft 0.1 | 2026-11-06 | First plan: the manager on `test.zangbundel.nl`, a static placeholder on `zangbundel.nl` (TD-20); repository layout, threads and tools; milestones M0 to M7 with work, requirements and exit checks; order, testing, release procedure, risks R-01 to R-08, open questions IQ-01 to IQ-06. |
+| Draft 0.2 | 2026-11-06 | The owner's decisions on IQ-01 to IQ-06: `test.zangbundel.nl`, Node.js LTS as a development tool (TD-21), a written browser checklist first, `v0.2.0`, the requester and two or three leaders as testers with GitHub issues, no date on the placeholder. |
