@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+- SQ-01 decided: the host nginx on contabo6 serves `zangbundel.nl` and its test instance natively, each from its own read-only release directory, without a container (`design/securityAssessment.md` draft 0.4, SR-70, SR-83; `design/webappTDS.md` draft 0.8, TD-19). All security questions are now decided.
+- The owner's security decisions (`design/securityAssessment.md` draft 0.3): HSTS preload after three months (SQ-03); no passphrases on key files, the risk accepted (SQ-04); Ed25519 from the browser's Web Crypto with non-extractable keys where available and `@noble/ed25519` elsewhere (SQ-05; webappTDS draft 0.7, TD-17); no offline package (SQ-07, SR-64 withdrawn); forgetting the key on request and after 30 minutes without input (SQ-08). `design/webappGUI.md` draft 0.12 adds *Sleutel vergeten* (GD-39) and the inactivity warning (GD-40), and the mock shows both. SQ-01 (native or container) is still open.
+- `design/securityAssessment.md` draft 0.2, the owner's answers: SF-02 and SR-71 withdrawn (the legacy sites on contabo6 run in their own containers behind the host nginx); two-factor authentication is on at the DNS provider; the domain has no mail, so a null MX, SPF `-all` and DMARC `reject` (SR-07). Section 10 compares native nginx with a container for SQ-01 (equal for security; native is simpler, the container consistent with the other sites) and works out SQ-03, SQ-04, SQ-05 (now a hybrid: non-extractable Web Crypto keys where the browser has Ed25519), SQ-07 (an offline package needs a local web server) and SQ-08.
+
 ### Added
 - `design/securityAssessment.md` draft 0.1: a security and privacy assessment of the web app's design. It names the assets, attackers and 20 findings (among them: the site's code as the root of trust, the shared host with end-of-life PHP sites, CVE-2026-45820 in `fflate` before 0.8.3, the unaudited `@noble/ed25519` v3, DOM injection from library content, missing security headers, no CAA, registrar lock, SPF or DMARC on the new domain), and specifies 67 binding requirements (SR-01 to SR-93), the nginx, DNS, application and release implementation, a release gate of 13 checks, accepted risks and eight open questions. webappTDS draft 0.6 makes it binding (TD-18).
 

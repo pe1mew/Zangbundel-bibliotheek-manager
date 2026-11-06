@@ -215,6 +215,7 @@ function renderBottom() {
       <button class="navbtn" data-act="keymake">${icon('key')}${t('keyMake')}</button>
       <button class="navbtn" data-act="keyload">${icon('upload')}${t('keyLoad')}</button>
       <button class="navbtn ${S.key && !S.key.saved ? 'dirty' : ''}" data-act="keydl" ${S.key ? '' : 'disabled'}><span class="dot"></span>${icon('download')}${t('keyDownload')}</button>
+      <button class="navbtn" data-act="keyforget" ${S.key ? '' : 'disabled'}>${icon('close')}${t('keyForget')} ${gd('GD-39')}</button>
       <span class="navgroup-label">${S.key ? esc(S.key.name) + ' · ' + S.key.fp : esc(t('noKey'))}</span>
     </span>
     <span class="nav-sep"></span>
@@ -657,7 +658,7 @@ function dialog(html, wide) {
   const s = document.createElement('div');
   s.className = 'scrim'; s.id = 'scrim';
   s.innerHTML = `<div class="dialog ${wide ? 'wide' : ''}" role="dialog" aria-modal="true">${html}</div>`;
-  s.addEventListener('click', (e) => { if (e.target === s) closeDialog(); });
+  s.addEventListener('click', (e) => { if (e.target === s && !IDLE.open) closeDialog(); });
   document.body.appendChild(s);
   const f = s.querySelector('input:not([type=checkbox]), textarea, .btn-primary:not([disabled])');
   if (f) f.focus();
@@ -790,6 +791,43 @@ function keyLoadDialog() {
     <div id="keymsg"></div>
     ${btns(cancelBtn())}`);
 }
+// GD-39: forget the key now. A key not yet downloaded is only forgotten after a question.
+function forgetKey(confirmed) {
+  if (!S.key) return;
+  if (!S.key.saved && !confirmed) {
+    dialog(`<h2>${t('keyForgetUnsavedTitle')}</h2><p>${t('keyForgetUnsavedText')}</p>
+      ${btns(cancelBtn(), `<button class="btn btn-outline" data-act="keydl">${icon('download')}${t('keyFileDl')}</button>`,
+        `<button class="btn btn-primary" data-dlg="forgetanyway">${t('keyForgetAnyway')}</button>`)}`);
+    return;
+  }
+  S.key = null;                                  // the implementation zeroes the bytes in the crypto worker (SR-41)
+  closeDialog(); render(); toast(t('keyForgotten'));
+}
+
+// GD-40: after 30 minutes without input, warn for 60 seconds, then forget a downloaded key.
+const IDLE = { ms: 30 * 60 * 1000, warn: 60, last: Date.now(), open: false, left: 0 };
+['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'].forEach((ev) =>
+  document.addEventListener(ev, () => { if (!IDLE.open) IDLE.last = Date.now(); }, { passive: true, capture: true }));
+function idleOpen() {
+  IDLE.open = true; IDLE.left = IDLE.warn;
+  const unsaved = !S.key.saved;
+  dialog(`<h2>${icon('key', 'inl')}${t('idleTitle')} ${gd('GD-40')}</h2>
+    <p id="idletext">${unsaved ? t('idleUnsaved') : t('idleText', { s: `<b id="idlecount">${IDLE.left}</b>` })}</p>
+    ${btns(`<button class="btn btn-text" data-dlg="idleforget">${t('forgetNow')}</button>`,
+      unsaved ? `<button class="btn btn-outline" data-act="keydl">${icon('download')}${t('keyFileDl')}</button>` : '',
+      `<button class="btn btn-primary" data-dlg="idlekeep">${t('keepKey')}</button>`)}`);
+}
+function idleClose() { IDLE.open = false; IDLE.last = Date.now(); closeDialog(); }
+setInterval(() => {
+  if (!S.key) { IDLE.open = false; IDLE.last = Date.now(); return; }
+  if (!IDLE.open && Date.now() - IDLE.last >= IDLE.ms) { idleOpen(); return; }
+  if (IDLE.open && S.key.saved) {
+    IDLE.left -= 1;
+    const c = $('idlecount'); if (c) c.textContent = IDLE.left;
+    if (IDLE.left <= 0) { IDLE.open = false; forgetKey(true); }
+  }
+}, 1000);
+
 function loadKey(k) {
   if (S.lib && S.lib.signed && S.lib.signed.fp !== k.fp) {          // EDT-62, M-30
     $('keymsg').innerHTML = `<div class="checkbox">${sevIcon('error')} ${esc(t('M30'))}</div>`;
@@ -890,7 +928,8 @@ document.addEventListener('click', (e) => {
     case 'about': aboutDialog(); return;
     case 'keymake': keyMakeDialog(false); return;
     case 'keyload': keyLoadDialog(); return;
-    case 'keydl': if (S.key) keySaveDialog(false); return;
+    case 'keydl': IDLE.open = false; IDLE.last = Date.now(); if (S.key) keySaveDialog(false); return;
+    case 'keyforget': forgetKey(false); return;
     case 'android': androidDialog(); return;
     case 'newsong': if (!readOnly()) startEdit(null); return;
     case 'libinfo': S.sel = null; S.view = 'song'; S.mode = 'view'; render(); return;
@@ -998,6 +1037,9 @@ function dialogAction(d, tgt) {
     case 'guardapply': { const tab = S.tab; closeDialog(); apply(); S.tab = tab; renderRight(); replayGuarded(); return; }
     case 'guarddiscard': { const title = draftTitle(); closeDialog(); S.mode = 'view'; S.draft = null; S.textMode = false; if (S.sel && !selSong()) S.sel = null; render(); toast(t('discarded', { t: title })); replayGuarded(); return; }
     case 'keyreplace': keyMakeDialog(true); return;
+    case 'forgetanyway': forgetKey(true); return;
+    case 'idlekeep': idleClose(); return;
+    case 'idleforget': idleClose(); forgetKey(true); return;
     case 'keymake': {
       const name = $('key-name').value.trim();
       if (!name) { $('key-name').focus(); $('key-name').style.borderColor = 'var(--fire-orange-light)'; return; }
@@ -1031,7 +1073,7 @@ document.addEventListener('input', (e) => {
   }
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { closeDialog(); return; }
+  if (e.key === 'Escape') { if (IDLE.open) idleClose(); else closeDialog(); return; }   // Escape keeps the key (GD-40)
   if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('song') && S.mode !== 'edit') e.target.click();
 });
 document.addEventListener('change', (e) => {

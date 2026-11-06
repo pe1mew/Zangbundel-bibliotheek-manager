@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.11 |
+| **Status** | Draft 0.12 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -304,7 +304,11 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 
 **GD-38 — Two named editing modes: *Blokken* and *Code (ChordPro)*.** *(Owner, 2026-11-06, feedback on the mock.)* The switch *ChordPro-tekst* of GD-18 was not recognised as a choice between two ways of editing. Above the song, *Bewerken als* is followed by a segmented control with two options, *Blokken* (the section editor, the default) and *Code (ChordPro)* (the song as raw ChordPro code, editable, with line checks while typing). The current mode is filled orange. The user switches at any moment during an edit; every change made in one mode is in the other, and switching without changes leaves the song exactly as it was. *Toepassen* applies the song in whichever mode is open. Keyboard: the control is a radio group, reachable with Tab. This replaces the switch of GD-18; the rest of GD-18 stands.
 
-**Follow-ups from the security assessment** (`design/securityAssessment.md`, 2026-11-06), not yet decided here: *Sleutel vergeten* in the identity group (SR-46, SQ-08) and an automatic forget after inactivity (SQ-08); the extra key texts of SR-44; the privacy statement page reachable from *Over* and the narrow-window page (SR-52); the test instance's fixed *TESTVERSIE* banner (SR-81). The implementation renders without `innerHTML` and without `style` attributes (SR-24, SR-32), unlike the mock.
+**Follow-ups from the security assessment** (`design/securityAssessment.md`, 2026-11-06), not yet decided here: the extra key texts of SR-44; the privacy statement page reachable from *Over* and the narrow-window page (SR-52); the test instance's fixed *TESTVERSIE* banner (SR-81). The implementation renders without `innerHTML` and without `style` attributes (SR-24, SR-32), unlike the mock.
+
+**GD-39 — *Sleutel vergeten*.** *(Owner, 2026-11-06; securityAssessment SQ-08, SR-46.)* The identity group of the bottom bar has a fourth button, *Sleutel vergeten* (*Forget key*, *Schlüssel vergessen*), available while a key is loaded. It removes the key from memory at once and says so (*Sleutel vergeten. Laad hem opnieuw om te ondertekenen.*). If a key made in this session has not been downloaded yet, it first asks, because the key would then be lost for good. The open library and its changes are not touched; a signed library becomes read-only again (GD-24).
+
+**GD-40 — The key is forgotten after 30 minutes without input.** *(Owner, 2026-11-06; SQ-08, SR-46.)* While a key is loaded, 30 minutes without mouse, keyboard or touch input open a dialog: *Je sleutel wordt over 60 seconden vergeten*, with a countdown, *Sleutel houden* (primary) and *Nu vergeten*. Without an answer the key is forgotten as in GD-39. A key not yet downloaded is never forgotten silently: the dialog then says the key will be lost and keeps it until the user chooses. Library work is never affected.
 
 ---
 
@@ -349,3 +353,4 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.9 | 2026-11-06 | The owner's feedback on the mock: leaving the song editor asks what to do with the changes and names the song (GD-36), instead of *Pas eerst toe of annuleer*. |
 | Draft 0.10 | 2026-11-06 | Depends on FDS draft 0.6: the maintainer is required, the title at most 80 characters, and the terms *signed by* and *not signed* (GD-37); the mock follows. Equal spacing in the section editor (section 2.2). This draft is the design of version 0.1.0 (webappTDS TD-16). |
 | Draft 0.11 | 2026-11-06 | The owner's feedback on the mock: the two editing modes are a named segmented control, *Blokken* and *Code (ChordPro)* (GD-38), instead of the switch of GD-18. |
+| Draft 0.12 | 2026-11-06 | From the security assessment's SQ-08: *Sleutel vergeten* (GD-39) and forgetting the key after 30 minutes without input (GD-40); the mock follows. |
