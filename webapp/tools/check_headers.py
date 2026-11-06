@@ -19,6 +19,7 @@ import argparse
 import base64
 import datetime
 import http.client
+import os
 import re
 import socket
 import ssl
@@ -29,6 +30,8 @@ COMMON = {
     'Referrer-Policy': 'no-referrer',
     'X-Frame-Options': 'DENY',
     'Cross-Origin-Resource-Policy': 'same-origin',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Cross-Origin-Embedder-Policy': 'require-corp',
     'Permissions-Policy': 'accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), '
                           'fullscreen=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), '
                           'midi=(), payment=(), publickey-credentials-get=(), screen-wake-lock=(), serial=(), '
@@ -45,13 +48,12 @@ CSP_APP = ("default-src 'none'; script-src 'self'; worker-src 'self'; style-src 
 CSP_FILE = "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; sandbox"
 HTML = {
     'Cache-Control': 'no-cache',
-    'Cross-Origin-Opener-Policy': 'same-origin',
-    'Cross-Origin-Embedder-Policy': 'require-corp',
     'Integrity-Policy': 'blocked-destinations=(script)',
 }
 TYPES = {'.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml; charset=utf-8',
          '.png': 'image/png', '.webp': 'image/webp', '.js': 'application/javascript; charset=utf-8',
-         '.txt': 'text/plain; charset=utf-8'}
+         '.txt': 'text/plain; charset=utf-8', '.ico': 'image/x-icon', '.json': 'application/json; charset=utf-8',
+         '.webmanifest': 'application/manifest+json'}
 
 
 class Conn(http.client.HTTPSConnection):
@@ -72,6 +74,16 @@ def split_addr(s, port):
     return (host.strip('[]') or s, int(p) if p else port)
 
 
+def normpath(path):
+    parts = []
+    for seg in path.split('/'):
+        if seg == '..':
+            parts and parts.pop()
+        elif seg not in ('', '.'):
+            parts.append(seg)
+    return '/' + '/'.join(parts)
+
+
 class Checker:
     def __init__(self, a):
         self.a = a
@@ -88,7 +100,10 @@ class Checker:
 
     def fetch(self, path, method='GET', auth=True):
         c = Conn(self.host, self.addr, self.ctx)
-        headers = {'Host': self.host, 'User-Agent': 'zbm-check-headers', 'Accept-Language': 'nl-NL,nl;q=0.9,en;q=0.5'}
+        headers = {'Host': self.host, 'User-Agent': 'zbm-check-headers'}
+        lang = getattr(self, 'lang', None)
+        if lang != '':
+            headers['Accept-Language'] = lang or 'nl-NL,nl;q=0.9,en;q=0.5'
         if auth and self.a.auth:
             headers['Authorization'] = 'Basic ' + base64.b64encode(self.a.auth.encode()).decode()
         c.request(method, path, body=b'' if method == 'POST' else None, headers=headers)
@@ -114,7 +129,7 @@ class Checker:
         if kind == 'html':
             expect.update(HTML)
             expect['Content-Security-Policy'] = self.csp_html
-        elif kind == 'file':
+        else:   # 'file', and nginx's own error pages ('common'), which are HTML documents too (SR-20)
             expect['Content-Security-Policy'] = CSP_FILE
         for k, v in expect.items():
             if h.get(k.lower()) != v:
@@ -180,7 +195,12 @@ class Checker:
                 return
             pages = ['/']
         else:
-            self.check('front door: language', '/', 302, 'file', extra={'Location': '/nl/', 'Vary': 'Accept-Language'})
+            for lang, where in (('nl-NL,nl;q=0.9,en;q=0.5', '/nl/'), ('de-DE,de;q=0.9', '/de/'),
+                                ('en-GB', '/en/'), ('fr-FR,fr;q=0.9', '/en/'), ('', '/en/')):
+                self.lang = lang
+                self.check(f'front door: {lang or "no language"}', '/', 302, 'file',
+                           extra={'Location': where, 'Vary': 'Accept-Language'})
+            self.lang = None
             self.check('security.txt', '/.well-known/security.txt', 200, 'file', ctype=TYPES['.txt'])
             pages = ['/nl/', '/en/', '/de/', '/nl/privacy.html', '/en/privacy.html', '/de/privacy.html']
         for p in pages:
@@ -190,18 +210,22 @@ class Checker:
                 for ref in re.findall(r'(?:href|src)="([^"#?]+)"', body.decode('utf-8', 'replace')):
                     if '://' in ref or not re.search(r'/assets/', base + ref if not ref.startswith('/') else ref):
                         continue
-                    full = ref if ref.startswith('/') else base + ref
-                    parts = []
-                    for seg in full.split('/'):
-                        if seg == '..':
-                            parts and parts.pop()
-                        elif seg not in ('', '.'):
-                            parts.append(seg)
-                    assets.add('/' + '/'.join(parts))
-        for p in sorted(assets):
+                    assets.add(ref if ref.startswith('/') else normpath(base + ref))
+        done = set()
+        while assets - done:
+            p = sorted(assets - done)[0]
+            done.add(p)
             ext = p[p.rfind('.'):]
-            self.check('asset', p, 200, 'file', ctype=TYPES.get(ext),
-                       extra={'Cache-Control': 'public, max-age=31536000, immutable'})
+            if ext not in TYPES:
+                self.record('asset', p, [f'no expected Content-Type known for {ext}; add it to TYPES'])
+                continue
+            body = self.check('asset', p, 200, 'file', ctype=TYPES[ext],
+                              extra={'Cache-Control': 'public, max-age=31536000, immutable'})
+            if body and ext == '.css':                    # assets referenced from the stylesheet
+                base = p.rsplit('/', 1)[0] + '/'
+                for ref in re.findall(r'''url\(\s*["']?([^"')?#]+)''', body.decode('utf-8', 'replace')):
+                    if '://' not in ref and not ref.startswith('data:'):
+                        assets.add(ref if ref.startswith('/') else normpath(base + ref))
         self.check('not found', '/no-such-page', 404, 'common')
         self.check('POST refused', '/', 405, 'common', method='POST')
         self.check('PUT refused', '/x', 405, 'common', method='PUT')
@@ -219,6 +243,7 @@ class Checker:
                  '| Check | Request | Result |', '|---|---|---|']
         for label, what, problems in self.rows:
             lines.append(f'| {label} | `{what}` | ' + ('pass' if not problems else 'FAIL: ' + '; '.join(problems).replace('|', '\\|')) + ' |')
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         with open(path, 'w', encoding='utf-8', newline='\n') as fh:
             fh.write('\n'.join(lines) + '\n')
 

@@ -103,7 +103,7 @@ docker build -t zbm-m0test webapp/server/test && docker run --rm -v "$PWD:/repo:
 git add design/ webapp/ changelog.md
 ```
 
-Every notable change gets a line under `[Unreleased]` in `changelog.md` in the same staging step. Once code exists, every source file starts with `SPDX-License-Identifier: Apache-2.0`, and the build and test commands go here.
+Every notable change gets a line under `[Unreleased]` in `changelog.md` in the same staging step. Every source file starts with `SPDX-License-Identifier: Apache-2.0`. A release build needs a clean tree and a signed tag on HEAD (`git tag -s`); `--allow-dirty` builds are trials, accepted only on the test instance (`zbm-release activate --trial`).
 
 ## Commit Conventions
 

@@ -14,32 +14,39 @@ set -euo pipefail
 umask 027
 
 dir=/srv/zangbundel-staging/incoming
-max=$((50 * 1024 * 1024))   # 50 MB per upload
-keep=20                     # at most this many waiting uploads
+max=$((50 * 1024 * 1024))    # 50 MB per upload
+total=$((200 * 1024 * 1024)) # 200 MB waiting in staging at most
+keep=20                      # at most this many waiting uploads
+
+refuse() { echo "refused: $*" >&2; exit 1; }
+
+[ -d "$dir" ] || refuse "no staging directory $dir"
+
+# One upload at a time: the limits below are checked and the file stored under one lock, so
+# parallel sessions cannot each pass the check and together exceed it.
+exec 9>"$dir/.lock"
+flock -n 9 || refuse "another upload is in progress"
 
 count=$(find "$dir" -maxdepth 1 -type f -name 'upload-*.tar' | wc -l)
-if [ "$count" -ge "$keep" ]; then
-    echo "refused: $count uploads are waiting; ask the owner to clear $dir" >&2
-    exit 1
-fi
+[ "$count" -lt "$keep" ] || refuse "$count uploads are waiting; ask the owner to clear $dir"
+used=$(find "$dir" -maxdepth 1 -type f -name 'upload-*.tar' -printf '%s\n' | awk '{ n += $1 } END { print n + 0 }')
+[ "$used" -lt "$total" ] || refuse "$used bytes are waiting; ask the owner to clear $dir"
 
 name="upload-$(date -u +%Y%m%dT%H%M%SZ)-$$.tar"
 tmp="$dir/.partial-$$"
+rm -f "$dir"/.partial-*                       # left by a killed session; we hold the lock
 trap 'rm -f "$tmp"' EXIT
 
 head -c $((max + 1)) > "$tmp"
 size=$(stat -c %s "$tmp")
-if [ "$size" -gt "$max" ]; then
-    echo "refused: larger than $max bytes" >&2
-    exit 1
-fi
-if [ "$size" -eq 0 ]; then
-    echo "refused: nothing received" >&2
-    exit 1
-fi
+[ "$size" -le "$max" ] || refuse "larger than $max bytes"
+[ "$size" -gt 0 ] || refuse "nothing received"
+# A dropped connection ends the stream early; a tar that does not list completely is not stored.
+tar -tf "$tmp" >/dev/null 2>&1 || refuse "not a complete tar file ($size bytes received)"
 
-mv "$tmp" "$dir/$name"
+[ ! -e "$dir/$name" ] || refuse "name in use, try again: $name"
+mv -T "$tmp" "$dir/$name"
 trap - EXIT
-logger -t zbm-receive "received $name ($size bytes)"
+logger -t zbm-receive "received $name ($size bytes)" || true
 echo "received $name ($size bytes, sha256 $(sha256sum "$dir/$name" | cut -d' ' -f1))"
 echo "next, as the owner on the server: sudo zbm-release activate <site> $dir/$name"

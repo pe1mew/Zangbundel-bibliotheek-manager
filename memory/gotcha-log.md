@@ -76,6 +76,16 @@
 **Root cause**: Docker Desktop is installed but not running by default. Git Bash (MSYS) converts arguments that look like POSIX paths.
 **Fix**: Start it with `Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"`; the engine is up within seconds. Prefix `docker run` with `MSYS_NO_PATHCONV=1`. `bash -c` with several `cat <<'EOF'` blocks still fails in this shell; a single `python - <<'PY'` heredoc works, and the Write tool always does.
 
+### A check that only lists what it can read reports green on what it cannot (2026-11-06)
+**Problem**: `zbm-release verify` (SR-73) said "ok" while an unlisted page sat in a mode-0711 directory under the live release; nginx served it. The run as root caught it, the run as the unprivileged check user did not.
+**Root cause**: `os.walk` skips a directory it cannot list unless `onerror` is given. A tamper check run with fewer rights than the web server sees less than the web server serves.
+**Fix**: Pass `onerror` that raises, and check owner and mode of every entry. Rule: if an integrity check runs as a different user than the server, test it as that user with a seeded hidden file (`webapp/server/test/run.sh`, "file hidden in an unreadable dir").
+
+### Regex checks on HTML are evadable; check the result with a parser (2026-11-06)
+**Problem**: `build.py` "refused" inline script and handlers by regex. `<img/onerror=…>`, `<a title=">" onclick=…>`, `<p/style=…>`, `</script x>` and single-quoted `href` all passed; a single-quoted stylesheet shipped without SRI and pointing at a renamed file.
+**Root cause**: The regexes assumed one spelling of HTML; browsers tokenize many.
+**Fix**: Check with `html.parser`, and after rewriting verify the output: every local reference resolves and every stylesheet and script has the right SRI. A form the rewrite misses then fails the build instead of shipping.
+
 ## Promoted
 
 <!-- Track gotchas that have been promoted to topic files or the memory index.
@@ -115,3 +125,10 @@
 
 | Date | Finding shape | Check | Status | Occurrences |
 |------|---------------|-------|--------|-------------|
+| 2026-11-06 | Integrity check blind to unreadable directories | `webapp/server/test/run.sh` "verify: file hidden in an unreadable dir" | proposed | 0 |
+| 2026-11-06 | nginx error page (401/404/405) without CSP, COOP or COEP | `webapp/tools/check_headers.py` (error responses checked against the file CSP and the common set); seeded: COEP removed, 24 checks went red | live | 0 |
+| 2026-11-06 | HTML check evaded (attribute spelling, quoting) | `webapp/tests/test_build.py` <!-- placeholder --> from the scratch case list (10 evasions + 1 valid page) | proposed | 0 |
+| 2026-11-06 | Release built without a signed tag | `webapp/server/test/run.sh` "build without a signed tag", "trial build to zangbundel.nl" | proposed | 0 |
+| 2026-11-06 | Upload limits checked without a lock | `webapp/server/test/run.sh` "second upload while one runs" | proposed | 0 |
+| 2026-11-06 | Test step printed PASS but never counted a failure | `webapp/server/test/run.sh` uses only `check`/`refused`; a grep for `&& ok` without `bad` in `webapp/server/test/` <!-- placeholder --> | proposed | 0 |
+| 2026-11-06 | A count in a doc ("6 files") differs from disk | a doc-count lint <!-- placeholder --> comparing counts in `webapp/server/README.md` with `ls` | proposed | 0 |

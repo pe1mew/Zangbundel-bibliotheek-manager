@@ -6,6 +6,8 @@ Description=Zangbundel: hourly integrity check of the live web files (SR-73)
 [Timer]
 OnCalendar=hourly
 RandomizedDelaySec=300
+# The same delay every hour, so pushes stay 3600 s apart for the Kuma heartbeat.
+FixedRandomDelay=true
 Persistent=true
 
 [Install]

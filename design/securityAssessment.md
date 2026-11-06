@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.5 |
+| **Status** | Draft 0.6 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.11, `design/webappTDS.md` draft 0.5 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
@@ -342,15 +342,18 @@ server {
 
 `snippets/zbm-html-headers.conf` adds, besides the common set, `Cache-Control: no-cache`, the CSP of SR-20, `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: require-corp` and `Integrity-Policy: blocked-destinations=(script)`. The trap to avoid: in nginx, a `location` with any `add_header` drops all `add_header` lines of the server block, so every location includes the common set explicitly, and SC-01 checks every file type.
 
-The test instance (`test.zangbundel.nl`) uses the same file with `root /srv/zangbundel-test/live`, `auth_basic` with its own `auth_basic_user_file` (SR-80), and `add_header X-Robots-Tag "noindex, nofollow" always;` (SR-81). Certificates come from `certbot` as for the other sites; certbot's edits are reviewed so that it does not remove the headers.
+The test instance (`test.zangbundel.nl`) uses the same file with `root /srv/zangbundel-test/live`, `auth_basic` with its own `auth_basic_user_file` (SR-80), and `add_header X-Robots-Tag "noindex, nofollow" always;` (SR-81). Certificates come from `certbot certonly --webroot`, which does not edit nginx files (see below).
 
 **As implemented (M0, `webapp/server/nginx/`).** The sketch above is implemented with these deviations, each tested on nginx 1.24.0 (Ubuntu 24.04) with SC-01:
 
-- **No `http2`.** On nginx 1.24 the `http2` parameter of `listen` switches HTTP/2 on for every site on the host's 443 socket, so it would change the other sites. HTTP/1.1 serves a handful of static files well enough.
+- **No `http2` of our own.** On nginx 1.24 the `http2` parameter of `listen` applies to the whole 443 socket, so it is not ours to set. On contabo6 another vhost (`console.rfsee.net`) already sets it, so our hosts speak HTTP/2 there too. The container test checks the headers over HTTP/2.
 - **One set of files for both hosts.** The common headers are a snippet that the server block and every location with its own headers include. The values that differ per host (the HTML CSP, `X-Robots-Tag`) come from maps keyed on `$server_name`, not on the client's `Host`.
-- **Responses that are not HTML pages** carry `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; sandbox`. An SVG opened on its own is a document that could run script.
-- **The error log** cannot shorten addresses. `log_not_found off` and rate-limit events at `warn` keep it to real faults; the privacy statement says so (7.5).
-- **TLS versions** are fixed by the default server of the 443 socket before SNI selects ours. On contabo6 that server allows TLS 1.2 and 1.3 only; SC-02 checks it.
+- **Responses that are not HTML pages** carry `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; sandbox`, because an SVG opened on its own is a document that could run script.
+- **nginx's own error pages** (401, 403, 404, 405, 429) are HTML too. They carry that same sandboxing CSP (SR-20) and, like every response, `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` (SR-23). The server block includes the file-header set for that reason.
+- **The error log** cannot shorten addresses (SR-51 covers the access log). `log_not_found off` and rate-limit events at `warn` keep it to real faults. On the test instance, nginx also logs a failed basic-auth login there, at error level, with the user name entered. The privacy statement says so (7.5).
+- **IPv6 addresses** arrive compressed. The map keeps at most the groups before a `::` within the first three, so nothing beyond the /48 is logged (SR-51).
+- **Retention.** Ubuntu's logrotate rotates `/var/log/nginx/*.log` daily and keeps 14 old files. SR-51's "deleted after 14 days" therefore holds to within a day: an entry is gone after at most 15 days, which is what the privacy statement says.
+- **TLS versions** are fixed by the default server of the 443 socket before SNI selects ours. The cipher list of `zbm-tls.conf` does apply. On contabo6 the default server (snakeoil certificate, `return 444`) sets no protocols. Ubuntu's OpenSSL 3 refused TLS 1.0 and 1.1 in the container test even where `nginx.conf` lists them. SC-02 checks what the real host offers.
 - **Certificates** come from `certbot certonly --webroot`, so certbot never edits our files. A separate port-80 server answers ACME challenges and redirects everything else.
 - **`release-manifest.json` and its signature** stay on disk for the integrity check, but nginx does not serve them.
 - **The placeholder** has a script-free CSP (`script-src 'none'; worker-src 'none'`). Its front door `/` redirects to `/nl/`, `/en/` or `/de/` by the first language in `Accept-Language`, else English.
@@ -392,16 +395,25 @@ assets/app.<hash>.css           all styles; no style attributes anywhere
 1. On the owner's computer: `git tag -s vX.Y.Z`, then the build script (no network) writes `dist/` with hashed file names, SRI attributes and `release-manifest.json` (path, size, SHA-256 of every file).
 2. The owner signs the manifest with the release key (`ssh-keygen -Y sign -n zangbundel-release`); the public key is in this repository (`webapp/tools/release-key.pub`) and on the server.
 3. Upload to `test.zangbundel.nl`'s staging directory as the deploy user (forced command, SR-74).
-4. On the server, an activation script (run by the owner, not by the deploy user) verifies the signature and every hash, copies the release to `/srv/zangbundel-test/releases/<version>/` read-only, and switches the `live` symlink.
+4. On the server, an activation script (run by the owner, not by the deploy user) verifies the signature and every hash, copies the release to `/srv/zangbundel-test/releases/<name>-<version>/` read-only, and switches the `live` symlink.
 5. After testing, the same signed release is activated for `zangbundel.nl` by the same script (SR-84).
 6. A timer job checks the live files against the signed manifest hourly (SR-73) and reports to the owner.
-**As implemented (M0).** The build, signing and packing tools are `webapp/tools/build.py` and `webapp/tools/sign-release.sh`. The release travels as one tar file, piped over SSH to the deploy user, whose forced command `zbm-receive` only stores it. As the owner, `zbm-release activate` unpacks only listed regular files, checks the signature and every hash, installs the release read-only and switches `live` atomically. The hourly check is `zbm-release verify` (`zbm-verify.timer`), which pushes its result to Uptime Kuma. The runbook is `webapp/server/README.md`.
-
 7. Vendoring a package (SR-12): `npm pack <name>@<version>`, compare the tarball's SHA-512 with `npm view <name>@<version> dist.integrity`, check the provenance with `npm audit signatures` in a scratch project, copy the built file into `webapp/vendor/`, and record `name, version, source, sha256, licence` in `webapp/vendor/VENDOR.md`.
+
+**As implemented (M0).** The runbook is `webapp/server/README.md`.
+
+- **Build** (`webapp/tools/build.py`). It refuses uncommitted, untracked or ignored source files and a HEAD without a tag that `git verify-tag` accepts. It records that tag in the manifest (SR-10, SR-90).
+  - With `--allow-dirty` it makes a trial build instead, which `zbm-release` accepts only on the test instance and only with `--trial`.
+  - It checks the HTML with a parser: no inline script or style, no event handlers, no script URLs (SR-24, SR-32). After rewriting, it checks that every local reference resolves and that every stylesheet and script carries the right SRI (SR-13).
+- **Signing and packing** (`webapp/tools/sign-release.sh`).
+- **Upload.** The release travels as one tar file piped over SSH to the deploy user. Its forced command `zbm-receive` stores it, one upload at a time, within 50 MB per upload and 200 MB or 20 uploads waiting, and only if it is a complete tar.
+- **The deploy user** keeps `/bin/bash` as its shell, because sshd runs a forced command through the user's shell. That is a deviation from SR-74's "without a login shell": a locked password and `restrict` in `authorized_keys` keep it from logging in.
+- **Activation.** As root, `zbm-release activate` unpacks only listed regular files and checks the signature and every hash. It installs the release root-owned and read-only and switches `live` atomically.
+- **Hourly check.** `zbm-release verify` (`zbm-verify.timer`) runs as its own user `zbm-verify`. It checks the signature, every hash and every file's owner and mode, and fails on a directory it cannot read. It pushes the result to Uptime Kuma.
 
 ### 7.5 Privacy statement (SR-52)
 
-A page `privacy.html` in the three languages, with: who runs the site; that the manager processes libraries and keys only in the browser, and nothing is sent to the server; which server logs exist (shortened IP address, time, requested file, status) for security and fault finding, kept 14 days, and that only a server fault puts a full address in the separate error log, also kept 14 days; that local storage holds only the language and the bar widths; that there are no cookies, no analytics, no third parties; which external sites the links lead to; contact and the right to complain to the Autoriteit Persoonsgegevens.
+A page `privacy.html` in the three languages, with: who runs the site; that the manager processes libraries and keys only in the browser, and nothing is sent to the server; which server logs exist (shortened IP address, time, requested file, status) for security and fault finding, and that they are deleted after at most 15 days (daily rotation, 14 old files kept); that only a server fault, or on the test instance a failed login (with the user name entered), puts a full address in the separate error log, deleted on the same schedule; that local storage holds only the language and the bar widths; that there are no cookies, no analytics, no third parties; which external sites the links lead to; contact and the right to complain to the Autoriteit Persoonsgegevens.
 
 ---
 
@@ -565,3 +577,4 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 | Draft 0.3 | 2026-11-06 | The owner's decisions: HSTS preload after three months (SQ-03, SR-02); no passphrases on key files (SQ-04, SR-47, accepted in section 9); hybrid Ed25519 with non-extractable Web Crypto keys (SQ-05, SR-15, SR-16); no offline package (SQ-07, SR-64 withdrawn); forget key on request and after 30 minutes of inactivity (SQ-08, SR-46). SQ-01 stays open. |
 | Draft 0.4 | 2026-11-06 | SQ-01 decided: the host nginx serves `zangbundel.nl` natively (SR-70, SR-83). All open questions are decided. |
 | Draft 0.5 | 2026-11-06 | M0 implemented: sections 7.1 and 7.4 record the implementation in `webapp/server/` and `webapp/tools/` and its deviations from the sketch (no `http2`, per-host maps, CSP and sandbox on non-HTML responses, error-log handling, `certonly --webroot`); the release public key is at `webapp/tools/release-key.pub`; 7.5 names the error log. |
+| Draft 0.6 | 2026-11-06 | Review of the M0 implementation (7.1, 7.4, 7.5). nginx's own error pages carry a CSP, COOP and COEP. IPv6 is shortened correctly for compressed addresses. TLS and HTTP/2 are described as on contabo6. Log retention is stated as at most 15 days, and failed test logins are named. The build enforces a signed tag (SR-10, SR-90) and checks HTML with a parser. The hourly check runs as its own user and checks owner, mode and unreadable directories. `zbm-receive` takes one upload at a time. SR-74's shell deviation is recorded. |

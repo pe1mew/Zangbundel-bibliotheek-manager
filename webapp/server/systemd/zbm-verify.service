@@ -11,7 +11,10 @@ Wants=network-online.target
 Type=oneshot
 ExecStart=/usr/local/sbin/zbm-release verify
 LoadCredential=kuma-push-url:/etc/zangbundel/kuma-push-url
-DynamicUser=yes
+# A fixed system user, not DynamicUser: ssh-keygen looks the uid up (getpwuid) and fails when
+# the dynamic uid does not resolve through NSS. Not root and not www-data (SR-73).
+User=zbm-verify
+Group=zbm-verify
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes

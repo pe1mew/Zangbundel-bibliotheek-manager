@@ -29,4 +29,12 @@ printf '%s namespaces="%s" %s\n' "$identity" "$namespace" "$(cut -d' ' -f1,2 "$p
 ssh-keygen -Y verify -f "$signers" -I "$identity" -n "$namespace" \
     -s "$dir/release-manifest.json.sig" < "$dir/release-manifest.json"
 
-python "$here/build.py" pack "$dir"
+# python3 on Linux; on Windows "python3" is often the Store stub, so fall back to "python".
+py="${PYTHON:-}"
+if [ -z "$py" ]; then
+    for c in python3 python; do
+        if command -v "$c" >/dev/null 2>&1 && "$c" -c "import sys; sys.exit(sys.version_info < (3, 9))" 2>/dev/null; then py="$c"; break; fi
+    done
+fi
+[ -n "$py" ] || { echo "no Python 3.9 or newer found; set PYTHON" >&2; exit 1; }
+"$py" "$here/build.py" pack "$dir"

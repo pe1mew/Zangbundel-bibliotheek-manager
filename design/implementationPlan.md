@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.3 |
+| **Status** | Draft 0.4 |
 | **Date** | 2026-11-06 |
-| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.8, `design/securityAssessment.md` draft 0.5, `test-libraries/` (56 cases) |
+| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.8, `design/securityAssessment.md` draft 0.6, `test-libraries/` (56 cases) |
 
 ---
 
@@ -146,7 +146,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
 
 | # | Work | Requirements |
 |---|---|---|
-| M0.1 | DNS: A and AAAA for `zangbundel.nl` and `test.zangbundel.nl` to contabo6; CAA (Let's Encrypt, `accounturi`, `iodef`); null MX replacing the current MX; SPF `-all`; DMARC `reject`; empty DKIM | SR-03, SR-07, §7.2 |
+| M0.1 | DNS: A for `zangbundel.nl` and `test.zangbundel.nl` to contabo6, AAAA once contabo6 has working IPv6; CAA (Let's Encrypt, `accounturi`, `iodef`); null MX replacing the current MX; SPF `-all`; DMARC `reject`; empty DKIM | SR-03, SR-07, §7.2 |
 | M0.2 | Registrar: transfer lock; confirm two-factor authentication on registrar and DNS accounts | SR-05 |
 | M0.3 | Certificates for both hosts with certbot; check certbot left the headers intact | SR-01 |
 | M0.4 | nginx vhosts for both hosts as securityAssessment §7.1: headers, HSTS (start at 5 minutes, ramp up), method and dot-file rules, rate limits, shortened IP logs with 14-day rotation | SR-01, SR-02, SR-20 to SR-25, SR-51, SR-60, SR-61 |
@@ -158,7 +158,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
 
 **Exit:** SC-01, SC-02, SC-09, SC-12 and SC-13 pass for both hosts; the placeholder is live on `zangbundel.nl`.
 
-**State (2026-11-06).** The repository part of M0 is done: M0.4 to M0.6 and M0.8 are in `webapp/server/`, `webapp/placeholder/`, `webapp/test-holding/` and `webapp/tools/`. It was tested in an Ubuntu 24.04 container with nginx 1.24.0, a throwaway key and self-signed certificates; SC-01 passed for both hosts. M0.1 to M0.3, M0.7, M0.9, the installation and the exit checks are the owner's steps, in the order of the runbook `webapp/server/README.md`.
+**State (2026-11-06).** The repository part of M0 is done: M0.4 to M0.6 and M0.8 are in `webapp/server/`, `webapp/placeholder/`, `webapp/test-holding/` and `webapp/tools/`. It was tested in an Ubuntu 24.04 container with nginx 1.24.0, throwaway keys and self-signed certificates (`webapp/server/test/run.sh`, 55 of 55 checks, SC-01 for both hosts), and reviewed with `/review-changes` (draft 0.4). M0.1 to M0.3, M0.7, M0.9, the installation and the exit checks are the owner's steps, in the order of the runbook `webapp/server/README.md`.
 
 ### M1 — Toolchain and release pipeline (M)
 
@@ -333,3 +333,4 @@ The placeholder and the manager have separate release directories and separate m
 | Draft 0.1 | 2026-11-06 | First plan: the manager on `test.zangbundel.nl`, a static placeholder on `zangbundel.nl` (TD-20); repository layout, threads and tools; milestones M0 to M7 with work, requirements and exit checks; order, testing, release procedure, risks R-01 to R-08, open questions IQ-01 to IQ-06. |
 | Draft 0.2 | 2026-11-06 | The owner's decisions on IQ-01 to IQ-06: `test.zangbundel.nl`, Node.js LTS as a development tool (TD-21), a written browser checklist first, `v0.2.0`, the requester and two or three leaders as testers with GitHub issues, no date on the placeholder. |
 | Draft 0.3 | 2026-11-06 | M0's repository part done and tested locally (state under M0); privacy link per language; `check_headers.py` and the test holding page in the layout; M1.1 and M1.5 build on the M0 tools. |
+| Draft 0.4 | 2026-11-06 | After the review of M0: AAAA records only once contabo6 has working IPv6 (M0.1); the state under M0 names the extended container test. |

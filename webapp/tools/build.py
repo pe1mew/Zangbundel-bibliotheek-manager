@@ -27,6 +27,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+from html.parser import HTMLParser
 
 ALLOWED_EXT = {'.html', '.css', '.js', '.svg', '.png', '.webp', '.ico', '.txt', '.json', '.webmanifest'}
 TEXT_EXT = {'.html', '.css', '.js', '.svg', '.txt', '.json', '.webmanifest'}
@@ -35,12 +36,9 @@ SIGNATURE = MANIFEST + '.sig'
 VERSION_RE = re.compile(r'^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$')
 NAME_RE = re.compile(r'^[a-z][a-z0-9-]{0,31}$')
 
-# Checks on HTML (SR-24, SR-32). Script elements are allowed only with a src and no content.
-RE_INLINE_STYLE_EL = re.compile(r'<style[\s>]', re.I)
-RE_STYLE_ATTR = re.compile(r'<[^>]*\sstyle\s*=', re.I)
-RE_EVENT_ATTR = re.compile(r'<[^>]*\son[a-z]+\s*=', re.I)
-RE_SCRIPT = re.compile(r'<script\b([^>]*)>(.*?)</script\s*>', re.I | re.S)
-RE_JS_URL = re.compile(r'''(href|src|action)\s*=\s*["']?\s*javascript:''', re.I)
+# References are rewritten with these regexes; every result is then checked again with a real
+# HTML parser (check_html, check_output), so a form the regexes miss fails the build instead of
+# slipping through.
 RE_REF = re.compile(r'''(?P<attr>\b(?:href|src))\s*=\s*"(?P<url>[^"]*)"''', re.I)
 RE_CSS_URL = re.compile(r'''url\(\s*(?P<q>["']?)(?P<url>[^"')]+)(?P=q)\s*\)''')
 RE_TAG = re.compile(r'<(?P<name>link|script)\b(?P<attrs>[^>]*)>', re.I)
@@ -95,35 +93,120 @@ def resolve(base_dir, url):
 
 
 def renamed_url(url, new_path):
-    """Keep the reference's own directory form, replace only its file name."""
-    head, _, _ = url.split('#', 1)[0].split('?', 1)[0].rpartition('/')
-    return (head + '/' if head or url.startswith('/') else '') + posixpath.basename(new_path)
+    """Keep the reference's own directory form and its query or fragment; replace the file name."""
+    m = re.match(r'^([^?#]*)(.*)$', url, re.S)
+    head, _, _ = m.group(1).rpartition('/')
+    return (head + '/' if head or url.startswith('/') else '') + posixpath.basename(new_path) + m.group(2)
+
+
+class Tags(HTMLParser):
+    """Every start tag with its attributes, as a browser's tokenizer sees them, plus script text."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.tags, self.script_text, self._in_script = [], [], False
+
+    def handle_starttag(self, tag, attrs):
+        self.tags.append((tag, attrs))
+        self._in_script = tag == 'script'
+
+    def handle_endtag(self, tag):
+        if tag == 'script':
+            self._in_script = False
+
+    def handle_data(self, data):
+        if self._in_script and data.strip():
+            self.script_text.append(data.strip()[:40])
+
+
+def parse(text):
+    t = Tags()
+    t.feed(text)
+    t.close()
+    return t
 
 
 def check_html(path, text):
-    problems = []
-    if RE_INLINE_STYLE_EL.search(text):
-        problems.append('a <style> element')
-    if RE_STYLE_ATTR.search(text):
-        problems.append('a style attribute')
-    if RE_EVENT_ATTR.search(text):
-        problems.append('an event-handler attribute (on...=)')
-    if RE_JS_URL.search(text):
-        problems.append('a javascript: URL')
-    for m in RE_SCRIPT.finditer(text):
-        if 'src=' not in m.group(1).replace(' ', '') or m.group(2).strip():
-            problems.append('an inline <script>')
+    """SR-24, SR-32: no inline style, no inline script, no event handlers, no script URLs."""
+    t = parse(text)
+    problems = set()
+    for tag, attrs in t.tags:
+        if tag == 'style':
+            problems.add('a <style> element')
+        if tag == 'script' and not dict(attrs).get('src'):
+            problems.add('a <script> without src')
+        for name, value in attrs:
+            if name == 'style':
+                problems.add('a style attribute')
+            elif name.startswith('on'):
+                problems.add(f'an event-handler attribute ({name})')
+            elif name == 'integrity':
+                problems.add('an integrity attribute (the build adds it)')
+            elif name == 'srcset':
+                problems.add('a srcset attribute (not rewritten by the build)')
+            if value and re.sub(r'[\s\x00-\x1f]', '', value).lower().startswith(('javascript:', 'vbscript:', 'data:text/html')):
+                problems.add(f'a script URL in {name}')
+    if t.script_text:
+        problems.add('an inline <script>')
     if problems:
-        fail(f'{path} contains ' + ', '.join(sorted(set(problems))) + ' (SR-24, SR-32)')
+        fail(f'{path} contains ' + ', '.join(sorted(problems)) + ' (SR-24, SR-32)')
 
 
-def git_state(src):
+def check_output(out_data):
+    """After rewriting: every local reference resolves to a released file, and every stylesheet
+    and script carries the right SRI (SR-12, SR-13). Catches what the regexes did not rewrite."""
+    for p, body in out_data.items():
+        base = posixpath.dirname(p)
+        if p.endswith('.html'):
+            for tag, attrs in parse(body.decode('utf-8')).tags:
+                a = dict(attrs)
+                for name in ('href', 'src'):
+                    url = a.get(name)
+                    target = resolve(base, url or '')
+                    if target is None:
+                        continue
+                    if target not in out_data and posixpath.join(target, 'index.html') not in out_data \
+                            and not (target in ('', '.') and 'index.html' in out_data):
+                        fail(f'{p}: {name}="{url}" does not resolve to a file of the release '
+                             '(write href and src in double quotes)')
+                rel = (a.get('rel') or '').lower().split()
+                if (tag == 'link' and 'stylesheet' in rel) or tag == 'script':
+                    url = a.get('href') if tag == 'link' else a.get('src')
+                    target = resolve(base, url or '')
+                    if target is None:
+                        fail(f'{p}: stylesheets and scripts must come from this site (SR-12): {url}')
+                    if a.get('integrity') != sri(out_data[target]):
+                        fail(f'{p}: {url} has no or a wrong integrity attribute (write rel, href and src in double quotes)')
+        elif p.endswith('.css'):
+            text = body.decode('utf-8')
+            if re.search(r'@import', text, re.I):
+                fail(f'{p}: @import is not supported; link each stylesheet from the HTML')
+            for m in RE_CSS_URL.finditer(text):
+                target = resolve(base, m.group('url'))
+                if target is not None and target not in out_data:
+                    fail(f'{p}: url({m.group("url")}) does not resolve to a file of the release')
+
+
+def git(src, *args):
+    return subprocess.run(['git', *args], cwd=src, capture_output=True, text=True, check=True).stdout
+
+
+def git_state(src, files):
+    """(commit, dirty, tag). Dirty also when a file to be released is not tracked by git, for
+    example an ignored file (SR-10). tag: a tag on HEAD whose signature git verifies (SR-90)."""
     try:
-        commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=src, capture_output=True, text=True, check=True).stdout.strip()
-        dirty = subprocess.run(['git', 'status', '--porcelain', '--', '.'], cwd=src, capture_output=True, text=True, check=True).stdout.strip() != ''
-        return commit, dirty
+        commit = git(src, 'rev-parse', 'HEAD').strip()
+        dirty = git(src, 'status', '--porcelain', '--', '.').strip() != ''
+        tracked = set(git(src, '-c', 'core.quotePath=false', 'ls-files', '--', '.').splitlines())
+        if set(files) - tracked:
+            dirty = True
+        tag = None
+        for t in sorted(git(src, 'tag', '--points-at', 'HEAD').split()):
+            if subprocess.run(['git', 'verify-tag', t], cwd=src, capture_output=True).returncode == 0:
+                tag = t
+                break
+        return commit, dirty, tag
     except (OSError, subprocess.CalledProcessError):
-        return None, True
+        return None, True, None
 
 
 def build(args):
@@ -134,16 +217,23 @@ def build(args):
         fail('name: lower-case letters, digits and hyphens')
     if not VERSION_RE.match(args.version):
         fail('version: X.Y.Z')
-    commit, dirty = git_state(src)
-    if dirty and not args.allow_dirty:
-        fail('the source has uncommitted changes; commit and tag first, or pass --allow-dirty for a trial build')
+    files = walk(src)
+    commit, dirty, tag = git_state(src, files)
+    if not args.allow_dirty:
+        if dirty:
+            fail('the source has uncommitted, untracked or ignored files; commit and tag first, '
+                 'or pass --allow-dirty for a trial build')
+        if not tag:
+            fail('HEAD carries no tag with a valid signature (git tag -s, then git verify-tag); '
+                 'or pass --allow-dirty for a trial build (SR-10, SR-90)')
+    else:
+        tag = None                                       # a trial build never claims a tag
     out = os.path.abspath(args.out or os.path.join('dist', f'{args.name}-{args.version}'))
     if os.path.exists(out):
         if not args.force:
             fail(f'{out} exists; pass --force to replace it')
         shutil.rmtree(out)
 
-    files = walk(src)
     data = {p: open(os.path.join(src, p.replace('/', os.sep)), 'rb').read() for p in files}
     for p in files:
         if posixpath.splitext(p)[1].lower() in TEXT_EXT:
@@ -201,8 +291,6 @@ def build(args):
 
         def tag_sub(m):
             name, attrs = m.group('name').lower(), m.group('attrs')
-            if 'integrity=' in attrs:
-                fail(f'{p}: integrity is added by the build, not written by hand')
             is_css = name == 'link' and re.search(r'\brel\s*=\s*"stylesheet"', attrs, re.I)
             if not (is_css or name == 'script'):
                 return m.group(0)
@@ -220,6 +308,7 @@ def build(args):
             return f'<{m.group("name")}{attrs} integrity="{sri(body)}"{closing}'
         text = RE_TAG.sub(tag_sub, text)
         out_data[p] = text.encode('utf-8')
+    check_output(out_data)
 
     # 3. Write the tree and the manifest.
     for p in sorted(out_data):
@@ -233,6 +322,7 @@ def build(args):
         'version': args.version,
         'source_commit': commit,
         'source_dirty': dirty,
+        'source_tag': tag,
         'files': [{'path': p, 'size': len(out_data[p]), 'sha256': sha256(out_data[p])} for p in sorted(out_data)],
     }
     with open(os.path.join(out, MANIFEST), 'w', encoding='utf-8', newline='\n') as fh:

@@ -2,7 +2,16 @@
 
 The owner's runbook for `design/implementationPlan.md` M0 on contabo6 (169.58.68.107, Ubuntu, nginx 1.24). Every step names the requirement it meets (`design/securityAssessment.md`). The files in this folder are the source; once installed, copy the live versions into `../contabo-vps-6` as for the other sites (SR-75).
 
-Tested on 2026-11-06 in an Ubuntu 24.04 container with its nginx 1.24.0, Python 3.12 and OpenSSH 9.6, using self-signed certificates and a throwaway release key. The test covered the build and signing, the install of steps 4 to 7, uploads through the forced command, activation, eight kinds of refused upload, the integrity check with a push, and SC-01 for both hosts: 31 of 31 passed. Not tested there: DNS, real certificates, certbot, systemd, sshd and the real host's other sites.
+Tested on 2026-11-06 in an Ubuntu 24.04 container with its nginx 1.24.0, Python 3.12, OpenSSH 9.6 and git, using self-signed certificates and throwaway keys; 55 of 55 checks passed. The test:
+
+- builds the placeholder from a signed git tag and the holding page as a trial build, then signs both;
+- installs the files of steps 4 and 6, without sshd and authorized_keys;
+- uploads through the forced command and activates as root;
+- tries nine kinds of bad upload, two misplaced trial builds and three upload limits;
+- runs the integrity check as `zbm-verify`, with a push, against four kinds of tampering;
+- serves both hosts next to a contabo6-like default server and an HTTP/2 neighbour, and runs SC-01 for both.
+
+Not tested there: DNS, real certificates, certbot, systemd itself, sshd, and the real host's other sites.
 
 Rerun the test after any change in this folder or in `webapp/tools/` (needs Docker; on Git Bash, put `MSYS_NO_PATHCONV=1` before `docker run`):
 
@@ -19,7 +28,7 @@ docker run --rm -v "$PWD:/repo:ro" zbm-m0test bash /repo/webapp/server/test/run.
 | File in this repository | On contabo6 | Owner, mode |
 |---|---|---|
 | `server/nginx/conf.d/zangbundel.conf` | `/etc/nginx/conf.d/zangbundel.conf` | root, 0644 |
-| `server/nginx/snippets/zbm-*.conf` (6 files) | `/etc/nginx/snippets/` | root, 0644 |
+| `server/nginx/snippets/zbm-*.conf` (5 files) | `/etc/nginx/snippets/` | root, 0644 |
 | `server/nginx/sites-available/*.conf` (3 files) | `/etc/nginx/sites-available/`, linked from `sites-enabled/` | root, 0644 |
 | `server/bin/zbm-receive` | `/usr/local/bin/zbm-receive` | root, 0755 |
 | `server/bin/zbm-release` | `/usr/local/sbin/zbm-release` | root, 0755 |
@@ -28,7 +37,7 @@ docker run --rm -v "$PWD:/repo:ro" zbm-m0test bash /repo/webapp/server/test/run.
 | (made on the server) | `/etc/nginx/zangbundel-test.htpasswd` | root:www-data, 0640 |
 | (made on the server) | `/etc/zangbundel/kuma-push-url` | root, 0600 |
 
-Directories: `/srv/zangbundel/releases/` and `/srv/zangbundel-test/releases/` (root, 0755; `live` is a symlink to one release), `/srv/zangbundel-staging/incoming/` (zbm-deploy, 0750), `/var/www/acme/` (root, 0755).
+Directories: `/srv/zangbundel/releases/` and `/srv/zangbundel-test/releases/` (root, 0755; `live` is a symlink to one release), `/srv/zangbundel-staging/incoming/` (zbm-deploy, 0750), `/var/www/acme/` (root, 0755). Users: `zbm-deploy` (uploads only) and `zbm-verify` (runs the hourly check).
 
 ## 1. DNS at Openprovider (M0.1, SR-03, SR-07, SC-12)
 
@@ -56,7 +65,7 @@ Directories: `/srv/zangbundel/releases/` and `/srv/zangbundel-test/releases/` (r
 
 ## 3. Keys, on the owner's computer (M0.7, SR-11, SR-74)
 
-There are two keys: a release key that signs releases, and a deploy key that may only upload. Neither private key ever goes to the server.
+There are three keys. A release key signs releases. A deploy key may only upload. Your git signing key signs release tags; the build refuses a tree without a signed tag (SR-10, SR-90). No private key ever goes to the server.
 
 ```bash
 ssh-keygen -t ed25519 -C "zangbundel release key" -f ~/.ssh/zangbundel-release
@@ -68,12 +77,22 @@ ssh-keygen -t ed25519 -C "zangbundel deploy" -f ~/.ssh/zangbundel-deploy
 
 1. Give the release key a passphrase. Keep a copy of `~/.ssh/zangbundel-release` offline, for example on a USB stick in a drawer: without it, no new release can be activated.
 2. Copy `~/.ssh/zangbundel-release.pub` to `webapp/tools/release-key.pub` and commit it. `sign-release.sh` checks every signature against that file.
+3. Let git sign tags with an SSH key, if it does not already. Your usual key works; the allowed-signers file lets `git verify-tag` check the signature:
+
+   ```bash
+   git config --global gpg.format ssh && git config --global user.signingkey ~/.ssh/id_ed25519.pub
+   ```
+
+   ```bash
+   echo "$(git config user.email) $(cut -d' ' -f1,2 ~/.ssh/id_ed25519.pub)" >> ~/.ssh/allowed_signers && git config --global gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
+   ```
 
 ## 4. Install on contabo6 (M0.4 to M0.6)
 
 Copy this folder and `tools/release-key.pub` to the server, for example to `~/zbm/`. Then, as root:
 
 ```bash
+apt install apache2-utils        # htpasswd, for step 6
 install -m 0644 ~/zbm/nginx/conf.d/zangbundel.conf /etc/nginx/conf.d/
 install -m 0644 ~/zbm/nginx/snippets/zbm-*.conf /etc/nginx/snippets/
 install -m 0644 ~/zbm/nginx/sites-available/*.conf /etc/nginx/sites-available/
@@ -86,10 +105,16 @@ mkdir -p /var/www/acme /etc/zangbundel /srv/zangbundel/releases /srv/zangbundel-
 **The release key.** Store it as the only trusted signer:
 
 ```bash
-printf 'release@zangbundel.nl namespaces="zangbundel-release" %s\n' "$(cut -d' ' -f1,2 ~/zbm/release-key.pub)" > /etc/zangbundel/allowed_signers
+test -s ~/zbm/release-key.pub && printf 'release@zangbundel.nl namespaces="zangbundel-release" %s\n' "$(cut -d' ' -f1,2 ~/zbm/release-key.pub)" > /etc/zangbundel/allowed_signers
 ```
 
-**The deploy user (SR-74).** It has no password and no shell use: its only command is `zbm-receive`.
+**The user of the hourly check (SR-73).** It is not root and not www-data, and has no login:
+
+```bash
+useradd --system --no-create-home --shell /usr/sbin/nologin zbm-verify
+```
+
+**The deploy user (SR-74).** It has no password and can run only `zbm-receive`. It keeps `/bin/bash` as its shell because sshd runs a forced command through the user's shell; with `nologin` the forced command would not run. The `restrict` option and the locked password are what keep it from logging in (securityAssessment 7.4).
 
 ```bash
 useradd --system --create-home --shell /bin/bash zbm-deploy
@@ -149,7 +174,9 @@ nginx -t && systemctl reload nginx
 
 ## 7. First releases (M0.8, SR-11, SR-84)
 
-These steps run on the owner's computer, from a clean, tagged checkout. `build.py` refuses uncommitted sources; `--allow-dirty` is only for trial builds.
+These steps run on the owner's computer, from a clean checkout whose HEAD carries a signed tag (`git tag -s v0.2.0 -m "…"`, step 3). `build.py` refuses uncommitted, untracked or ignored files and a HEAD without a verified signed tag.
+
+`--allow-dirty` makes a trial build, without those checks. `zbm-release` accepts a trial build only on the test instance, and only with `activate --trial test.zangbundel.nl …`.
 
 ```bash
 python webapp/tools/build.py build --src webapp/placeholder --name placeholder --version 0.1.0
@@ -189,12 +216,18 @@ zbm-release activate test.zangbundel.nl /srv/zangbundel-staging/incoming/upload-
 zbm-release list
 ```
 
-- **What activation does.** `activate` refuses any upload whose signature fails, whose files differ from the manifest, or which holds unlisted files, links or unsafe paths. A release goes in read-only under `releases/<name>-<version>/` and becomes live by an atomic symlink switch. `zbm-release switch <site> <release>` goes back to an earlier release.
-- **Clearing staging.** Delete processed uploads from the staging directory; `zbm-receive` refuses new uploads once 20 are waiting.
+- **What activation does.** `activate` refuses an upload when:
+  - its signature fails;
+  - its files differ from the manifest;
+  - it holds unlisted files, links or unsafe paths;
+  - it is a trial build going anywhere but the test instance.
+
+  A release goes in read-only under `releases/<name>-<version>/` and becomes live by an atomic symlink switch. `zbm-release switch <site> <release>` goes back to an earlier release.
+- **Clearing staging.** Delete processed uploads from the staging directory. `zbm-receive` takes one upload at a time, and refuses a new one once 20 uploads or 200 MB are waiting, or when what arrives is not a complete tar file.
 
 ## 8. Integrity check and monitoring (M0.6, M0.9, SR-06, SR-62, SR-73)
 
-1. In Uptime Kuma, add a monitor of type **Push** named "zangbundel integrity", with a heartbeat interval of 3900 s (just over an hour).
+1. In Uptime Kuma, add a monitor of type **Push** named "zangbundel integrity", with a heartbeat interval of 3900 s (just over an hour) and one retry. The timer keeps the same random delay every hour (`FixedRandomDelay`), so pushes arrive 3600 s apart.
 2. Store its push URL, the whole URL Kuma shows:
 
    ```bash
@@ -211,8 +244,8 @@ Once that works, the monitor turns green. It turns red when a live file no longe
 
 Uptime Kuma runs on contabo6 itself, so it cannot see the host go down. Add from outside:
 
-- **Availability.** An external monitor on `https://zangbundel.nl/nl/` (keyword `Zangbundel`) and on `https://test.zangbundel.nl/robots.txt`, for example a free UptimeRobot account or a Kuma on another machine. Use certificate-expiry alerts where offered.
-- **Certificate Transparency (SR-62).** A watch on `zangbundel.nl` including subdomains, for example SSLMate Cert Spotter (free for one domain). Any certificate not issued by our own certbot is an incident.
+- **Availability (SR-62).** An external monitor on `https://zangbundel.nl/nl/` (keyword `Zangbundel`) and on `https://test.zangbundel.nl/robots.txt`, for example a free UptimeRobot account or a Kuma on another machine. Use certificate-expiry alerts where offered.
+- **Certificate Transparency (SR-06).** A watch on `zangbundel.nl` including subdomains, for example SSLMate Cert Spotter (free for one domain). Any certificate not issued by our own certbot is an incident.
 
 ## 9. HSTS ramp (SR-02, SQ-03)
 
@@ -230,7 +263,7 @@ Uptime Kuma runs on contabo6 itself, so it cannot see the host go down. Add from
 
 ## 10. Release gate for M0 (SC-01, SC-02, SC-09, SC-12, SC-13)
 
-Run these from the owner's computer and save the results in `design/test-results/` (one file per run):
+Run these from the owner's computer and save the results in `design/test-results/` (one file per run; `--report` creates the folder):
 
 ```bash
 python webapp/tools/check_headers.py zangbundel.nl --report design/test-results/<date>-sc01-zangbundel.nl.md
@@ -245,6 +278,6 @@ python webapp/tools/check_headers.py test.zangbundel.nl --auth <tester>:<passwor
 | SC-02 | `testssl.sh zangbundel.nl` and `testssl.sh test.zangbundel.nl`: only TLS 1.2 and 1.3, no weak suites, a valid chain, HSTS present |
 | SC-09 | `zbm-release verify` on the server: both sites `ok` |
 | SC-12 | The checks of step 1 and step 2 |
-| SC-13 | `https://zangbundel.nl/.well-known/security.txt` is served and its `Expires` is in the future (renew it before 2027-11-01). The privacy statement matches the logging: shortened addresses in the access log, full addresses only in the error log, both kept 14 days by Ubuntu's logrotate for `/var/log/nginx/*.log` |
+| SC-13 | `https://zangbundel.nl/.well-known/security.txt` is served and its `Expires` is in the future (renew it before 2027-11-01). The privacy statement matches the logging. The access log holds shortened addresses. The error log holds full addresses for server faults and, on the test instance, for failed logins with the user name entered. Ubuntu's logrotate rotates `/var/log/nginx/*.log` daily and keeps 14 old files, so an entry is gone after at most 15 days |
 
 Finally, copy the live files into `../contabo-vps-6` (SR-75): the three vhosts, `conf.d/zangbundel.conf`, the snippets, both scripts and both systemd units. Leave out the htpasswd file and the push URL, which are secrets.

@@ -3,5 +3,5 @@
 # Used by run.sh in this folder; see the comment there.
 FROM ubuntu:24.04
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        nginx python3 python-is-python3 openssh-client apache2-utils openssl ca-certificates curl \
+        nginx python3 openssh-client apache2-utils openssl ca-certificates curl git \
     && rm -rf /var/lib/apt/lists/*
