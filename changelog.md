@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M2: writing and saving a library** (`design/implementationPlan.md` draft 0.12).
+  - **New core modules:** `webapp/src/core/zip.js` writes ZIPs deterministically; `view.js` writes the 1.1 view; `library.js` opens a library into the Editor's model and saves it.
+  - **Unchanged:** saved byte for byte as opened, signature included (EDT-51).
+  - **Changed:** version + 1, `modified`, an optional `changes` note, canonical songs, a new view and manifest, and the signature of the library's own key (EDT-52 to EDT-58, EDT-60, EDT-62, EDT-63).
+  - **Save as copy** gets a new ID, version 1, and no author (EDT-71).
+  - **Every save runs the rules on its own output** and is refused on an Error (EDT-50). PKG-09, the sharing warning, is added.
+  - **Tests:** `tests/unit/library.test.mjs`, 10 tests; `node --test` 201 of 201, container 81 of 81.
 - **M2: every validation rule of FDS section 6, SC-04 met.** `webapp/src/core/chordpro.js` reads a song as the ChordPro profile of the app's song format defines it: canonical form, metadata, environments, chorus repeats and the canonical line list. It reproduces the worked example of song format §9.3.
   - **`validate.js`** adds the song rules (SNG-01 to SNG-18), the set rules (SET-01 to SET-05) and the view checks (VIEW-01 to VIEW-03, with the exact PF-42/PF-43 bytes).
   - **SC-04:** all 56 test libraries give exactly their expected Editor findings, with no to-dos left. Five seeded defects turn cases red.

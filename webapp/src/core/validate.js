@@ -17,6 +17,7 @@ import { readCentralDirectory, readEntry, ZipError } from './zip.js';
 import { caseClashes, compareOrdinal, isIgnored, isSongId, nameProblem, pathTooLong } from './names.js';
 import { readManifest, readSignature } from './manifest.js';
 import { canonicalize, parseSong, SINGLE } from './chordpro.js';
+import { licenseBytes, setlistBytes } from './view.js';
 import { verifyAsync } from '../../vendor/noble-ed25519-3.2.0.js';
 
 export const IMPLEMENTED = Object.freeze(['PKG', 'STR', 'MAN', 'SIG', 'SNG', 'SET', 'VIEW']);
@@ -28,6 +29,7 @@ const SONG_RECOMMENDED = 8 * 1024;                    // SNG-17
 const LANGUAGE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/;
 const SONG_LICENSE = /^[A-Za-z0-9.+-]+$/;             // SPDX, public-domain or proprietary (W010)
 const VIEW_APP_VERSION = [0, 1, 0];                   // PF-41: an app from 0.1.0 on must accept the view
+const SHARING = 16 * 1024 * 1024;                     // FDS 3.5, PKG-09 (Editor only)
 
 /** FDS 6.6 for one song file songs/<id>/<id>.cho; returns its title, or null. */
 function checkSong(id, bytes, add) {
@@ -100,15 +102,6 @@ function viewLibraryOk(bytes) {
   return isSongId(v.id);                                                      // L006
 }
 
-/** PF-43: the bytes of setlists/set-<n>.zbs for a set. */
-function setlistBytes(libraryId, set, n) {
-  const lines = [`{title: ${set.name}}`, `{meta: id set-${n}}`];
-  if (set.songs.length) {
-    lines.push('', ...set.songs.map((id) => `${libraryId}/${id}`));
-  }
-  return new TextEncoder().encode(`${lines.join('\n')}\n`);
-}
-
 function sameBytes(a, b) {
   return a.length === b.length && a.every((x, i) => x === b[i]);
 }
@@ -151,6 +144,11 @@ export async function validateLibrary(bytes, options = {}) {
     }
   } catch (e) {
     return fatal(e);
+  }
+
+  // ---- PKG-09: above the sharing threshold (a Warning; checked on opening and on save)
+  if (bytes.length > SHARING) {
+    add('PKG-09', 'Warning');
   }
 
   // ---- PKG-08: ignored system files, set aside before any other rule
@@ -281,7 +279,7 @@ export async function validateLibrary(bytes, options = {}) {
   const manBytes = rel.get('manifest.json');
   if (manBytes === undefined) {
     add('MAN-01', 'Info');                             // converted to a new library (EDT-25)
-    return { findings, fatal: false, songs };
+    return { findings, fatal: false, songs, manifest: null, folder: lib, files: rel };
   }
   const man = readManifest(manBytes);
   if (man.findings.some((f) => f.code === 'MAN-03')) {
@@ -335,7 +333,7 @@ export async function validateLibrary(bytes, options = {}) {
   }
 
   if (m === null) {
-    return { findings, fatal: false, songs, manifest: m };
+    return { findings, fatal: false, songs, manifest: m, manifestBytes: manBytes, folder: lib, files: rel };
   }
 
   // ---- SET (6.7): the sets of the manifest against the song folders
@@ -375,8 +373,7 @@ export async function validateLibrary(bytes, options = {}) {
   }
   const licenseFile = rel.get('LICENSE');
   if (licenseFile !== undefined) {
-    const source = typeof lic.text === 'string' && lic.text ? lic.text : lic.summary;
-    const expected = typeof source === 'string' ? new TextEncoder().encode(`${source.replace(/\n+$/, '')}\n`) : null;
+    const expected = licenseBytes(lic);
     if (expected === null || !sameBytes(licenseFile, expected)) add('VIEW-02', 'Info', 'LICENSE');
   }
   sets.forEach((set, i) => {
@@ -385,5 +382,5 @@ export async function validateLibrary(bytes, options = {}) {
     if (b !== undefined && !sameBytes(b, setlistBytes(m.libraryId, set, i + 1))) add('VIEW-02', 'Info', path);
   });
 
-  return { findings, fatal: false, songs, manifest: m };
+  return { findings, fatal: false, songs, manifest: m, manifestBytes: manBytes, signed: hasKey && sigBytes !== undefined, folder: lib, files: rel };
 }

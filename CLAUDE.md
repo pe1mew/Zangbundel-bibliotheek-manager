@@ -71,7 +71,7 @@ Zangbundel-bibliotheek-manager/
 ├── webapp/
 │   ├── mock/                     ← clickable mock of webappGUI (static HTML, CSS, JS; app icon CC BY-SA 4.0); never deployed
 │   ├── placeholder/              ← zangbundel.nl until go-live: nl/en/de pages, privacy, security.txt (no script)
-│   ├── src/                      ← the web app: index.html, app/ (ES modules, bundled by the build, TD-22), core/ (the library engine: zip, names, manifest, chordpro, validate), assets/
+│   ├── src/                      ← the web app: index.html, app/ (ES modules, bundled by the build, TD-22), core/ (the library engine: zip, names, manifest, chordpro, validate, view, library), assets/
 │   ├── tests/                    ← test_build.py, test_bundle.py, test_vendor.py (need node); unit/, conformance.test.mjs (node --test)
 │   ├── vendor/                   ← fflate 0.8.3, @noble/ed25519 3.2.0 with licences; VENDOR.md (hashes, provenance), written by tools/vendor.py
 │   ├── test-holding/             ← test.zangbundel.nl until M1.4

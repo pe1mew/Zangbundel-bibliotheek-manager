@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.11 |
+| **Status** | Draft 0.12 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.11, `test-libraries/` (56 cases) |
 
@@ -211,10 +211,19 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - `{album: …}` is a known directive (song format §5.3 calls `album` a standard name).
   - VIEW-03 checks `min_app_version` against 0.1.0, the value PF-41 fixes, so a view that would lock out an app from 0.1.0 is reported.
   - SNG-17's 254-line bound counts the canonical line list with chorus repeats (song format W004).
-- **To do:**
-  - M2.3's block form and its round trip (GD-18, GD-19, locked blocks byte-exact);
-  - writing the view and the deterministic ZIP (M2.5, M2.1's writer), and EDT-51 (open and save unchanged, byte-identical);
-  - conversion (M2.7), the library worker (M2.8) and fuzzing (M2.9).
+- **Writing (M2.1 writer, M2.5 writer, EDT-51 to EDT-58, EDT-71):**
+  - `zip.js` `writeZip` writes deterministically; `view.js` writes the 1.1 view, and VIEW-02 checks against the same functions.
+  - `library.js` opens a library into an in-memory model and saves it. An unchanged library is saved byte for byte as opened, signature included (EDT-51). A changed one is built, with version + 1, `modified`, an optional `changes`, canonical songs and a new view, signed with the library's own key or a newly loaded one.
+  - Every save runs the rules of section 6 on its own output and is refused on an Error (EDT-50). PKG-09 is added.
+  - Tested in `tests/unit/library.test.mjs` (10 tests, two seeded defects caught):
+    - EDT-51 on both reference libraries;
+    - a changed library that reopens to the same model;
+    - identical bytes from two builds;
+    - signing with the RFC 8032 key, and refusal of a foreign key;
+    - Save as copy of a signed library;
+    - a refused save, and a new library needing its licence and maintainer;
+    - the §3.3 names.
+- **To do:** M2.3's block form and its round trip (GD-18, GD-19, locked blocks byte-exact), conversion (M2.7), the library worker (M2.8) and fuzzing (M2.9).
 
 ### M3 — Keys and signing (M)
 
@@ -369,3 +378,4 @@ The placeholder and the manager have separate release directories and separate m
 | Draft 0.9 | 2026-11-06 | M1.2 and M1.3 done (state under M1): vendoring with `vendor.py`, `node --test` with unit tests and the conformance runner's corpus checks. |
 | Draft 0.10 | 2026-11-06 | M2 started (state under M2): ZIP reader, names, manifest, fingerprint, and the PKG, STR, MAN and SIG rules, conformant on all 56 cases for those families. |
 | Draft 0.11 | 2026-11-06 | M2: every rule family implemented; SC-04 met on all 56 test libraries; readings beyond the corpus and what is left of M2 listed under M2. |
+| Draft 0.12 | 2026-11-06 | M2: writing and saving done (deterministic ZIP, view writer, `library.js` with EDT-50 to EDT-58 and EDT-71); left: block form, conversion, worker, fuzzing. |

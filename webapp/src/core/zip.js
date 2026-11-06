@@ -5,7 +5,7 @@
 // cannot make it allocate more than the limits allow (implementationPlan M2.1).
 // Pure functions: no DOM, no workers; runs in the library worker and in node --test.
 
-import { inflateSync } from '../../vendor/fflate-0.8.3.js';
+import { deflateSync, inflateSync } from '../../vendor/fflate-0.8.3.js';
 
 export const LIMITS = Object.freeze({
   zipSize: 64 * 1024 * 1024,          // FDS 3.5
@@ -195,4 +195,74 @@ export function readEntry(bytes, entry) {
     throw new ZipError('PKG-01', entry.rawName, 'CRC-32 mismatch');
   }
   return data;
+}
+
+/**
+ * Write a ZIP deterministically (implementationPlan M2.1): the same files and date always give the
+ * same bytes. Files are { name, data } with names already inside the one top-level folder; they
+ * are written in the order given, deflated (level 6) unless that would not make them smaller,
+ * with the UTF-8 flag, Unix mode 0644, no extra fields, and the DOS time of `date` (UTC).
+ */
+export function writeZip(files, date) {
+  const d = date instanceof Date ? date : new Date(date);
+  const dosTime = (d.getUTCHours() << 11) | (d.getUTCMinutes() << 5) | Math.floor(d.getUTCSeconds() / 2);
+  const dosDate = ((Math.max(1980, d.getUTCFullYear()) - 1980) << 9) | ((d.getUTCMonth() + 1) << 5) | d.getUTCDate();
+  const enc = new TextEncoder();
+  const parts = [];
+  const central = [];
+  let offset = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name);
+    const deflated = deflateSync(f.data, { level: 6 });
+    const stored = deflated.length >= f.data.length;
+    const body = stored ? f.data : deflated;
+    const crc = crc32(f.data);
+    const head = new Uint8Array(30 + name.length);
+    const h = new DataView(head.buffer);
+    h.setUint32(0, 0x04034b50, true);
+    h.setUint16(4, 20, true);
+    h.setUint16(6, 0x800, true);
+    h.setUint16(8, stored ? 0 : 8, true);
+    h.setUint16(10, dosTime, true);
+    h.setUint16(12, dosDate, true);
+    h.setUint32(14, crc, true);
+    h.setUint32(18, body.length, true);
+    h.setUint32(22, f.data.length, true);
+    h.setUint16(26, name.length, true);
+    head.set(name, 30);
+    const cd = new Uint8Array(46 + name.length);
+    const c = new DataView(cd.buffer);
+    c.setUint32(0, 0x02014b50, true);
+    c.setUint16(4, (3 << 8) | 20, true);               // made by Unix, ZIP 2.0
+    c.setUint16(6, 20, true);
+    c.setUint16(8, 0x800, true);
+    c.setUint16(10, stored ? 0 : 8, true);
+    c.setUint16(12, dosTime, true);
+    c.setUint16(14, dosDate, true);
+    c.setUint32(16, crc, true);
+    c.setUint32(20, body.length, true);
+    c.setUint32(24, f.data.length, true);
+    c.setUint16(28, name.length, true);
+    c.setUint32(38, (0o100644 << 16) >>> 0, true);
+    c.setUint32(42, offset, true);
+    cd.set(name, 46);
+    parts.push(head, body);
+    central.push(cd);
+    offset += head.length + body.length;
+  }
+  const cdSize = central.reduce((n, x) => n + x.length, 0);
+  const end = new Uint8Array(22);
+  const e = new DataView(end.buffer);
+  e.setUint32(0, 0x06054b50, true);
+  e.setUint16(8, files.length, true);
+  e.setUint16(10, files.length, true);
+  e.setUint32(12, cdSize, true);
+  e.setUint32(16, offset, true);
+  const out = new Uint8Array(offset + cdSize + 22);
+  let p = 0;
+  for (const x of [...parts, ...central, end]) {
+    out.set(x, p);
+    p += x.length;
+  }
+  return out;
 }
