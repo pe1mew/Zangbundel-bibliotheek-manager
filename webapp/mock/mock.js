@@ -457,7 +457,11 @@ function centreEdit(d) {
   const small = (n) => icon(n).replace('<svg', '<svg style="width:16px;height:16px;fill:currentColor;vertical-align:-3px"');
   const head = `<div class="edithead">
       <h2>${d.id ? t('editing', { t: esc(d.title || t('noTitle')) }) : t('newSongTitle')}</h2>
-      <label class="switch"><input type="checkbox" id="textview" ${S.textMode ? 'checked' : ''}><span class="track"></span><span>${t('textView')}</span></label> ${gd('GD-18')}
+      <div class="modes"><span class="muted small">${t('modeLabel')}</span>
+        <div class="segmented" role="radiogroup" aria-label="${esc(t('modeLabel'))}">
+          <button role="radio" aria-checked="${!S.textMode}" class="${S.textMode ? '' : 'on'}" data-editmode="blocks">${icon('list')}${t('modeBlocks')}</button>
+          <button role="radio" aria-checked="${S.textMode}" class="${S.textMode ? 'on' : ''}" data-editmode="code">${icon('edit')}${t('modeCode')}</button>
+        </div> ${gd('GD-18')} ${gd('GD-38')}</div>
     </div>`;
   const foot = `<div class="editfoot">
       ${d.id ? `<button class="btn btn-text" data-delsong="${esc(d.id)}" style="margin-right:auto">${icon('delete')}${t('deleteSong')}</button>` : ''}
@@ -524,6 +528,14 @@ function wireEditor() {
   makeSortable($('sections'), '.section', '.handle', (from, to) => {
     const secs = S.draft.sections; const [m] = secs.splice(from, 1); secs.splice(to, 0, m);
   }, () => { renderCentre(); return document.querySelectorAll('.section'); });
+}
+// GD-18, GD-38: two editing modes for the same song; switching keeps every change.
+function setEditMode(mode) {
+  if (!S.draft || (mode === 'code') === S.textMode) return;
+  if (mode === 'code') { syncLeft(); S.textDraft = toChordPro(S.draft); S.textMode = true; } else leaveTextMode();
+  renderLeft(); renderCentre();
+  const f = mode === 'code' ? $('cptext') : document.querySelector('.editor');
+  if (f) f.focus();
 }
 function hint(i, msg) {
   const h = $('hint-' + i); if (!h) return;
@@ -846,12 +858,13 @@ function showSplash() {
 
 const EDIT_SAFE = ['lang', 'about', 'android', 'check', 'keymake', 'keyload', 'keydl', 'apply', 'cancel', 'skip'];
 document.addEventListener('click', (e) => {
-  const tgt = e.target.closest('[data-act],[data-edit],[data-song],[data-dlg],[data-up],[data-down],[data-del],[data-addsec],[data-goto],[data-jump],[data-sort],[data-chip],[data-clear],[data-delsong],[data-tab],[data-setopen],[data-setmove],[data-setrename],[data-setdel],[data-addtoset],[data-entrymove],[data-entrydel],[data-setlang]');
+  const tgt = e.target.closest('[data-act],[data-edit],[data-song],[data-dlg],[data-up],[data-down],[data-del],[data-addsec],[data-goto],[data-jump],[data-sort],[data-chip],[data-clear],[data-delsong],[data-tab],[data-setopen],[data-setmove],[data-setrename],[data-setdel],[data-addtoset],[data-entrymove],[data-entrydel],[data-setlang],[data-editmode]');
   if (!tgt) { if (!e.target.closest('#langmenu')) { const m = $('langmenu'); if (m) m.remove(); } return; }
   const d = tgt.dataset;
   if (d.jump) { jump(d.jump); return; }
   if (d.setlang) { S.lang = d.setlang; store.set('lang', S.lang); closeDialog(); render(); return; }
   if (d.dlg) { dialogAction(d, tgt); return; }
+  if (d.editmode) { setEditMode(d.editmode); return; }
   if (d.goto) { gotoIssue(d.goto); return; }
   if (d.act === 'skip') { clearTimeout(S.splashTimer); goHome(); return; }
   if (d.act === 'lang') { if ($('langmenu')) closeDialog(); else langMenu(tgt); return; }
@@ -1025,10 +1038,6 @@ document.addEventListener('change', (e) => {
   const el = e.target;
   if (el.id === 'ack') { $('keydl-btn').disabled = !el.checked; return; }
   if (el.id === 'intext') { S.filter.inText = el.checked; renderSongList(); return; }
-  if (el.id === 'textview') {                                   // GD-18
-    if (el.checked) { syncLeft(); S.textDraft = toChordPro(S.draft); S.textMode = true; } else leaveTextMode();
-    renderLeft(); renderCentre(); return;
-  }
   if (el.id === 'lib-license' && S.lib && !S.lib.license.summary.trim() && LICENSES[el.value]) {
     S.lib.license.summary = LICENSES[el.value][S.lang]; renderLeft(); renderBottom(); return;
   }

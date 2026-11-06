@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+- `design/webappGUI.md` draft 0.11 and the mock: while editing a song, *Bewerken als* offers two named modes, *Blokken* and *Code (ChordPro)*, as a segmented control instead of a switch; the user can change mode at any moment without losing changes (GD-38).
+
 ## [0.1.0] - 2026-11-06
 
 The first version: the functional design specification (FDS draft 0.7), the GUI and technical design of the web app (webappGUI draft 0.10, webappTDS draft 0.5), the clickable mock in `webapp/mock/`, and the shared test libraries. There is no web app code yet.

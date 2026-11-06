@@ -475,3 +475,15 @@ textarea { font: inherit; }
 .guardbtns { display: flex; flex-direction: column; align-items: stretch; gap: 8px; margin-top: 18px; }
 .guardbtns .btn { justify-content: flex-start; }
 .section.chorus, .section.bridge, .section.repeat { padding-left: 9px; }   /* 4 px coloured border + 9 px = 1 px border + 12 px: equal on every side */
+
+/* GD-38: the two editing modes as a segmented control */
+.modes { display: flex; align-items: center; gap: 10px; }
+.segmented { display: inline-flex; border: 1px solid var(--fire-orange); border-radius: 999px; overflow: hidden; }
+.segmented button {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 16px; border: none; background: none;
+  color: var(--fire-orange); font-weight: 600; cursor: pointer;
+}
+.segmented button + button { border-left: 1px solid var(--fire-orange); }
+.segmented button svg { width: 18px; height: 18px; fill: currentColor; }
+.segmented button.on { background: var(--fire-orange); color: var(--night-blue-dark); }
+.segmented button:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: -3px; }

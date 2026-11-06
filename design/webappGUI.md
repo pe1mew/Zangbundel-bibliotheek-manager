@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.10 |
+| **Status** | Draft 0.11 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -302,6 +302,8 @@ The title is the song's name before editing, so the user recognises it; a new so
 
 The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown in the interface: nobody edits it (PF-45).
 
+**GD-38 — Two named editing modes: *Blokken* and *Code (ChordPro)*.** *(Owner, 2026-11-06, feedback on the mock.)* The switch *ChordPro-tekst* of GD-18 was not recognised as a choice between two ways of editing. Above the song, *Bewerken als* is followed by a segmented control with two options, *Blokken* (the section editor, the default) and *Code (ChordPro)* (the song as raw ChordPro code, editable, with line checks while typing). The current mode is filled orange. The user switches at any moment during an edit; every change made in one mode is in the other, and switching without changes leaves the song exactly as it was. *Toepassen* applies the song in whichever mode is open. Keyboard: the control is a radio group, reachable with Tab. This replaces the switch of GD-18; the rest of GD-18 stands.
+
 ---
 
 ## 4. Open questions
@@ -344,3 +346,4 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.8 | 2026-11-06 | The mock follows section 3.6 (GD-16 to GD-35); section 3.5 says how to use it. No decision changed. |
 | Draft 0.9 | 2026-11-06 | The owner's feedback on the mock: leaving the song editor asks what to do with the changes and names the song (GD-36), instead of *Pas eerst toe of annuleer*. |
 | Draft 0.10 | 2026-11-06 | Depends on FDS draft 0.6: the maintainer is required, the title at most 80 characters, and the terms *signed by* and *not signed* (GD-37); the mock follows. Equal spacing in the section editor (section 2.2). This draft is the design of version 0.1.0 (webappTDS TD-16). |
+| Draft 0.11 | 2026-11-06 | The owner's feedback on the mock: the two editing modes are a named segmented control, *Blokken* and *Code (ChordPro)* (GD-38), instead of the switch of GD-18. |
