@@ -7,6 +7,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M1.2, vendoring.** `webapp/tools/vendor.py` vendored `fflate` 0.8.3 and `@noble/ed25519` 3.2.0 into `webapp/vendor/`, with their MIT licences and `VENDOR.md`.
+  - **Checks run:** the tarball SHA-512 against the registry's `dist.integrity`, the registry signatures, provenance, and `npm audit` with no advisories.
+  - **fflate 0.8.3 publishes no provenance attestation.** It is vendored with `--accept-missing-provenance` and recorded as such. noble's SLSA provenance verified.
+  - **`build.py` re-checks** every vendored file against `VENDOR.md` when it bundles one.
+  - **`.gitattributes`** keeps `webapp/vendor/` byte-exact (`-text`), as it does `test-libraries/`.
+  - **`webapp/tests/test_vendor.py`** bundles both and runs them in Node: same exports and ZIP bytes as the native modules, and RFC 8032 test 1.
+  - `NOTICE`, `license.md`, `design/securityAssessment.md` draft 0.11 (7.4) and `design/webappTDS.md` draft 0.14 (TD-17) record the result.
+- **M1.3, test runner.** `node --test webapp/tests/` (`webapp/package.json` marks the folder as ES modules for Node; no dependencies) runs:
+  - unit tests of `i18n.js`;
+  - `conformance.test.mjs` over the 56 test libraries. It checks each `.zbl` against its recorded SHA-256 and each `expected.json`'s form now, and lists the Editor comparison (SC-04) as a to-do until the library engine exists (M2).
+  - The container test runs all of these: 80 of 80. `design/implementationPlan.md` draft 0.9.
 - Milestone M1, first part (`design/webappTDS.md` draft 0.11, `design/securityAssessment.md` draft 0.8, `design/implementationPlan.md` draft 0.6):
   - **TD-22, the owner's choice: the build bundles the JavaScript itself.** `Integrity-Policy` refuses modules imported without integrity, so `webapp/tools/bundle.py` joins each entry point (main thread, each worker) into one file with SRI. It works from a subset of ES modules, read with a lexer that skips comments, strings, templates and regexes. The bundler refuses default exports, re-exports, dynamic `import()`, bare specifiers and cycles.
   - **Tests.** `webapp/tests/test_bundle.py` runs bundles in Node: 20 checks. fflate 0.8.3 and @noble/ed25519 3.2.0, bundled from their npm packages in a scratch test, behave as natively, including an RFC 8032 signature.

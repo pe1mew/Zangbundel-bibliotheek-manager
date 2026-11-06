@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.10 |
+| **Status** | Draft 0.11 |
 | **Date** | 2026-11-06 |
-| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.13 |
+| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
 
 ---
@@ -403,6 +403,13 @@ assets/app.<hash>.css           all styles; no style attributes anywhere
 6. A timer job checks the live files against the signed manifest hourly (SR-73) and reports to the owner.
 7. Vendoring a package (SR-12): `npm pack <name>@<version>`, compare the tarball's SHA-512 with `npm view <name>@<version> dist.integrity`, check the provenance with `npm audit signatures` in a scratch project, copy the built file into `webapp/vendor/`, and record `name, version, source, sha256, licence` in `webapp/vendor/VENDOR.md`.
 
+**As implemented (M1.2): vendoring.** `webapp/tools/vendor.py add <name> <version> --file <path>` does step 7.
+- **It checks:** the tarball's SHA-512 against `dist.integrity`; the registry signatures and provenance (`npm audit signatures`, in a scratch project installed with `--ignore-scripts`); and `npm audit` (SR-14, GitHub's advisory database).
+- **It records** every file in `webapp/vendor/VENDOR.md`, with the licence file next to it.
+- **The build re-checks.** `vendor.py check`, and `build.py` whenever a bundle contains vendored code, compare every file with its recorded SHA-256.
+- **Deviation from SR-12: fflate has no provenance.** `fflate` 0.8.3 is published without a provenance attestation, so for it SR-12's provenance check has nothing to verify; it is vendored with `--accept-missing-provenance`, as VENDOR.md says. `@noble/ed25519` 3.2.0 has a verified SLSA provenance.
+- **SR-14's GitLab advisory database is a manual step.** `npm audit` covers only GitHub's database, so GitLab's has to be searched by hand before a release.
+
 **As implemented (M0).** The runbook is `webapp/server/README.md`.
 
 - **Build** (`webapp/tools/build.py`). A release build needs all of these (SR-10, SR-90), and records the tag in the manifest:
@@ -595,3 +602,4 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 | Draft 0.8 | 2026-11-06 | Section 7.3: the app ships as three bundles (webappTDS TD-22); the vendored libraries are inside the worker bundles; workers are protected by hashed names, SR-11 and SR-73, since browsers have no SRI for workers. |
 | Draft 0.9 | 2026-11-06 | After the review of M1 part 1: 7.3 names the main bundle `main.<hash>.js`, says SRI covers bundles and how SR-12 still holds, and points at webappTDS TQ-08 (the workers' Trusted Types policy). 7.1 records the one header that differs between the hosts until go-live (SR-27). The app's test banner is the fixed Dutch text of SR-81 in every language. |
 | Draft 0.10 | 2026-11-06 | The owner's decision on webappTDS TQ-08 (TD-23): SR-20's CSP lists a second Trusted Types policy, `zbm-worker`, for starting the two workers; SR-32 and 7.3 say what each policy accepts. |
+| Draft 0.11 | 2026-11-06 | 7.4 records the vendoring of M1.2 (`vendor.py`): SR-12 checks as run, fflate 0.8.3 without published provenance (accepted, recorded), SR-14's GitLab check by hand. |

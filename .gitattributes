@@ -5,6 +5,8 @@
 *.cho   text eol=lf
 # Test libraries (FDS O-04) are byte-exact input: BOMs, invalid UTF-8, broken ZIPs. Never convert them.
 test-libraries/**    -text
+# Vendored packages (securityAssessment SR-12) are byte-exact: VENDOR.md records their SHA-256.
+webapp/vendor/**     -text
 *.zip   binary
 *.zbkey -text
 raw/*   binary

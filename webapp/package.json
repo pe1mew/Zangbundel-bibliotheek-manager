@@ -1,0 +1,10 @@
+{
+  "name": "zangbundel-bibliotheek-manager-webapp",
+  "private": true,
+  "description": "Development only (webappTDS TD-21): marks webapp/ as ES modules for node --test. No dependencies; nothing from npm reaches the site except the files in vendor/.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/"
+  }
+}

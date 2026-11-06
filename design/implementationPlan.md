@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.8 |
+| **Status** | Draft 0.9 |
 | **Date** | 2026-11-06 |
-| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.13, `design/securityAssessment.md` draft 0.10, `test-libraries/` (56 cases) |
+| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.11, `test-libraries/` (56 cases) |
 
 ---
 
@@ -106,11 +106,12 @@ webapp/
 │   ├── assets/               app.css (all styles; no inline styles), icon, photograph
 │   └── .well-known/          security.txt (SR-92)
 ├── vendor/                   fflate 0.8.3, @noble/ed25519 3.2.0, VENDOR.md with hashes (SR-12)
-├── tests/                    test_build.py, test_bundle.py; later unit tests of core/, the conformance runner, fuzzing
+├── tests/                    test_build.py, test_bundle.py, test_vendor.py; unit/*.test.mjs and conformance.test.mjs (node --test); fuzzing later
+├── package.json              development only: "type": "module" for node --test; no dependencies
 ├── tools/
 │   ├── build.py              offline, reproducible: hashed names, SRI, release-manifest.json (SR-10, SR-13)
 │   ├── bundle.py             one bundle per entry point from a subset of ES modules (webappTDS TD-22)
-│   ├── vendor.py             verifies a package against npm's dist.integrity, writes VENDOR.md (SR-12)
+│   ├── vendor.py             vendors a package: integrity, signatures, provenance, advisories; writes VENDOR.md (SR-12, SR-14)
 │   ├── sign-release.sh       signs the manifest with the release key (SR-11)
 │   ├── check_headers.py      SC-01 against a live host
 │   └── release-key.pub       public release key
@@ -176,10 +177,12 @@ Each milestone ends with its exit checks passing and the result written to `desi
 **Exit:** a signed build reaches `test.zangbundel.nl` end to end; SC-08 and SC-09 pass.
 
 **State (2026-11-06).**
-- **M1.1 done.** `webapp/tools/bundle.py`; `build.py` bundles each entry point, checks each bundle with `node --check`, and refuses JavaScript that names a renamed asset or a `--version` that differs from `app/version.js`. Tested in the repository: `webapp/tests/test_bundle.py` (33 checks, run in Node: bundles give the same result as the native modules, and the refusals) and `webapp/server/test/run.sh` (two builds byte-identical). A one-off experiment outside the repository, to be repeated in M1.2: fflate 0.8.3 and @noble/ed25519 3.2.0 bundled from their npm packages behaved as natively, including an RFC 8032 signature.
+- **M1.1 done.** `webapp/tools/bundle.py`; `build.py` bundles each entry point, checks each bundle with `node --check`, and refuses JavaScript that names a renamed asset or a `--version` that differs from `app/version.js`. Tested in the repository: `webapp/tests/test_bundle.py` (33 checks, run in Node: bundles give the same result as the native modules, and the refusals) and `webapp/server/test/run.sh` (two builds byte-identical). The vendored fflate and @noble/ed25519, bundled, behave as the native modules (`webapp/tests/test_vendor.py`, including RFC 8032 test 1).
 - **M1.4 built, not deployed.** The minimal app is in `webapp/src/` (splash, then a card). In the container test it is signed, activated on the test instance as a trial build and passes SC-01 with `--app`; a manual check in the browser pane (not in the repository's tests): it ran under the SR-20 CSP and `Integrity-Policy` without a report, and copies with a missing or a wrong script integrity were refused. Deploying it waits for M0's server steps.
 - **M1.5, configuration part:** the test instance's CSP is now the SR-20 policy.
-- **Open:** M1.2 (vendoring with `vendor.py`) and M1.3 (`node --test` and the conformance runner). Node.js LTS 26.13.0 is installed.
+- **M1.2 done.** `webapp/tools/vendor.py` vendored both libraries into `webapp/vendor/` with `VENDOR.md`; `NOTICE` and `license.md` name them. Integrity, signatures and advisories were checked; provenance was verified for `@noble/ed25519`, while `fflate` 0.8.3 publishes none (securityAssessment 7.4).
+- **M1.3 done as far as M1 can go.** `node --test webapp/tests/` runs the unit tests (`tests/unit/`) and `tests/conformance.test.mjs`: corpus integrity for all 56 cases now. The 56 Editor comparisons (SC-04) are reported as to-dos until `src/core/validate.js` exists (M2).
+- **The container test** (`webapp/server/test/run.sh`) runs all of these: 80 of 80.
 
 ### M2 — Library engine (L)
 
@@ -347,3 +350,4 @@ The placeholder and the manager have separate release directories and separate m
 | Draft 0.6 | 2026-11-06 | M1.1 bundles each entry point (webappTDS TD-22); Node.js LTS 26.13.0 installed on the development machine (IQ-02). |
 | Draft 0.7 | 2026-11-06 | After the review of M1 part 1: the M1 state separates repository tests from one-off and manual checks; layout 3.1 matches `webapp/src/`. |
 | Draft 0.8 | 2026-11-06 | M2.8 includes the Trusted Types policy `zbm-worker` (webappTDS TD-23, the owner's decision on TQ-08). |
+| Draft 0.9 | 2026-11-06 | M1.2 and M1.3 done (state under M1): vendoring with `vendor.py`, `node --test` with unit tests and the conformance runner's corpus checks. |

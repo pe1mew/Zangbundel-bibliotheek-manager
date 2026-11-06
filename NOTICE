@@ -16,4 +16,7 @@ logo are trademarks of Google LLC) and webapp/mock/img/f-droid-badge-nl.png
 The placeholder pages (webapp/placeholder/, webapp/test-holding/) use copies of the app icon
 and of both badges, and the web app (webapp/src/assets/) copies of the app icon and the
 background photograph, under the same terms.
+The web app bundles two third-party libraries, vendored unchanged in webapp/vendor/ with
+their licence files: fflate 0.8.3 (MIT, Copyright (c) Arjun Barrett) and @noble/ed25519 3.2.0
+(MIT, Copyright (c) 2019 Paul Miller). See webapp/vendor/VENDOR.md and license.md.
 Song lyrics are not part of this project.

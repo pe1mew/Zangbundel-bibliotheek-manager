@@ -34,6 +34,7 @@ from html.parser import HTMLParser
 sys.dont_write_bytecode = True                           # no __pycache__ in the tree whose cleanliness we check
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bundle as bundler  # noqa: E402  (this folder's bundle.py)
+import vendor  # noqa: E402  (this folder's vendor.py)
 
 # .js files are module sources: they are bundled (TD-22), never copied. A web manifest would need
 # its references rewritten; the build refuses one until that is written.
@@ -371,6 +372,10 @@ def build(args):
         del data[p]
     files = [p for p in files if not p.endswith('.js')] + sorted(set(bundles.values()))
     outside = sorted(os.path.relpath(m, src) for m in sources if os.path.commonpath([src, m]) != src)
+    if any(os.path.commonpath([vendor.VENDOR, m]) == vendor.VENDOR for m in sources if os.path.splitdrive(m)[0] == os.path.splitdrive(vendor.VENDOR)[0]):
+        problems = vendor.check(quiet=True)              # SR-12: vendored code exactly as recorded
+        if problems:
+            fail('webapp/vendor does not match VENDOR.md: ' + '; '.join(problems))
 
     commit, dirty, tag, on_main = git_state(src, src_files, outside)
     if not args.allow_dirty:

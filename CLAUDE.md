@@ -72,9 +72,10 @@ Zangbundel-bibliotheek-manager/
 │   ├── mock/                     ← clickable mock of webappGUI (static HTML, CSS, JS; app icon CC BY-SA 4.0); never deployed
 │   ├── placeholder/              ← zangbundel.nl until go-live: nl/en/de pages, privacy, security.txt (no script)
 │   ├── src/                      ← the web app: index.html, app/ (ES modules, bundled by the build, TD-22), assets/
-│   ├── tests/                    ← test_build.py, test_bundle.py (needs node)
+│   ├── tests/                    ← test_build.py, test_bundle.py, test_vendor.py (need node); unit/, conformance.test.mjs (node --test)
+│   ├── vendor/                   ← fflate 0.8.3, @noble/ed25519 3.2.0 with licences; VENDOR.md (hashes, provenance), written by tools/vendor.py
 │   ├── test-holding/             ← test.zangbundel.nl until M1.4
-│   ├── tools/                    ← build.py, bundle.py, sign-release.sh, check_headers.py (SC-01); release-key.pub once the owner makes it
+│   ├── tools/                    ← build.py, bundle.py, vendor.py, sign-release.sh, check_headers.py (SC-01); release-key.pub once the owner makes it
 │   └── server/                   ← nginx config, zbm-receive, zbm-release, zbm-verify timer; README.md = M0 runbook
 ├── memory/                       ← MEMORY.md index, gotcha-log.md, todo.md (committed, shared)
 ├── .claude/                      ← review-profile.md, launch.json (preview server webapp-mock)
@@ -98,6 +99,9 @@ python webapp/tools/build.py build --src webapp/placeholder --name placeholder -
 # Build checks: unsafe pages refused, a valid page built; bundler checks run in Node (C:\Program Files\nodejs)
 python webapp/tests/test_build.py
 python webapp/tests/test_bundle.py
+python webapp/tests/test_vendor.py
+node --test webapp/tests/                          # unit tests + test-library conformance (Editor checks are to-dos until M2)
+python webapp/tools/vendor.py check                # vendored files against VENDOR.md (vendor.py add needs npm and the network)
 
 # Trial build of the web app (the version must equal webapp/src/app/version.js; needs node on PATH for its syntax check)
 python webapp/tools/build.py build --src webapp/src --name manager --version 0.2.0-dev.1 --allow-dirty --force

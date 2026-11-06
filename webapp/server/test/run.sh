@@ -37,10 +37,13 @@ git config --global user.name 'Test Owner'; git config --global user.email 'owne
 git config --global gpg.format ssh; git config --global user.signingkey $W/rk/tag-key.pub
 echo "owner@example.invalid $(cut -d' ' -f1,2 $W/rk/tag-key.pub)" > $W/rk/tag-signers
 git config --global gpg.ssh.allowedSignersFile $W/rk/tag-signers
-cp /repo/webapp/tools/build.py /repo/webapp/tools/bundle.py /repo/webapp/tools/sign-release.sh $W/tools/
+cp /repo/webapp/tools/build.py /repo/webapp/tools/bundle.py /repo/webapp/tools/vendor.py /repo/webapp/tools/sign-release.sh $W/tools/
 cp $W/rk/test-release.pub $W/tools/release-key.pub
 
 check "build.py refuses unsafe pages, builds a valid one" python3 /repo/webapp/tests/test_build.py /repo/webapp/tools/build.py
+check "bundler: same as native ES modules, refusals (test_bundle.py)" python3 /repo/webapp/tests/test_bundle.py
+check "vendored packages match VENDOR.md and work bundled (test_vendor.py)" sh -c "cp -r /repo/webapp /tmp/webapp-rw && python3 /tmp/webapp-rw/tests/test_vendor.py"
+check "node --test: unit tests and the test-library corpus" sh -c "cp -r /repo/test-libraries /tmp/test-libraries && node --test /tmp/webapp-rw/tests/"
 
 # --- build: placeholder from a signed tag (SR-10, SR-90), holding page as a trial build ---
 mkdir -p $W/src/webapp && cp -r /repo/webapp/placeholder /repo/webapp/test-holding /repo/webapp/tools $W/src/webapp/

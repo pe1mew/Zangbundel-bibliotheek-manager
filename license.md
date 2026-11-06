@@ -51,6 +51,15 @@ The mock's *Android-app* panel (`design/webappGUI.md` GD-15) shows two official 
 
 The placeholder of `zangbundel.nl` (`webapp/placeholder/assets/`) uses the same two badge files and the app icon, unchanged as files; the page shows the badges greyed with *binnenkort* and without a link (GD-35), and names the trademark and the F-Droid licence in its footer. The test holding page (`webapp/test-holding/assets/`) uses the app icon. The web app (`webapp/src/assets/`) uses the app icon and the background photograph, unchanged, under CC BY-SA 4.0 as above.
 
+## Third-party code in the web app: MIT
+
+The web app bundles two libraries, vendored unchanged by `webapp/tools/vendor.py` (securityAssessment SR-12). Each keeps its own licence, which is next to it in `webapp/vendor/` and travels inside the bundle that contains it.
+
+| File | Package | Licence |
+|---|---|---|
+| `webapp/vendor/fflate-0.8.3.js` | `fflate` 0.8.3, `esm/browser.js` | MIT, Copyright (c) Arjun Barrett (`fflate-0.8.3.LICENSE`) |
+| `webapp/vendor/noble-ed25519-3.2.0.js` | `@noble/ed25519` 3.2.0, `index.js` | MIT, Copyright (c) 2019 Paul Miller (`noble-ed25519-3.2.0.LICENSE`) |
+
 ## Song lyrics: not in this repository
 
 This repository contains **no song lyrics** and does not accept any. The bibliotheek-manager edits libraries that users open on their own device; their songs never become part of this project. Test libraries in this repository contain only songs that are public domain or written for the tests. The maintainers of a library are responsible for having the right to distribute its contents; this project's licences say nothing about the lyrics.
