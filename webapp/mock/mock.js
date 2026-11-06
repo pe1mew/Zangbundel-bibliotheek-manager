@@ -186,7 +186,7 @@ function renderSongList() {
   ul.innerHTML = rows.length || !S.lib.songs.length ? rows.map((s) => `
     <li class="song ${s.id === S.sel ? 'selected' : ''}" data-song="${esc(s.id)}" tabindex="0" title="Klik om te bekijken">
       <span class="t">${esc(s.title)}</span>
-      <span class="actions"><button class="btn btn-outline btn-small" data-edit="${esc(s.id)}">Bewerken</button></span>
+      <span class="actions"><button class="btn btn-outline btn-small" data-edit="${esc(s.id)}">Bewerken</button><button class="iconbtn binbtn" data-delsong="${esc(s.id)}" title="Lied verwijderen" aria-label="${esc(s.title)} verwijderen">${icon('delete')}</button></span>
       <span class="s">${esc(langName(s.language))}${s.lyricist ? ' · ' + esc(s.lyricist) : ''}</span>
     </li>`).join('') : '<li class="empty">Geen liederen gevonden.</li>';
   const cw = $('clearwrap');
@@ -282,7 +282,10 @@ function renderCentre() {
   c.innerHTML = `<div class="view">
     <div class="viewhead">
       <div><h1>${esc(s.title)}</h1><div class="muted">${[s.lyricist && 'tekst: ' + s.lyricist, s.composer && 'muziek: ' + s.composer].filter(Boolean).map(esc).join(' · ')}</div></div>
-      <button class="btn btn-outline" data-edit="${esc(s.id)}">${icon('edit')}Bewerken</button>
+      <div class="headbtns">
+        <button class="btn btn-text" data-delsong="${esc(s.id)}" title="Lied verwijderen">${icon('delete')}Verwijderen</button>
+        <button class="btn btn-outline" data-edit="${esc(s.id)}">${icon('edit')}Bewerken</button>
+      </div>
     </div>
     <div class="lyrics">${lyricsHtml(s.sections)}</div></div>`;
 }
@@ -327,6 +330,7 @@ function centreEdit(d) {
       <button class="btn btn-outline" data-addsec="chorus">${icon('add')}Refrein</button>
     </div></div>
     <div class="editfoot">
+      ${d.id ? `<button class="btn btn-text" data-delsong="${esc(d.id)}" style="margin-right:auto">${icon('delete')}Lied verwijderen</button>` : ''}
       <button class="btn btn-text" data-act="cancel">Annuleren</button>
       <button class="btn btn-primary" data-act="apply">${icon('check')}Toepassen</button>
     </div>`;
@@ -626,7 +630,7 @@ function showSplash() {
 }
 
 document.addEventListener('click', (e) => {
-  const t = e.target.closest('[data-act],[data-view],[data-edit],[data-song],[data-dlg],[data-up],[data-down],[data-del],[data-addsec],[data-goto],[data-jump],[data-sort],[data-chip],[data-clear]');
+  const t = e.target.closest('[data-act],[data-view],[data-edit],[data-song],[data-dlg],[data-up],[data-down],[data-del],[data-addsec],[data-goto],[data-jump],[data-sort],[data-chip],[data-clear],[data-delsong]');
   if (!t) return;
   const d = t.dataset;
 
@@ -651,6 +655,17 @@ document.addEventListener('click', (e) => {
       S.sel = null; S.mode = 'view'; S.dirty = true; render();
     }
     if (d.dlg === 'download') { closeDialog(); toast(`Mock: ${downloadName} zou nu worden gedownload`); S.dirty = false; setTimeout(goHome, 900); }
+    if (d.dlg === 'delsong') {
+      const id = t.dataset.id, songs = S.lib.songs, k = songs.findIndex((x) => x.id === id);
+      const title = songs[k].title;
+      songs.splice(k, 1);
+      (S.lib.sets || []).forEach((set) => { set.songs = set.songs.filter((x) => x !== id); });   // also from every set
+      S.mode = 'view'; S.draft = null; S.errors = []; S.dirty = true;
+      const vis = visibleSongs();
+      S.sel = vis.length ? vis[Math.min(k, vis.length - 1)].id : null;   // select a neighbour, or nothing
+      closeDialog(); render(); toast(`"${title}" verwijderd`);
+      return;
+    }
     if (d.dlg === 'keyreplace') { keyMakeDialog(true); return; }
     if (d.dlg === 'keymake') {
       const name = $('key-name').value.trim();
@@ -683,6 +698,16 @@ document.addEventListener('click', (e) => {
   if (d.act === 'keydl') { if (S.key) keySaveDialog(false); return; }
   if (d.act === 'android') { androidDialog(); return; }
   if (d.act === 'newsong') { if (S.mode === 'edit') { toast('Pas eerst toe of annuleer'); return; } startEdit(null); return; }
+  if (d.delsong) {   // GD-16, FDS EDT-32: delete with confirmation M-62
+    const s = S.lib.songs.find((x) => x.id === d.delsong);
+    if (!s) return;
+    dialog(`<h2>Lied verwijderen</h2>
+      <p>"${esc(s.title)}" verwijderen? Dit kan in deze sessie niet ongedaan worden gemaakt.</p>
+      <p class="muted small">Het lied verdwijnt ook uit alle sets. FDS M-62, EDT-32.</p>
+      <div class="buttons"><button class="btn btn-text" data-dlg="cancel">Annuleren</button>
+        <button class="btn btn-primary" data-dlg="delsong" data-id="${esc(s.id)}">${icon('delete')}Verwijderen</button></div>`);
+    return;
+  }
   if (d.act === 'cancel') { S.mode = 'view'; S.draft = null; S.errors = []; if (S.sel && !selSong()) S.sel = null; render(); return; }
   if (d.act === 'apply') { syncLeft(); apply(); return; }
   if (d.view) { S.sel = d.view; S.mode = 'view'; render(); return; }

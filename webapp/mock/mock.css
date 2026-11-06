@@ -214,7 +214,8 @@ h3 { font-size: 16px; color: var(--secondary); text-transform: uppercase; letter
 .song.selected { background: var(--night-blue); border-left-color: var(--fire-orange); }
 .song .t { font-size: 16px; }
 .song .s { grid-column: 1; color: var(--secondary); font-size: 13px; }
-.song .actions { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.song .actions { grid-column: 2; grid-row: 1 / span 2; display: flex; gap: 2px; align-items: center; }
+.binbtn:hover { color: var(--fire-orange); }
 .song .warn { color: var(--fire-orange-light); font-size: 13px; }
 .listfoot { padding: 12px 20px 24px; }
 
@@ -353,3 +354,4 @@ h3 { font-size: 16px; color: var(--secondary); text-transform: uppercase; letter
   font-weight: normal; text-transform: none; letter-spacing: 0;
 }
 body.nobadges .gq { display: none; }
+.headbtns { display: flex; gap: 8px; align-items: center; flex: none; }

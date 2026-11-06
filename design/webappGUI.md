@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.6 |
+| **Status** | Draft 0.7 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.4; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -84,7 +84,7 @@ Reusing these files brings their licences into this repository: the Material Ico
 
 ## 3. Screens and behaviour
 
-The owner's GUI notes of 2026-11-05 are recorded below as decisions GD-03 to GD-09, in the owner's words where possible. The notes call the product *Songbook Dictionary Manager* and a library a *dictionary*; this document uses the FDS term **library** (*bibliotheek*), and the product name is GQ-06. Where a note meets an FDS requirement it does not cover, or departs from one, the point is an open question in section 4 (GQ-06 to GQ-15), not a change to the FDS.
+The owner's GUI notes of 2026-11-05 are recorded below as decisions GD-03 to GD-09, in the owner's words where possible. The notes call the product *Songbook Dictionary Manager* and a library a *dictionary*; this document uses the FDS term **library** (*bibliotheek*), and the product name is GQ-06. Where a note meets an FDS requirement it does not cover, or departs from one, the point is an open question in section 4 (GQ-06 to GQ-15), not a change to the FDS. Most of these questions were answered on 2026-11-06; the decisions are in section 3.6.
 
 ### 3.1 Startup
 
@@ -206,7 +206,7 @@ How *apply* relates to the FDS's validation while typing (EDT-42) and to Save be
 
 `webapp/mock/` shows GD-03 to GD-09 as a clickable mock (TD-04): open `index.html` through the preview server `webapp-mock` in `.claude/launch.json`, or any static file server. It reads and writes no files; *Openen* loads a built-in example library with songs that are traditional or written for the mock. A strip at the top, not part of the design, jumps to each state and shows or hides the open-question badges.
 
-Where the notes leave a point open, the mock makes an assumption and marks it with the question's badge. None of these is a decision:
+Where the notes leave a point open, the mock makes an assumption and marks it with the question's badge. None of these is a decision. *Since 2026-11-06 most of these questions are answered (section 3.6); the table shows what the first mocks assumed, and the mock is brought in line with section 3.6.*
 
 | Open question | What the mock assumes |
 |---|---|
@@ -230,31 +230,83 @@ Where the notes leave a point open, the mock makes an assumption and marks it wi
 
 Further behaviour the mock shows: the bottom bar's *Bewerken* is available only with a song selected, and *Sluiten en downloaden* only with a library open, with a dot after an applied change. While a song is being edited, the song list and *Sluiten en downloaden* ask the user to apply or cancel first. *Openen* and *Nieuw* ask for confirmation when there are unsaved changes (M-60). A new song's ID is proposed from its title on apply (EDT-36). Typing `{` or `}` in a section is refused with a hint, and pasted text loses such characters (GD-07).
 
+### 3.6 Decisions of the walk-through of 2026-11-06
+
+The owner's answers to the open questions, and two further requests made during the walk-through. *(Owner, 2026-11-06.)*
+
+**GD-16 — Deleting a song.** A song is deleted with the bin icon to the right of *Bewerken* on its row in the song list, with *Verwijderen* next to *Bewerken* above the song in view mode, or with *Lied verwijderen* in the edit footer. Each asks for confirmation (FDS M-62, *"<titel>" verwijderen? Dit kan in deze sessie niet ongedaan worden gemaakt.*). The song is removed from every set as well (EDT-32). Afterwards the neighbouring song in the list is selected, or none when the list is empty. A song that is new and not yet applied has no delete button; *Annuleren* discards it.
+
+**GD-17 — The interface follows the browser's language, and the bottom bar can change it.** On opening, the manager takes the first of the browser's preferred languages (`navigator.languages`) that it offers: Dutch, English or German (EDT-80); otherwise English (EDT-81). A language button in the bottom bar shows the current language (*NL*, *EN*, *DE*) and switches it at once, without losing work. Whether the choice is remembered for the next visit is GQ-16 (EDT-82 allows it). This replaces the proposal of GQ-10 to put the language choice in *Over*.
+
+**GD-18 — Sections first, ChordPro text as a second view.** *(Resolves GQ-14.)* The section editor (GD-06) is the default. A switch *ChordPro-tekst* shows the same song as plain ChordPro text, editable, with validation while typing (FDS EDT-33 stands). Switching back rebuilds the sections from the text. Both views edit the same song; nothing is lost by switching.
+
+**GD-19 — The section editor knows the common parts and keeps the rest unchanged.** *(Resolves GQ-13.)*
+
+| Part | In the section editor |
+|---|---|
+| Verse, chorus, bridge | Section types *Couplet*, *Refrein*, *Brug* (song format §7.1). |
+| Repeating a chorus (`{chorus}`, §7.2) | A section *Refrein herhalen*, without text of its own, showing which chorus it repeats. |
+| Section label (`{start_of_verse: Couplet 1}`) | An optional label field per section; empty means the app generates the label. |
+| Chords (`[G]`, §5.4) | Typed inline in the text; shown highlighted. |
+| Everything else: `{comment}`, tab, grid and ABC blocks, `#` maintainer notes, unknown directives, implicit verses | A locked block in its place, showing its text greyed with *Alleen te wijzigen in de ChordPro-tekst*. It is written back exactly as it was, so the song's content hash does not change by accident. |
+
+**GD-20 — *Toepassen* always applies; problems are marked and listed.** *(Resolves GQ-12.)* *Toepassen* takes the song into the library also when it has an Error. A song with an Error or Warning gets the severity icon of GD-29 on its row in the song list. A button *Controle* in the bottom bar shows the number of Errors and Warnings and opens the validation panel (FDS EDT-40 to EDT-42): all messages grouped by severity, each with its location (set, song, line), and a click on one goes there. *Downloaden* stays blocked while any Error is present (EDT-50, M-63) and says so. This supersedes the refusal shown in the first mock.
+
+**GD-21 — Sets are a tab in the right bar.** *(Resolves GQ-11.)* The right bar has two tabs, *Liedjes* and *Sets*, like the app's *Setlist* and *Zangbundel* tabs. *Sets* lists the sets (add, rename, delete with M-62, drag to reorder; EDT-31). Opening a set shows its songs in order in the centre area, with drag and up/down reordering as in the section editor (GD-08, GD-11) and a bin per entry that removes the song from the set only. Songs are added to the open set from the *Liedjes* tab with a *+ Set* button on each row while a set is open. A song can be in several sets (D-22).
+
+**GD-22 — The library's own fields are in the left bar when no song is selected.** *(Resolves GQ-10.)* With no song selected, the left bar shows the library's title, description, licence and maintainer (EDT-13, EDT-14, EDT-30), editable there. Clicking the library's title at the top of the right bar deselects the song and shows them. The language choice is in the bottom bar (GD-17).
+
+**GD-23 — *Downloaden* keeps the library open; *Sluiten* is separate.** *(Resolves GQ-09.)* The bottom bar's *Sluiten en downloaden* becomes *Downloaden*: it saves the `.zbl` and the user keeps working. Each download after a change raises the version (EDT-51). Its dialog offers *Opslaan als kopie* (EDT-70 to EDT-73) as well. A separate *Sluiten* ends the session, asking first when there are changes not yet downloaded (M-60, EDT-03).
+
+**GD-24 — Signing is a tick box in the download dialog; a signed library asks for its key.** *(Resolves GQ-18.)* While a key is in memory (GD-14), the download dialog has *Ondertekenen als <naam> · <vingerafdruk>* (EDT-60, EDT-53); for a library that is already signed with that key, it is ticked and cannot be unticked (EDT-63). A signed library shows a lock and the author in the right bar's header. Opened without its key, it is read-only (EDT-23): a bar above the centre area says *Alleen lezen: ondertekend door <naam> · <vingerafdruk>. Laad de sleutel om te wijzigen*, with *Sleutel laden*; a key that does not match is refused with M-30.
+
+**GD-25 — A new song is never hidden by the filter.** *(Resolves GQ-17.)* When a song is applied that the current search or filter hides, the filter is cleared, with the message *Filters gewist om het nieuwe lied te tonen*.
+
+**GD-26 — The product name is *Zangbundel bibliotheek-manager*.** *(Resolves GQ-06.)* English *Zangbundel library manager*, German *Zangbundel Bibliotheksverwaltung*, following the app's glossary (EDT-83).
+
+**GD-27 — The splash stays 3 seconds, or until a click.** *(Resolves GQ-07.)* Deliberately longer than the app's 1.5 s (app guiDesign D-05), so that the name and the version are seen.
+
+**GD-28 — Opening is *Bibliotheek openen*.** *(Resolves GQ-08.)* With the line *Het bestand wordt in je browser gelezen en blijft op deze computer*; the word *uploaden* is not used, since nothing is uploaded (TD-06).
+
+**GD-29 — Severities are shown with an icon, a word and a palette colour.** *(Resolves GQ-02.)* *Fout* (Error and Fatal): fire orange `#FF8A3D` with a filled triangle; *Waarschuwing*: fire orange light `#FFB36B` with an outlined triangle; *Info*: grey `#BFBFBF` with an *i*. The word is always shown, so colour is never the only sign.
+
+**GD-30 — The app icon is the logo and favicon; the splash shows the app's campfire photograph.** *(Resolves GQ-01 and GQ-03.)* The splash shows the app's background photograph (app guiDesign section 5, `design/gui/backdrop-3200x1440.webp`, CC BY-SA 4.0) under a dark scrim, with the icon, name and version on top, like the app's welcome screen. Everywhere else the background is the black of the app's screens.
+
+**GD-31 — The system font.** *(Resolves GQ-04.)* The platform's own font, as the app uses the platform font; no font is downloaded.
+
+**GD-32 — Desktop and laptop only.** *(Resolves GQ-05.)* The manager is designed for a window of at least 980 px wide. In a narrower window it shows only the message *De bibliotheek-manager heeft een groter scherm nodig: gebruik een computer of maak het venster breder*, with the Android-app links of GD-15.
+
+**GD-33 — Sections also move with up and down buttons.** *(Resolves GQ-15.)* Each section keeps its *Omhoog* and *Omlaag* buttons next to the drag handle, reachable with Tab and usable with Enter, as the keyboard alternative to dragging (GD-08).
+
+**GD-34 — Bar widths, folding and the language are remembered on this computer.** *(Resolves GQ-16.)* They are kept in the browser's local storage, on that computer only, and restored on the next visit (EDT-82). Nothing about a library or a key is kept there (EDT-02, EDT-64). If local storage is not available, the manager starts with the defaults.
+
+**GD-35 — Store badges say *binnenkort* until the app is there; the manager's manual is on its GitHub wiki.** *(Resolves GQ-19.)* In the Android panel (GD-15), a badge is shown greyed with *binnenkort* (*coming soon*) and no link while the app is not public in that store; the GitHub APK link works now. The manager's manual lives on this repository's GitHub wiki (`github.com/pe1mew/Zangbundel-bibliotheek-manager/wiki`), like the app's.
+
 ---
 
 ## 4. Open questions
 
 | ID | Date | Question |
 |---|---|---|
-| GQ-01 | 2026-11-05 | Does the manager use the app's background photograph (app guiDesign section 5) on its start screen, as the app's configuration screens do, or only the plain night-blue background? |
-| GQ-02 | 2026-11-05 | Which colours and icons mark the severities Fatal, Error, Warning and Info in the validation panel? The app's palette has no red or yellow; a choice must stay readable on night blue and must not rely on colour alone. |
-| GQ-03 | 2026-11-05 | Is the app icon the manager's logo and favicon, or does the manager get its own mark in the same style? |
-| GQ-04 | 2026-11-05 | Which font: the platform's system font stack (as the app uses the platform font, app guiDesign D-18), or a web font served from the project's own server? |
-| GQ-05 | 2026-11-05 | Which screen widths are designed for: desktop and laptop only, or also tablet and phone? Editing ChordPro text is a desktop task, but FDS 1.4 says every implementation behaves identically. The four-area layout of GD-04 needs a desktop width; on a narrow screen the bars would have to fold away. |
-| GQ-06 | 2026-11-05 | The product name on the splash and in the browser tab. The notes say *Songbook Dictionary Manager*; the repository and README say *Zangbundel bibliotheek-manager*, and the FDS calls a song collection a *library* (*bibliotheek*). Proposal: *Zangbundel bibliotheek-manager* in Dutch, *Zangbundel library manager* in English and *Zangbundel Bibliotheksverwaltung* in German, following the app's glossary (EDT-83). |
-| GQ-07 | 2026-11-05 | How long the splash stays. The notes say "a few seconds"; the app shows its welcome screen for at most 1.5 s, or until a tap (app guiDesign D-05), so that it never delays the user. Follow the app (GD-01)? |
-| GQ-08 | 2026-11-05 | The words for opening a library. The notes say *upload and open*, but TD-06 means nothing is uploaded: the file is read in the browser. *Upload* would tell the user the opposite of what happens. Proposal: *Open library* (*Bibliotheek openen*), with a line that the file stays on this computer. |
-| GQ-09 | 2026-11-05 | Where *Save as copy* (EDT-70 to EDT-73) and *Close* without saving (EDT-01, EDT-03, M-60) appear, next to *Close and download*. Does *Close and download* save and then end the session, or can the user download and keep editing? |
-| GQ-10 | 2026-11-05 | Where the library's own fields (title, description, licence, maintainer: EDT-13, EDT-14, EDT-30), signing and keys (§7.7, including the notice M-64 and the fingerprint SG-21) and the language choice (EDT-81) go. The left bar holds the selected song's fields; does it switch to the library's fields when no song is selected, or does the bottom bar open them? |
-| GQ-11 | 2026-11-05 | Where the sets go and how they are edited (EDT-31: add, rename, reorder, delete; add and reorder songs in a set; a song in several sets). The right bar shows the library's songs; a second list, a tab in the right bar, or a view in the centre? |
-| GQ-12 | 2026-11-05 | Where the validation panel goes (EDT-40, EDT-41: all messages grouped by severity, each leading to its location), and how *apply* (GD-09) relates to the FDS. The FDS validates while typing (EDT-42) and blocks only Save, only on Errors (EDT-50), so a half-finished song may stay in the library while the user works. Does *apply* refuse a song with an Error, or apply it and show the Error in the panel? |
-| GQ-13 | 2026-11-05 | Which parts of the ChordPro profile the section editor (GD-06) represents besides verse and chorus: bridge (song format §7.1), repeating a chorus with `{chorus}` (§7.2), section labels, implicit verses (§7.3), `{comment}` remarks (§7.4), chords in brackets (§5.4), tab, grid and ABC blocks, `#` maintainer comments and unknown directives (§10.1). A song opened from a file may contain any of them; the editor must keep what it cannot show unchanged, or the song's content hash changes and the app sees a new song. |
-| GQ-14 | 2026-11-05 | FDS EDT-33 says the song text is edited "as ChordPro text directly". The section editor (GD-06, GD-07) replaces that with a structured editor. Keep a plain-text view as a second mode for users who know ChordPro, or amend EDT-33 to allow the section editor alone? |
-| GQ-15 | 2026-11-05 | A keyboard alternative to dragging sections (GD-08), for users who cannot use a mouse well: for example *move up* and *move down* buttons on each section. |
-| GQ-16 | 2026-11-06 | Are the bar widths and folded state (GD-10) remembered between visits? They are not tied to a library, so EDT-02 allows it, like the language choice (EDT-82); they would be kept in the browser's local storage on the user's computer only. Or does every visit start with both bars open at their default width? |
-| GQ-17 | 2026-11-06 | When a new song is applied (GD-09) that the current search or filter hides, does the list clear the filter, or show the song anyway with a note? The mock clears the filter, so that the new song is never invisible. |
-| GQ-18 | 2026-11-06 | Where and how the open library is signed with the key in memory (*Bibliotheek ondertekenen*, EDT-60, EDT-53), how a signed library that opens read-only (EDT-23) asks for its key (EDT-62, M-30), and where the identity in use (name and fingerprint, SG-21) is shown. |
-| GQ-19 | 2026-11-06 | The links of GD-15 while the app is not public: hide the Google Play and F-Droid badges until the app is in the store, or show them with a line *binnenkort* (*coming soon*)? And where does the manager's manual live: this repository's GitHub wiki, or pages on `zangbundel.nl`? |
+| GQ-01 | 2026-11-05 | *Resolved 2026-11-06 by GD-30.* Does the manager use the app's background photograph (app guiDesign section 5) on its start screen, as the app's configuration screens do, or only the plain night-blue background? |
+| GQ-02 | 2026-11-05 | *Resolved 2026-11-06 by GD-29.* Which colours and icons mark the severities Fatal, Error, Warning and Info in the validation panel? The app's palette has no red or yellow; a choice must stay readable on night blue and must not rely on colour alone. |
+| GQ-03 | 2026-11-05 | *Resolved 2026-11-06 by GD-30.* Is the app icon the manager's logo and favicon, or does the manager get its own mark in the same style? |
+| GQ-04 | 2026-11-05 | *Resolved 2026-11-06 by GD-31.* Which font: the platform's system font stack (as the app uses the platform font, app guiDesign D-18), or a web font served from the project's own server? |
+| GQ-05 | 2026-11-05 | *Resolved 2026-11-06 by GD-32.* Which screen widths are designed for: desktop and laptop only, or also tablet and phone? Editing ChordPro text is a desktop task, but FDS 1.4 says every implementation behaves identically. The four-area layout of GD-04 needs a desktop width; on a narrow screen the bars would have to fold away. |
+| GQ-06 | 2026-11-05 | *Resolved 2026-11-06 by GD-26.* The product name on the splash and in the browser tab. The notes say *Songbook Dictionary Manager*; the repository and README say *Zangbundel bibliotheek-manager*, and the FDS calls a song collection a *library* (*bibliotheek*). Proposal: *Zangbundel bibliotheek-manager* in Dutch, *Zangbundel library manager* in English and *Zangbundel Bibliotheksverwaltung* in German, following the app's glossary (EDT-83). |
+| GQ-07 | 2026-11-05 | *Resolved 2026-11-06 by GD-27.* How long the splash stays. The notes say "a few seconds"; the app shows its welcome screen for at most 1.5 s, or until a tap (app guiDesign D-05), so that it never delays the user. Follow the app (GD-01)? |
+| GQ-08 | 2026-11-05 | *Resolved 2026-11-06 by GD-28.* The words for opening a library. The notes say *upload and open*, but TD-06 means nothing is uploaded: the file is read in the browser. *Upload* would tell the user the opposite of what happens. Proposal: *Open library* (*Bibliotheek openen*), with a line that the file stays on this computer. |
+| GQ-09 | 2026-11-05 | *Resolved 2026-11-06 by GD-23.* Where *Save as copy* (EDT-70 to EDT-73) and *Close* without saving (EDT-01, EDT-03, M-60) appear, next to *Close and download*. Does *Close and download* save and then end the session, or can the user download and keep editing? |
+| GQ-10 | 2026-11-05 | *Resolved 2026-11-06 by GD-22 (language: GD-17).* Where the library's own fields (title, description, licence, maintainer: EDT-13, EDT-14, EDT-30), signing and keys (§7.7, including the notice M-64 and the fingerprint SG-21) and the language choice (EDT-81) go. The left bar holds the selected song's fields; does it switch to the library's fields when no song is selected, or does the bottom bar open them? |
+| GQ-11 | 2026-11-05 | *Resolved 2026-11-06 by GD-21.* Where the sets go and how they are edited (EDT-31: add, rename, reorder, delete; add and reorder songs in a set; a song in several sets). The right bar shows the library's songs; a second list, a tab in the right bar, or a view in the centre? |
+| GQ-12 | 2026-11-05 | *Resolved 2026-11-06 by GD-20.* Where the validation panel goes (EDT-40, EDT-41: all messages grouped by severity, each leading to its location), and how *apply* (GD-09) relates to the FDS. The FDS validates while typing (EDT-42) and blocks only Save, only on Errors (EDT-50), so a half-finished song may stay in the library while the user works. Does *apply* refuse a song with an Error, or apply it and show the Error in the panel? |
+| GQ-13 | 2026-11-05 | *Resolved 2026-11-06 by GD-19.* Which parts of the ChordPro profile the section editor (GD-06) represents besides verse and chorus: bridge (song format §7.1), repeating a chorus with `{chorus}` (§7.2), section labels, implicit verses (§7.3), `{comment}` remarks (§7.4), chords in brackets (§5.4), tab, grid and ABC blocks, `#` maintainer comments and unknown directives (§10.1). A song opened from a file may contain any of them; the editor must keep what it cannot show unchanged, or the song's content hash changes and the app sees a new song. |
+| GQ-14 | 2026-11-05 | *Resolved 2026-11-06 by GD-18.* FDS EDT-33 says the song text is edited "as ChordPro text directly". The section editor (GD-06, GD-07) replaces that with a structured editor. Keep a plain-text view as a second mode for users who know ChordPro, or amend EDT-33 to allow the section editor alone? |
+| GQ-15 | 2026-11-05 | *Resolved 2026-11-06 by GD-33.* A keyboard alternative to dragging sections (GD-08), for users who cannot use a mouse well: for example *move up* and *move down* buttons on each section. |
+| GQ-16 | 2026-11-06 | *Resolved 2026-11-06 by GD-34.* Are the bar widths and folded state (GD-10) remembered between visits? They are not tied to a library, so EDT-02 allows it, like the language choice (EDT-82); they would be kept in the browser's local storage on the user's computer only. Or does every visit start with both bars open at their default width? The same question applies to the language chosen in the bottom bar (GD-17). |
+| GQ-17 | 2026-11-06 | *Resolved 2026-11-06 by GD-25.* When a new song is applied (GD-09) that the current search or filter hides, does the list clear the filter, or show the song anyway with a note? The mock clears the filter, so that the new song is never invisible. |
+| GQ-18 | 2026-11-06 | *Resolved 2026-11-06 by GD-24.* Where and how the open library is signed with the key in memory (*Bibliotheek ondertekenen*, EDT-60, EDT-53), how a signed library that opens read-only (EDT-23) asks for its key (EDT-62, M-30), and where the identity in use (name and fingerprint, SG-21) is shown. |
+| GQ-19 | 2026-11-06 | *Resolved 2026-11-06 by GD-35.* The links of GD-15 while the app is not public: hide the Google Play and F-Droid badges until the app is in the store, or show them with a line *binnenkort* (*coming soon*)? And where does the manager's manual live: this repository's GitHub wiki, or pages on `zangbundel.nl`? |
 
 ---
 
@@ -268,3 +320,4 @@ Further behaviour the mock shows: the bottom bar's *Bewerken* is available only 
 | Draft 0.4 | 2026-11-06 | The owner's feedback on the mock: the side bars can be resized and folded, with a tab in the middle of each inner edge (GD-10, GQ-16); the song scrolls along while a section is dragged (GD-11); the colours are the app's night theme (black, dark grey, orange) instead of its night-blue configuration scheme (GD-12, section 2.1 rewritten). The mock follows all three. |
 | Draft 0.5 | 2026-11-06 | The owner's feedback on the mock: no *Bekijken* in the song list, a click shows the song; search, sort and filter chips above the list as in the app's songbook (GD-13). GQ-17 added. |
 | Draft 0.6 | 2026-11-06 | The owner's requests: identity buttons in the bottom bar to make, download and load a signing key (GD-14); an *Android-app* button with the official Google Play and F-Droid badges, the GitHub APK, the source code and the manuals of the app and the manager (GD-15). GQ-18 and GQ-19 added. |
+| Draft 0.7 | 2026-11-06 | Walk-through of the open questions with the owner (section 3.6): deleting a song (GD-16), language from the browser and the bottom bar (GD-17), sections plus ChordPro text (GD-18), the common ChordPro parts with the rest kept locked (GD-19), apply always with a validation panel (GD-20), sets as a tab (GD-21), library fields in the left bar (GD-22), *Downloaden* and *Sluiten* (GD-23), signing in the download dialog and read-only signed libraries (GD-24), filter cleared for a new song (GD-25), name (GD-26), 3-second splash (GD-27), *Bibliotheek openen* (GD-28), severity icons (GD-29), logo and splash photograph (GD-30), system font (GD-31), desktop only (GD-32). Up/down buttons as keyboard alternative (GD-33), widths, folding and language remembered on the computer (GD-34), *binnenkort* badges and the manager's manual on its GitHub wiki (GD-35). All open questions GQ-01 to GQ-19 resolved. |
