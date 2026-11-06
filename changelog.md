@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M2 started: the library engine** in `webapp/src/core/` (`design/implementationPlan.md` draft 0.10).
+  - **`zip.js`** reads the ZIP as untrusted input. It checks the central directory and every limit before inflating, then inflates each entry into a buffer of exactly its declared size and checks the CRC-32, so a ZIP bomb cannot allocate more than the limits.
+  - **`names.js`, `manifest.js` and `fingerprint.js`** cover the name rules, the manifest and `manifest.sig`, and SG-20.
+  - **`validate.js`** applies the PKG, STR, MAN and SIG rules with the readings of FDS O-11, verifying signatures with the vendored `@noble/ed25519`.
+  - **Conformance:** for these four families all 56 test libraries give exactly their expected findings. Song, set and view rules are listed as to-dos (49).
+  - **Unit tests** (`tests/unit/zip.test.mjs`) cover the PKG forms the corpus cannot hold and a ZIP bomb that lies about its size.
+  - **The container test** runs the engine under Node 18 with `--experimental-global-webcrypto`: 80 of 80.
 - **M1.2, vendoring.** `webapp/tools/vendor.py` vendored `fflate` 0.8.3 and `@noble/ed25519` 3.2.0 into `webapp/vendor/`, with their MIT licences and `VENDOR.md`.
   - **Checks run:** the tarball SHA-512 against the registry's `dist.integrity`, the registry signatures, provenance, and `npm audit` with no advisories.
   - **fflate 0.8.3 publishes no provenance attestation.** It is vendored with `--accept-missing-provenance` and recorded as such. noble's SLSA provenance verified.
