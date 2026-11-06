@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- FDS draft 0.5: libraries that Songbook apps from before this format can read, from the app repository's proposal `design/proposals/2026-11-06-backward-compatible-packages.md`, approved by the owner on 2026-11-06 (D-34 to D-39).
+  - Every library carries a format 1.1 view (new §3.7, PF-40 to PF-46): `zangbundel.json`, `LICENSE` and `setlists/set-<n>.zbs`, generated on every save (EDT-52) and listed in the manifest.
+  - Songs move under `songs/` (§3.2, PF-10, PF-12, STR-01, new STR-11).
+  - New view rules VIEW-01 to VIEW-03 (§6.8, M-36 to M-38) catch a view that disagrees with the manifest.
+  - `maintainer` is required (MAN-08, M-39, EDT-14), and `title` is at most 80 characters.
+  - An unsigned library gets the app's warning W013 (APP-22).
+  - Limitation 9: older apps get the view without protection.
+  - Keys are raw Ed25519 keys (new SG-05, D-40). The `author.publicKey` example was an X.509 wrapper whose fingerprint differs from the raw key's; it is now the RFC 8032 test key. The app's implementation found this.
+  - D-29, D-31 and D-32 are superseded in part.
 - `design/webappGUI.md` draft 0.2, the owner's GUI notes: startup like the Songbook app's (GD-03); one main screen with a bottom navigation bar, the song list on the right, the song's fields on the left and the song in the centre (GD-04, GD-05); songs edited as verse and chorus sections, each with a small WYSIWYG editor, reordered by dragging (GD-06 to GD-08); a check before a change is applied and a view after it (GD-09). Open questions GQ-06 to GQ-15 for what the notes leave open or where they meet the FDS, among them the plain-text ChordPro editing of EDT-33 (GQ-14) and the profile parts beyond verse and chorus (GQ-13).
 - `design/webappTDS.md` draft 0.2: libraries and keys are processed in the browser (TD-06, resolves TQ-01). PHP has no part in library handling (TD-07), and a Content Security Policy keeps every request on the app's own server (TD-08). New open question TQ-06 on supported browsers.
 - FDS draft 0.4, after the app repository's proposal on O-09 and O-10 (`design/proposals/2026-11-04-library-package-id-and-file-type.md` there), approved by the owner:
