@@ -51,6 +51,7 @@ The manager is built as a web app that runs on nginx or Apache with PHP. Each sc
 | [design/webappGUI.md](design/webappGUI.md) | You design or review a screen of the web app: what it shows, what happens on each action, and its colours, buttons and icons, which come from the Zangbundel app. |
 | [design/webappTDS.md](design/webappTDS.md) | You build, serve or deploy the web app: server (nginx or Apache with PHP), the mock, the test server. |
 | [design/securityAssessment.md](design/securityAssessment.md) | You touch keys, files, the network, a dependency, the server or the deployment: the threats, and the requirements and release checks the implementation must meet. |
+| [design/implementationPlan.md](design/implementationPlan.md) | You want to know how the manager is being built, in which order, and what has to pass before each step is done. |
 
 The library format and the import rules in the FDS are shared with the [Zangbundel app](https://github.com/pe1mew/Zangbundel); the app and the manager must apply the same validation rules.
 

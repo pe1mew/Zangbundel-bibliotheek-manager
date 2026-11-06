@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Technical Design Specification (TDS) of the web app |
-| **Status** | Draft 0.8 |
+| **Status** | Draft 0.9 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7 |
 | **Companion** | `design/webappGUI.md` (screens, colours, buttons, icons) |
@@ -47,6 +47,7 @@ This document records how the bibliotheek-manager is built as a web app: where t
 | TD-17 | 2026-11-06 | **Two small libraries, chosen under TD-14 for the browsers of TD-15.** *ZIP*: `fflate` 0.8.3 (MIT), reading and writing ZIP with deflate and CRC-32; the browsers of TD-15 have no ZIP reader of their own. *Ed25519*: the browser's Web Crypto Ed25519 where available, with keys made non-extractable as soon as possible; `@noble/ed25519` 3.2.0 (MIT) in browsers of TD-15 that lack it, with raw 32-byte keys as FDS SG-05 requires (*amended 2026-11-06*, securityAssessment SQ-05, SR-16). `@noble/ed25519` takes its SHA-512 from Web Crypto (`crypto.subtle`), so `@noble/hashes` is not needed. Everything else is the browser's own: SHA-256 (Web Crypto), UTF-8 with `TextDecoder` in fatal mode, NFC with `String.prototype.normalize`, random UUIDs with `crypto.getRandomValues`. Both libraries are copied into `webapp/` (no CDN, TD-08), each with its version and SHA-256 recorded next to it and its licence named in `NOTICE`, in the change that adds them. A newer version is a new decision. *Audit status (securityAssessment SF-03, SR-14 to SR-16):* `fflate` 0.8.3 is the first 0.8 release with CVE-2026-45820 fixed and is therefore the minimum; `@noble/ed25519` v3 is not independently audited (v1 was, by Cure53 in 2022), which the assessment accepts with a known-answer self-test and a cross-check against Web Crypto. |
 | TD-18 | 2026-11-06 | **The security requirements are binding.** `design/securityAssessment.md` specifies the requirements SR-01 to SR-93 and the release gate SC-01 to SC-13 for the final implementation: site authenticity (TLS, HSTS, CAA, DNSSEC, registrar lock), code integrity (signed releases, vendored and verified libraries, SRI, Integrity-Policy, file-integrity monitoring), browser hardening (CSP with Trusted Types, isolation headers), untrusted input in a worker, keys only in a crypto worker, privacy (no third parties, shortened IP logs for 14 days, a privacy statement), availability, server isolation and the test instance. A change to one of them is made in that document first. |
 | TD-19 | 2026-11-06 | **The host nginx serves the site natively.** `zangbundel.nl` and `test.zangbundel.nl` are vhosts of the host nginx on contabo6, each serving its own read-only release directory, with no container and no interpreter (securityAssessment SQ-01, SR-70, SR-83). Unlike the other sites on the host, which nginx proxies to containers; the assessment found no security gain in a container here, and native has fewer parts to patch and configure. |
+| TD-20 | 2026-11-06 | **Until going live, `zangbundel.nl` shows a static placeholder and the manager runs on `test.zangbundel.nl`.** The placeholder is HTML and CSS only, in Dutch, English and German, with the name and logo, a line that the manager is being built, the Android links of GD-15 and GD-35, the privacy statement and `security.txt`; its CSP forbids all script (`script-src 'none'`). It meets the same transport, header and logging requirements as the manager. Replacing it with the manager is a later decision (`design/implementationPlan.md` M8). |
 
 ---
 
@@ -105,3 +106,4 @@ These FDS requirements constrain every technical choice below; they are listed h
 | Draft 0.6 | 2026-11-06 | TD-18: the security assessment's requirements are binding; TD-17 notes the audit status of the two libraries. |
 | Draft 0.7 | 2026-11-06 | TD-17 amended: Web Crypto Ed25519 with non-extractable keys where available, `@noble/ed25519` elsewhere (securityAssessment SQ-05). |
 | Draft 0.8 | 2026-11-06 | TD-19: the host nginx serves the site natively. |
+| Draft 0.9 | 2026-11-06 | TD-20: a static placeholder on `zangbundel.nl` while the manager runs on the test instance; the implementation plan is `design/implementationPlan.md`. |

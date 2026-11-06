@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Added
+- `design/implementationPlan.md` draft 0.1: the plan for implementing the manager on `test.zangbundel.nl` with a static placeholder on `zangbundel.nl` (webappTDS draft 0.9, TD-20). Repository layout, threads and tools; milestones M0 (infrastructure and placeholder) to M7 (hardening and test release) with their work, requirements and exit checks; testing, release procedure, risks and six open questions (among them `test.zangbundel.net` versus `.nl`, and Node.js as a development tool).
+
 ### Changed
 - SQ-01 decided: the host nginx on contabo6 serves `zangbundel.nl` and its test instance natively, each from its own read-only release directory, without a container (`design/securityAssessment.md` draft 0.4, SR-70, SR-83; `design/webappTDS.md` draft 0.8, TD-19). All security questions are now decided.
 - The owner's security decisions (`design/securityAssessment.md` draft 0.3): HSTS preload after three months (SQ-03); no passphrases on key files, the risk accepted (SQ-04); Ed25519 from the browser's Web Crypto with non-extractable keys where available and `@noble/ed25519` elsewhere (SQ-05; webappTDS draft 0.7, TD-17); no offline package (SQ-07, SR-64 withdrawn); forgetting the key on request and after 30 minutes without input (SQ-08). `design/webappGUI.md` draft 0.12 adds *Sleutel vergeten* (GD-39) and the inactivity warning (GD-40), and the mock shows both. SQ-01 (native or container) is still open.

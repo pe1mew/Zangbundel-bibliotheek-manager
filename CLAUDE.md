@@ -22,6 +22,7 @@ The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in 
 | Touching how the Zangbundel app reads songs or libraries today | The app repository `../Zangbundel` (github.com/pe1mew/Zangbundel): `design/song-format.md` defines the current `.zbl` release archive and the ChordPro profile. The FDS package format is a different, new format; the app reads both (FDS D-23). |
 | Designing a screen, a control, a colour, an icon, or what happens when the user does something | `design/webappGUI.md` — decisions `GD-nn` and open questions `GQ-nn`; screens **and behaviour**. Colours, buttons and icons come from the app (GD-01). Every design is checked in the mock before it is built. |
 | Choosing how the web app is built, served, tested or deployed, or adding a library or server dependency | `design/webappTDS.md` — decisions `TD-nn` and open questions `TQ-nn`. Libraries and keys are processed in the browser only; the server never receives them (TD-06 to TD-08). Domain `zangbundel.nl` and a test instance, both hosted on contabo6 (TD-09, TD-10; its config lives in `../contabo-vps-6`). |
+| Planning or doing implementation work, or asking what comes next | `design/implementationPlan.md` — milestones M0 to M7 with work, requirements and exit checks; the manager on `test.zangbundel.nl`, a placeholder on `zangbundel.nl` (TD-20). |
 | Touching keys, files, the network, a dependency, headers, the server, DNS or the deployment | `design/securityAssessment.md` — findings SF-nn, requirements SR-nn (binding, TD-18), release gate SC-nn, open questions SQ-nn. Repeat the assessment for any such change (SR-91). |
 | Stuck or debugging something weird | `memory/gotcha-log.md` — problem-fix archive |
 | **Before committing** | Diff-driven review, lenses chosen by what changed — `/review-changes`. It needs the per-repo **review profile** at `.claude/review-profile.md`; without one it STOPS rather than reviewing at LOW. |
@@ -65,7 +66,8 @@ Zangbundel-bibliotheek-manager/
 │   ├── FDS.md                    ← functional design specification (canonical)
 │   ├── webappGUI.md              ← web app screens, behaviour and look (GD-nn, GQ-nn)
 │   ├── webappTDS.md              ← web app technical design: server, mock, deployment (TD-nn, TQ-nn)
-│   └── securityAssessment.md     ← security and privacy: findings SF, requirements SR, release gate SC
+│   ├── securityAssessment.md     ← security and privacy: findings SF, requirements SR, release gate SC
+│   └── implementationPlan.md     ← milestones M0 to M7 for the test instance and the placeholder
 ├── webapp/
 │   └── mock/                     ← clickable mock of webappGUI (static HTML, CSS, JS; app icon CC BY-SA 4.0)
 ├── memory/                       ← MEMORY.md index, gotcha-log.md, todo.md (committed, shared)
