@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M5.3d: adding and importing songs** (`design/implementationPlan.md`).
+  - ***Lied toevoegen*** opens the editor on an empty song; on *Toepassen* it gets an ID from its title, unique in the library.
+  - ***Lied importeren*** takes in a `.cho` file at once.
+  - **Filters:** a new song that the search or filters would hide clears them.
+  - **Tests:** `addsong.test.mjs`; `syntax.test.mjs` checks that every module parses. `node --test` 365 of 365. Checked in Chromium.
 - **M5.3c: the song's fields** (`design/implementationPlan.md`).
   - **The left bar** shows title, language, words, music, copyright, licence, source and tags while you edit a song in *Blokken*.
   - **Writing:** each field writes its line in the song.

@@ -76,7 +76,7 @@ function worstBySong(findings) {
  * filter(), visibleIds(), reveal(id) }. *Bewerken* opens the song editor (M5.3); a song that is not text
  * (SNG-01, SNG-18) is edited only in the code mode.
  */
-export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete }) {
+export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onAdd, onImport }) {
   let filter = { ...DEFAULT_FILTER, languages: [], tags: [] };
   let songs = [];
   let findings = [];
@@ -101,7 +101,11 @@ export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete }) {
   const heading = el('h3', { class: 'listhead' }, []);
   const list = el('ul', { class: 'songlist', 'aria-label': t(lang, 'songs') }, []);
   const empty = el('p', { class: 'empty' }, [t(lang, 'libEmpty')]);
-  const node = el('div', { class: 'songpane' }, [heading, tools, list, empty]);
+  // EDT-32: *Lied toevoegen* and *Lied importeren* below the list, as in the mock
+  const footButton = (iconName, text, handler) => el('button', { type: 'button', class: 'btn btn-outline btn-small',
+    disabled: readOnly || !handler, on: !readOnly && handler ? { click: handler } : undefined }, [icon(iconName), text]);
+  const foot = el('div', { class: 'listfoot' }, [footButton('add', t(lang, 'addSong'), onAdd), footButton('upload', t(lang, 'importSong'), onImport)]);
+  const node = el('div', { class: 'songpane' }, [heading, tools, list, empty, foot]);
 
   const setFilter = (next) => {
     filter = next;

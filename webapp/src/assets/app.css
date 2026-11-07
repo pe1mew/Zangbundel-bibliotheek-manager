@@ -412,3 +412,7 @@ svg.sev-ok { fill: var(--fire-orange); }
 .problems li svg { width: 18px; height: 18px; flex: none; }
 .problems li.ok { color: var(--secondary); }
 .problems li.ok svg { fill: var(--secondary); }
+
+/* M5.3d: adding and importing songs (EDT-32) */
+.listfoot { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 20px 24px; }
+.home .addrow { margin-top: 8px; }

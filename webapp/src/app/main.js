@@ -25,7 +25,7 @@ import { createSession } from './session.js';
 import { createSongList, neighbourAfterDelete } from './songlist.js';
 import { libraryHomeNode, songDataNode, songViewNode } from './songview.js';
 import { createSongEditor } from './editor.js';
-import { closeConfirm, convertedDialog, copyDialog, deleteSongConfirm, downloadDialog, leaveEditorDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
+import { closeConfirm, convertedDialog, copyDialog, deleteSongConfirm, downloadDialog, importFailedDialog, leaveEditorDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
   keyReplaceConfirm, keySaveDialog, manifestConfirm, newLibraryDialog, openFailedDialog, pickFile, saveFailedDialog,
   savedDialog } from './library-ui.js';
 import { KEY_MIME, LIBRARY_MIME, offerDownload } from './download.js';
@@ -251,7 +251,7 @@ function start() {
   // GD-09, GD-20: Toepassen writes the blocks back in the worker and always applies; the song then shows
   const applyEdit = async () => {
     if (!editing) return true;
-    const { id, editor } = editing;
+    const { editor } = editing;
     const lang = language.get();
     // GD-38: the song is applied in the mode that is open; code is stored canonically (EDT-57)
     const st = editor.state();
@@ -260,30 +260,68 @@ function start() {
       editor.showProblem(t(lang, 'applyProblem'));       // a form the worker cannot write: nothing applied
       return false;
     }
-    await session.updateSong(id, r.text);
+    const isNew = editing.isNew;
+    let id = editing.id;
+    if (isNew) {
+      // EDT-32, EDT-36: a new song is taken in by the worker, which proposes its ID from its title
+      const added = await session.adoptSong(r.text);
+      if (!(await session.addSong(added.id, added.text))) {
+        editor.showProblem(t(lang, 'applyProblem'));
+        return false;
+      }
+      id = added.id;
+    } else {
+      await session.updateSong(id, r.text);
+    }
     editing = null;
     selected = id;
     const errors = (session.get().findings || []).filter((f) => f.where === id && (f.severity === 'Error' || f.severity === 'Fatal')).length;
-    toast(errors ? t(lang, 'appliedWithErrors', { n: errors }) : t(lang, 'applied'));
     render();
+    // GD-25: a new song is never hidden by the filter
+    toast(isNew && songList && songList.reveal(id) ? t(lang, 'filtersCleared')
+      : errors ? t(lang, 'appliedWithErrors', { n: errors }) : t(lang, 'applied'));
     return true;
   };
-  const startEdit = async (id) => {
-    if (session.isReadOnly() || (editing && editing.id === id)) return;
-    const [form, details] = await Promise.all([session.songBlocks(id), session.songDetails(id)]);
-    if (!form) return;                                    // not text (SNG-01, SNG-18): nothing to show or edit
+  const makeEditor = ({ id, isNew = false, text, form, title }) => {
     const lang = language.get();
-    const title = (details && details.meta && details.meta.title) || t(lang, 'noTitle');
-    selected = id;
-    editing = { id, title, token: ++editTokens, editor: createSongEditor({ lang, id, text: session.get().library.songs.get(id), form, title,
+    return { id, isNew, title, token: ++editTokens, editor: createSongEditor({ lang, id, isNew, text, form, title,
       onApply: () => applyEdit(), onCancel: stopEditing, onDelete: () => onDeleteSong(id, title), onMode: () => render(),
       // GD-38, EDT-33: the worker turns blocks into code and code into blocks, and checks the code as it is typed
       toText: (f) => session.unblocks(f),
       toForm: async (code) => session.blocksOf((await session.canonicalSong(code)).text),
       checkCode: async (code) => (await session.songCheck(id, code)).findings,
     }) };
+  };
+  const startEdit = async (id) => {
+    if (session.isReadOnly() || (editing && editing.id === id)) return;
+    const [form, details] = await Promise.all([session.songBlocks(id), session.songDetails(id)]);
+    if (!form) return;                                    // not text (SNG-01, SNG-18): nothing to show or edit
+    const title = (details && details.meta && details.meta.title) || t(language.get(), 'noTitle');
+    selected = id;
+    editing = makeEditor({ id, text: session.get().library.songs.get(id), form, title });
     render();
   };
+  // EDT-32: *Lied toevoegen* opens the editor on an empty verse; the song joins the library on Toepassen
+  const NEW_SONG = { blocks: [{ type: 'section', kind: 'verse', label: null, lines: [''], implicit: false }] };
+  const startNew = () => {
+    if (session.isReadOnly() || !session.get().library) return;
+    selected = null;
+    editing = makeEditor({ id: null, isNew: true, text: '', form: NEW_SONG, title: t(language.get(), 'newSongTitle') });
+    render();
+  };
+  // EDT-32: a .cho file joins the library at once and shows; its problems are in Controle (GD-20)
+  const importFile = () => pickFile(async (file) => {
+    const lang = language.get();
+    const r = await session.importSong(file);
+    if (r.problem) {
+      importFailedDialog(lang, file.name, r.problem);
+      return;
+    }
+    if (!(await session.addSong(r.id, r.text))) return;
+    selected = r.id;
+    render();
+    toast(songList && songList.reveal(r.id) ? t(lang, 'filtersCleared') : t(lang, 'songImported', { file: file.name }));
+  }, '.cho,text/plain');
   // GD-36: an action that leaves the editor asks first when there is something to apply or throw away
   const leaving = (next) => (...args) => {
     if (!editing) return next(...args);
@@ -291,7 +329,8 @@ function start() {
       editing = null;
       return next(...args);
     }
-    const { title } = editing;
+    // GD-36: a new song is named by its typed title, or *Nieuw lied*
+    const title = editing.isNew ? editing.editor.currentTitle() || t(language.get(), 'newSongTitle') : editing.title;
     return leaveEditorDialog(language.get(), title, {
       onApply: async () => { if (await applyEdit()) next(...args); },
       onDiscard: () => {
@@ -304,6 +343,8 @@ function start() {
   };
   const choose = leaving(select);
   const chooseEdit = leaving(startEdit);
+  const onAddSong = leaving(startNew);
+  const onImportSong = leaving(importFile);
   let form = null;
   let shown = { id: null, text: undefined, details: null };   // the selected song's view, from the worker
   let lastCentre;
@@ -329,14 +370,14 @@ function start() {
       session.songDetails(selected).then(done, () => done(null));
     }
     // the centre is redrawn only when what it shows changes, so the reader keeps their place in a song
-    if (editing && (!state.library || !state.library.songs.has(editing.id) || readOnly)) editing = null;   // gone, or the key forgotten
+    if (editing && (!state.library || (!editing.isNew && !state.library.songs.has(editing.id)) || readOnly)) editing = null;   // gone, or the key forgotten
     const centreKey = JSON.stringify([screen, lang, readOnly, state.authorFingerprint, Boolean(state.library), state.busy,
       state.library ? [state.library.title, state.songs.length] : null, selected, shown.details ? shown.text : null, editing ? editing.token : 0]);
     if (centreKey !== lastCentre) {
       lastCentre = centreKey;
       const content = !state.library ? home(lang, { onOpen, onNew, onDownload: () => onDownload(), hasLibrary: false, busy: state.busy })
         : editing ? editing.editor.node                    // the same editor node: typing is never lost to a redraw
-          : !selected ? libraryHomeNode(lang, state)
+          : !selected ? libraryHomeNode(lang, state, { readOnly, onAdd: onAddSong, onImport: onImportSong })
             : shown.details ? songViewNode(lang, selected, shown.details, { readOnly, onDelete: leaving(onDeleteSong), onEdit: chooseEdit })
               : el('p', { class: 'empty' }, ['…']);
       replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); })
@@ -347,14 +388,15 @@ function start() {
     const listKey = state.library ? `${state.generation}|${lang}|${readOnly}` : null;
     if (listKey !== rightKey) {
       rightKey = listKey;
-      songList = state.library ? createSongList({ lang, readOnly, onSelect: choose, onEdit: chooseEdit, onDelete: leaving(onDeleteSong) }) : null;
+      songList = state.library ? createSongList({ lang, readOnly, onSelect: choose, onEdit: chooseEdit, onDelete: leaving(onDeleteSong),
+        onAdd: onAddSong, onImport: onImportSong }) : null;
       replace(layout.right, head, songList ? songList.node : el('p', { class: 'empty' }, [t(lang, 'noLibrary')]));
     }
     replace(head, ...libHead(lang, state, () => choose(null)));
     if (songList) songList.update(state, selected);
     // GD-05: a selected song's data, read-only until the song editor (M5.3); GD-22: otherwise the library's
     // fields, built once per library and language, then only updated (library-form.js)
-    if (selected) {
+    if (selected || editing) {
       leftKey = `song|${selected}`;
       form = null;
       if (editing && editing.editor.mode() === 'blocks') {
@@ -368,7 +410,7 @@ function start() {
       }
     }
     const formKey = state.library ? `${state.generation}|${lang}|${readOnly}` : null;
-    if (!selected && formKey !== leftKey) {
+    if (!selected && !editing && formKey !== leftKey) {
       leftKey = formKey;
       form = state.library ? createLibraryForm({ lang, library: state.library, readOnly, onChange: (patch) => session.updateLibrary(patch) }) : null;
       replace(layout.left, form ? form.node : el('p', { class: 'empty' }, [t(lang, 'tileNeedLib')]));

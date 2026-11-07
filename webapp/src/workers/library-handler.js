@@ -3,6 +3,7 @@
 // (securityAssessment SR-30; implementationPlan M2.8). library-worker.js wires it to messages.
 //
 // Request  { id, op, payload }            op: 'validate' | 'open' | 'check' | 'save' | 'copy' | 'new' | 'song' | 'blocks' | 'unblocks' | 'songCheck' | 'canonical'
+//                                          | 'addSong' | 'importSong'
 // Response { id, ok: true, result }  or  { id, ok: false, error }
 //
 // Every library byte is read here, never on the main thread. Results are structured data only
@@ -15,6 +16,8 @@ import { checkSongText, validateLibrary } from '../core/validate.js';
 import { copyLibrary, newLibrary, openLibrary, saveLibrary } from '../core/library.js';
 import { canonicalize, parseSong, songView } from '../core/chordpro.js';
 import { fromBlocks, toBlocks } from '../core/blocks.js';
+import { setMeta } from '../core/blockmeta.js';
+import { isSongId, proposeSongId } from '../core/names.js';
 
 /** The songs as the screens list them: { id, title }, read here so the main thread never parses a song (SR-30). */
 export function songSummary(library) {
@@ -43,6 +46,30 @@ export function songDetails(text) {
       composers: all('composer'), copyright: one('copyright'), license: one('license'), source: one('source'),
       tags: [...new Set(all('tag'))] },
   };
+}
+
+/**
+ * EDT-32, EDT-36 (M5.3d): a new or imported song taken into a library whose song IDs are taken: it keeps
+ * a valid {meta: id} of its own when that is free, otherwise its ID is proposed from its title, and the
+ * song gets exactly that {meta: id}. text is made canonical first (EDT-57). Returns { id, text }.
+ */
+export function adoptSong(text, taken) {
+  const canonical = canonicalize(new TextEncoder().encode(String(text))).text;
+  const song = parseSong(canonical);
+  const ids = song.meta.get('id') || [];
+  const own = ids.length === 1 && isSongId(ids[0]) && !taken.includes(ids[0]) ? ids[0] : null;
+  if (own) return { id: own, text: canonical };
+  const id = proposeSongId((song.meta.get('title') || [''])[0], taken);
+  return { id, text: fromBlocks(setMeta(toBlocks(canonical), 'id', [id])) };
+}
+
+/** EDT-32: a .cho file to import: text of at most 64 KiB without control characters (SNG-18, SNG-01). */
+export function importSong(bytes, taken, name) {
+  const song = String(name || '').replace(/\.cho$/i, '');
+  if (!(bytes instanceof Uint8Array) || bytes.length > 64 * 1024) return { problem: { code: 'SNG-18', severity: 'Error', params: { song } } };
+  const c = canonicalize(bytes);
+  if (!c.bytesOk || c.controlChars) return { problem: { code: 'SNG-01', severity: 'Error', params: { song } } };
+  return adoptSong(c.text, taken);
 }
 
 const SIGN_TIMEOUT_MS = 10000;
@@ -112,6 +139,10 @@ export async function handleMessage(message) {
           signer: payload.signer ? portSigner(payload.signer) : undefined }) };
       case 'song':
         return { id, ok: true, result: songDetails(payload.text) };
+      case 'addSong':                                 // M5.3d, EDT-36: a new song's ID and text
+        return { id, ok: true, result: adoptSong(payload.text, payload.taken || []) };
+      case 'importSong':                              // M5.3d, EDT-32: a .cho file taken in
+        return { id, ok: true, result: importSong(payload.bytes, payload.taken || [], payload.name) };
       case 'songCheck':                               // M5.3b, EDT-33: the song rules while typing in the code mode
         return { id, ok: true, result: { findings: checkSongText(payload.id, payload.text) } };
       case 'canonical':                               // M5.3b, EDT-57: typed code as it will be stored

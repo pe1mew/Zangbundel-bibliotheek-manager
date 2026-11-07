@@ -118,7 +118,9 @@ export function createSongFields({ lang, id, getForm, setForm }) {
     box('license', t(lang, 'fLicense'), input('license', t(lang, 'phLicense'))),
     box('source', t(lang, 'fSource'), input('source', t(lang, 'phSource'))),
     box('tag', t(lang, 'fTags'), input('tag', t(lang, 'phTags'))),
-    el('div', { class: 'field' }, [el('div', { class: 'flabel' }, [t(lang, 'fSongId')]), el('div', { class: 'value fp' }, [id])]),
+    // EDT-36: a new song's ID is proposed from its title when it is applied
+    el('div', { class: 'field' }, [el('div', { class: 'flabel' }, [t(lang, 'fSongId')]),
+      id ? el('div', { class: 'value fp' }, [id]) : el('div', { class: 'value none' }, [t(lang, 'idProposed')])]),
     el('p', { class: 'muted small' }, [el('span', { class: 'req' }, ['*']), ' ', t(lang, 'required')]),
   ]);
   for (const name of ['title', 'language', 'tag']) mark(name, fieldProblem(lang, name, metaValues(form, name)));

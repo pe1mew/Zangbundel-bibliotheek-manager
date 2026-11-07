@@ -19,6 +19,28 @@ export function isSongId(s) {
 }
 
 /**
+ * EDT-36: the song ID of a new song, proposed from its title as song format 3.2 recommends (lower case,
+ * accents removed, everything that is not a letter or digit a hyphen, hyphens collapsed), at most 64
+ * characters, and made unique with a number (-2, -3, …) against taken. A title with nothing to keep
+ * gives "lied" (the mock's choice).
+ */
+export function proposeSongId(title, taken = []) {
+  const used = new Set(taken);
+  const cut = (s, max) => {
+    let x = s.slice(0, max);
+    while (x.endsWith('-')) x = x.slice(0, -1);
+    return x;
+  };
+  const words = String(title).normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  const base = cut(words.join('-'), 64) || 'lied';
+  if (!used.has(base)) return base;
+  for (let n = 2; ; n++) {
+    const id = `${cut(base, 64 - String(n).length - 1)}-${n}`;
+    if (!used.has(id)) return id;
+  }
+}
+
+/**
  * PF-20 to PF-22 for one name (a single path segment): a reason it breaks them, or null.
  * The full-path limit is checked separately (pathTooLong).
  */

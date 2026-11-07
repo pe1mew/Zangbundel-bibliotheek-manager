@@ -161,4 +161,6 @@
   - M5.3b committed. M5.3c done (uncommitted): `songfields.js` createSongFields({lang, id, getForm, setForm}); editor.fieldsNode(); `core/blockmeta.js` (setMeta, metaValues, valueProblem; no imports, so the page bundle has no parser).
     - TD-22: the bundler refuses re-exports (`export … from`).
     - Editor buttons resolve their block's index at click time (no redraw after a field write).
-  - Next: M5.3d Lied toevoegen (empty song, import .cho, ID from title EDT-36, GD-25 reveal), then M5.3e drag.
+  - M5.3c committed. M5.3d done (uncommitted): `names.js` proposeSongId; worker adoptSong/importSong (ops addSong, importSong); session.adoptSong/importSong/addSong; main makeEditor/startNew/importFile; editing.isNew.
+    - No unit test loads main.js (it starts the page): `syntax.test.mjs` runs node --check on every module.
+  - Next: M5.3e drag with auto-scroll (GD-08, GD-11), via setVar, not style.

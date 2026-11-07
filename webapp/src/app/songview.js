@@ -91,13 +91,18 @@ export function songDataNode(lang, id, details) {
   ]);
 }
 
-/** GD-03 with a library open and no song selected: its title, a lead, and *Lied toevoegen* (M5.3). */
-export function libraryHomeNode(lang, state) {
+/** GD-03 with a library open and no song selected: its title, a lead, *Lied toevoegen* and *Lied importeren* (EDT-32). */
+export function libraryHomeNode(lang, state, { readOnly = false, onAdd, onImport } = {}) {
   const empty = !state.songs.length;
+  const can = !readOnly;
   return el('div', { class: 'home' }, [
     el('h1', {}, [state.library.title]),
     el('p', { class: 'muted' }, [t(lang, empty ? 'libEmpty' : 'libHomeLead')]),
-    el('button', { type: 'button', class: 'btn btn-primary', disabled: true, title: `${t(lang, 'addSong')}: ${t(lang, 'tileSoon')}` },
-      [icon('add'), t(lang, 'addSong')]),
+    el('div', { class: 'addrow' }, [
+      el('button', { type: 'button', class: 'btn btn-primary', disabled: !can || !onAdd, on: can && onAdd ? { click: onAdd } : undefined },
+        [icon('add'), t(lang, 'addSong')]),
+      el('button', { type: 'button', class: 'btn btn-outline', disabled: !can || !onImport, on: can && onImport ? { click: onImport } : undefined },
+        [icon('upload'), t(lang, 'importSong')]),
+    ]),
   ]);
 }

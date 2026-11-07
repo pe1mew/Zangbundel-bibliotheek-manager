@@ -10,6 +10,7 @@ import { el, icon, listen, setAttrs } from './dom.js';
 import { t } from './i18n.js';
 import { messageFor, severityGroup, severityIcon } from './check.js';
 import { createSongFields } from './songfields.js';
+import { metaValues } from '../core/blockmeta.js';
 
 const KINDS = ['verse', 'chorus', 'bridge'];
 const KIND_TEXT = { verse: 'kVerse', chorus: 'kChorus', bridge: 'kBridge' };
@@ -98,7 +99,7 @@ const CODE_MAX = 64 * 1024;                               // FDS 3.5: a larger s
  * the worker: blocks to text ({ text } or { problem }), canonical text to blocks, the song rules over code.
  * GD-38: switching keeps every change, and switching without changes leaves the song exactly as it was.
  */
-export function createSongEditor({ lang, id, text: original, form: initial, title, onApply, onCancel, onDelete,
+export function createSongEditor({ lang, id, isNew = false, text: original, form: initial, title, onApply, onCancel, onDelete,
   onMode = () => {}, toText, toForm, checkCode }) {
   let form = structuredClone(initial);
   const start = JSON.stringify(initial);
@@ -329,12 +330,14 @@ export function createSongEditor({ lang, id, text: original, form: initial, titl
 
   const node = el('div', { class: 'editwrap' }, [
     el('div', { class: 'edit' }, [
-      el('div', { class: 'edithead' }, [el('h2', {}, [t(lang, 'editing', { t: title })]), modes]),
+      el('div', { class: 'edithead' }, [el('h2', {}, [isNew ? t(lang, 'newSongTitle') : t(lang, 'editing', { t: title })]), modes]),
       problem,
       body,
     ]),
     el('div', { class: 'editfoot' }, [
-      el('button', { type: 'button', class: 'btn btn-text delsong', on: { click: () => onDelete() } }, [icon('delete'), t(lang, 'deleteSong')]),
+      // GD-16: a new song not yet applied has no delete button; Annuleren throws it away
+      isNew ? el('span', { class: 'delsong' }, []) : el('button', { type: 'button', class: 'btn btn-text delsong', on: { click: () => onDelete() } },
+        [icon('delete'), t(lang, 'deleteSong')]),
       el('button', { type: 'button', class: 'btn btn-text', on: { click: () => onCancel() } }, [t(lang, 'cancel')]),
       el('button', { type: 'button', class: 'btn btn-primary', on: { click: () => onApply(mode === 'code' ? { mode, text: code } : { mode, form }) } },
         [icon('check'), t(lang, 'apply')]),
@@ -349,6 +352,8 @@ export function createSongEditor({ lang, id, text: original, form: initial, titl
     /** What Toepassen applies, in the mode that is open (GD-38). */
     state: () => (mode === 'code' ? { mode, text: code } : { mode, form }),
     mode: () => mode,
+    /** GD-36: the title typed in the fields, to name a new song in the leave question (none in the code mode). */
+    currentTitle: () => (mode === 'blocks' ? metaValues(form, 'title')[0] || null : null),
     fieldsNode: () => fields.node,
     /** GD-36: whether there is anything to apply or throw away. */
     changed: () => (mode === 'code' ? !sameCode(code, original) : JSON.stringify(form) !== start),

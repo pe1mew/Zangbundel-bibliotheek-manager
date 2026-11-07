@@ -554,7 +554,25 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - the fields seen as directives in the code mode, whose checks moved on to the next missing field;
   - *Toepassen* showed the new title in the view, the left bar and the song list;
   - *Lorem Ipsum!* showed its own language *Latijn* and two lyricists.
-- **Next:** M5.3d, *Lied toevoegen*.
+
+**M5.3d done.**
+- ***Lied toevoegen* (EDT-32):** on the library's home and below the song list. It opens the editor on an empty verse as *Nieuw lied*, without *Lied verwijderen* (GD-16: *Annuleren* throws a new song away). The ID field says it is proposed from the title on *Toepassen*.
+- ***Toepassen* on a new song:** the worker takes the song in (`addSong`, `adoptSong`) and `session.addSong` adds it.
+  - The ID is proposed from the title as song format 3.2 recommends and made unique with -2, -3, … (EDT-36; `names.js` `proposeSongId`, at most 64 characters, `lied` when nothing is left).
+  - The song gets exactly that `{meta: id}`; a song with a valid, free ID of its own keeps it.
+- ***Lied importeren* (EDT-32):** a `.cho` file of at most 64 KiB is read in the worker (`importSong`), taken in the same way and added at once, then shown; its problems are in Controle (GD-20). A file that is too large or not text is refused with the FDS message of SNG-18 (M-19) or SNG-01 (M-50).
+- **GD-25:** a new or imported song that the search or filters would hide clears them, with *Filters gewist om het nieuwe lied te tonen*.
+- **GD-36:** a new song is named in the leave question by its typed title, or *Nieuw lied*; an untouched new song leaves without a question.
+- **Found by the build:** a name declared twice in `main.js`, which no unit test loads. `tests/unit/syntax.test.mjs` now checks that every module under `webapp/src` parses, so `node --test` catches this too.
+- **Tested:**
+  - `tests/unit/addsong.test.mjs`, 5 tests: the ID proposal (the format's own example, accents, numbers, 64 characters), taking in a song (own ID kept, taken ID replaced, two IDs made one, canonical text), import limits, a new song from an empty verse to a saved library without song errors, read-only;
+  - `syntax.test.mjs`.
+  - `node --test`: 365 of 365. Container test: 81 of 81.
+- **In the browser pane (Chromium), on `valid-unsigned`:**
+  - a new *Vader Jacob* added as `vader-jacob-2`, the search *lorem* that hid it cleared with the GD-25 notice;
+  - `import.cho` added as `uit-een-bestand`; a file that is not UTF-8 refused with M-50;
+  - a typed new song named in the leave question and thrown away; an untouched one left without a question.
+- **Next:** M5.3e, dragging with auto-scroll (GD-08, GD-11).
 
 ### M6 — Open, save and sign (M)
 

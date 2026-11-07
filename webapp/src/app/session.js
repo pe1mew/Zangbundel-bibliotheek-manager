@@ -134,6 +134,33 @@ export function createSession({ client, crypto = null, now = () => new Date() })
       return true;
     },
 
+    /** EDT-32, EDT-36 (M5.3d): a new song's text taken in by the worker: { id, text } with its ID set. */
+    adoptSong(text) {
+      return client.request('addSong', { text, taken: [...(state.library ? state.library.songs.keys() : [])] });
+    },
+
+    /**
+     * EDT-32 (M5.3d): a .cho file read in the worker: { id, text }, or { problem } with the finding that
+     * stops it (SNG-18 too large, SNG-01 not text). A file larger than 64 KiB is refused before it is read.
+     */
+    async importSong(file) {
+      const song = String(file.name || '').replace(/\.cho$/i, '');
+      if (file.size > 64 * 1024) return { problem: { code: 'SNG-18', severity: 'Error', params: { song } } };
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      return client.request('importSong', { bytes, name: file.name, taken: [...(state.library ? state.library.songs.keys() : [])] }, [bytes.buffer]);
+    },
+
+    /** EDT-32: a song added to the library under id (from adoptSong or importSong). Returns true when added. */
+    async addSong(id, text) {
+      const lib = state.library;
+      if (!lib || isReadOnly() || typeof text !== 'string' || lib.songs.has(id)) return false;
+      const library = { ...lib, songs: new Map(lib.songs) };
+      library.songs.set(id, text);
+      set({ library, dirty: true });
+      await recheck();
+      return true;
+    },
+
     /** M2.3, GD-19: a song as blocks for the section editor, made in the worker (SR-30). */
     async songBlocks(id) {
       const lib = state.library;

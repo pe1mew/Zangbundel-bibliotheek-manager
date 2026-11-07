@@ -143,6 +143,11 @@ export function leaveEditorDialog(lang, title, { onApply, onDiscard }) {
   ] }, [el('p', {}, [t(lang, 'guardText', { t: title })]), el('p', { class: 'muted small' }, [t(lang, 'guardThen')])]);
 }
 
+/** EDT-32: a .cho file that cannot be imported, in the FDS's words (M-19 for SNG-18, M-50 for SNG-01). */
+export function importFailedDialog(lang, fileName, finding) {
+  return openDialog({ title: t(lang, 'importFailed'), sub: fileName, closeLabel: t(lang, 'close') }, [el('p', {}, [messageFor(lang, finding)])]);
+}
+
 /** GD-16, EDT-32, M-62: deleting a song, after this question; it leaves every set as well. */
 export function deleteSongConfirm(lang, title, onYes) {
   return openDialog({ title: t(lang, 'deleteSong'), closeLabel: t(lang, 'cancel'),
