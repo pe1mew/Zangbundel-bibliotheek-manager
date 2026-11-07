@@ -276,6 +276,14 @@ zbm-release list
   - it is a trial build going anywhere but the test instance.
 
   A release goes in read-only under `releases/<name>-<version>/` and becomes live by an atomic symlink switch. `zbm-release switch <site> <release>` goes back to an earlier release.
+*Done 2026-11-07.* Both were built from the signed tag `placeholder-0.1.0` (commit `f67e251`) and signed with the release key. They were uploaded with the deploy key; the server's SHA-256 matched the packs. Activation verified the signed manifest and all files of each: placeholder 11, holding page 4.
+- **On Windows:**
+  - Sign and upload in Git Bash, not PowerShell. PowerShell has no `<` to feed a file to `ssh`.
+  - A bare `bash` there may start WSL; use `C:\Program Files\Git\bin\bash.exe` or the Git Bash window.
+  - Activate with `ssh -t rfsee.net "sudo zbm-release activate …"`.
+- **Checked from outside:** `check_headers.py zangbundel.nl` gave 25 of 25 (SC-01).
+- **Still to run by the owner:** `check_headers.py test.zangbundel.nl --auth <tester>:<password> --app`, the pages behind the password. Without them, 4 of 4 passed. `--app` is needed: the test instance serves SR-20's full CSP, also for the holding page.
+
 - **Clearing staging.** Delete processed uploads from the staging directory. `zbm-receive` takes one upload at a time. It refuses an upload when 20 uploads are already waiting, when staging would hold more than 200 MB with this one, or when what arrives is not an uncompressed tar with its end marker.
 
 ## 8. Integrity check and monitoring (M0.6, M0.9, SR-06, SR-62, SR-73)
@@ -323,7 +331,7 @@ python webapp/tools/check_headers.py zangbundel.nl --report design/test-results/
 ```
 
 ```bash
-python webapp/tools/check_headers.py test.zangbundel.nl --auth <tester>:<password> --report design/test-results/<date>-sc01-test.zangbundel.nl.md
+python webapp/tools/check_headers.py test.zangbundel.nl --auth <tester>:<password> --app --report design/test-results/<date>-sc01-test.zangbundel.nl.md
 ```
 
 | Check | How |

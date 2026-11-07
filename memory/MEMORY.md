@@ -84,4 +84,9 @@
   - Git tag signing: dedicated key `C:\Users\drasv\.ssh\git-signing` (SHA256:yuXtv8xl…), set as user.signingkey, with gpg.format ssh and allowed_signers (CRLF, written by PowerShell). The owner's test tag verified: `Good "git" signature … SHA256:yuXtv8xl…`; CRLF in allowed_signers is fine. NOT panther_ed25519: its comment marks it as Claude Code's.
   - The owner's terminal is PowerShell (`$env:USERPROFILE`), sometimes cmd (`%USERPROFILE%`).
   - Owner's decision 2026-11-07: the Google Play badge is left out of the placeholder until the app is listed (Google's guidelines allow it only unaltered); F-Droid stays greyed (webappGUI 0.14, GD-35 amended). The mock still greys both.
-  - Next: step 7. Placeholder from a signed tag (the owner tags and pushes); test holding page as a trial build.
+  - Step 7 done: placeholder-0.1.0 and test-holding-0.1.0 live, from the signed tag placeholder-0.1.0 (f67e251; the owner's commit message is "ging 0.1.0"). SC-01 for zangbundel.nl: 25/25. The test instance needs `--auth`, which only the owner can run.
+  - Owner flow that worked:
+    - Sign and upload in the owner's own Git Bash window. Terminal-panel tabs were unreliable for passphrases.
+    - Activate with `ssh -t rfsee.net "sudo zbm-release activate …"`.
+  - Processed uploads remain in staging until the owner deletes them.
+  - Next: step 8 (zbm-verify timer, Kuma push, monitoring), step 9 (HSTS ramp), step 10 (release gate).
