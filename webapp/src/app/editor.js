@@ -393,5 +393,33 @@ export function createSongEditor({ lang, id, isNew = false, text: original, form
     changed: () => (mode === 'code' ? !sameCode(code, original) : JSON.stringify(form) !== start),
     /** What the worker could not write: shown above the song. */
     showProblem,
+    /**
+     * EDT-41 (*Ga naar*): the code mode with line n (from 1) selected and in view; the code is the song's
+     * own text, so a finding's line is its line here.
+     */
+    async showLine(n) {
+      await switchTo('code');
+      if (mode !== 'code') return;
+      const lines = codeArea.value.split('\n');
+      const line = Math.min(Math.max(1, n), lines.length);
+      const start = lines.slice(0, line - 1).reduce((sum, l) => sum + l.length + 1, 0);
+      codeArea.focus();
+      codeArea.setSelectionRange(start, start + lines[line - 1].length);
+      const scroller = node.closest('.centre');
+      if (scroller) {
+        const lh = parseFloat(getComputedStyle(codeArea).lineHeight) || 24;
+        const top = codeArea.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+        scroller.scrollTop = Math.max(0, top + 14 + (line - 1) * lh - scroller.clientHeight / 3);
+      }
+    },
+    /** EDT-41 (*Ga naar*): the song's field name focused in the left bar, in Blokken (songfields.js ids). */
+    focusField(name) {
+      if (mode !== 'blocks') return;
+      const field = fields.node.querySelector(`#song-${name}`);
+      if (field) {
+        field.focus();
+        field.scrollIntoView?.({ block: 'center' });
+      }
+    },
   };
 }

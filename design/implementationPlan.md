@@ -608,8 +608,23 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - renamed with Enter; moved up while open; *Demo* deleted after M-62;
   - a song chosen, closing the set view.
   - `valid-signed` without its key: every set button and *+* disabled, no drag handles.
-- **Still open in M5:** Controle's *Ga naar* (EDT-41, GD-20) goes nowhere yet. It should take a song finding to the song (and its line in the code mode), a set finding to the set, and a library finding to the library's fields.
-- **Then:** the M5 exit on the test instance (each GD of M5 against its text, dragging to an edge included), and M6's exit.
+
+**Controle's *Ga naar* done (EDT-41, GD-20); M5's work is complete.**
+- **`app/goto.js` `targetOf`** says where a finding leads; *Ga naar* in both Controle windows (the bottom bar's and the download dialog's) goes there, leaving the song editor through GD-36.
+- **Song findings:**
+  - about a field, to the editor in *Blokken* with that field focused: SNG-02 title, SNG-11 language, SNG-15 for a tag, and SNG-16's missing recommended field;
+  - with a line (SNG-03 to SNG-08, SNG-13 to SNG-15), to the code mode with that line selected and in view (`editor.showLine`); the code is the song's own text, so the line is the finding's line;
+  - otherwise, and in a read-only library or for a song that is not text, to the song in view mode.
+- **Set findings** open the set on the *Sets* tab.
+- **Library findings:** MAN-07, MAN-08 and MAN-02 (by its reasons) focus their field in the library's fields; the others show the library's home.
+- **Tested:** `tests/unit/goto.test.mjs`, 3 tests: each kind of target; over all findings of the test libraries, every one leads somewhere and every line it points at is in its song. `node --test`: 374 of 374. Container test: 81 of 81.
+- **In the browser pane (Chromium):**
+  - SNG-07 at *Fire in the Night* · 49 opened the code mode with `{x_zb_time: 1 2.0}` selected;
+  - SNG-16 focused *Tekst* of *Vader Jacob*;
+  - with a change in the editor, GD-36 asked first, *toepassen* applied, then the line was shown;
+  - SET-03 opened *Demo*;
+  - MAN-07 and MAN-08 of a new library focused the licence and the maintainer's name.
+- **Next: the M5 exit with the owner** on the test instance, each GD of M5 against its text, dragging a block to an edge included (its auto-scroll was not seen here); then M6's exit (a library made and signed here through the independent checker and the phone).
 
 ### M6 — Open, save and sign (M)
 

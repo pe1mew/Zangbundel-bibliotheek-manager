@@ -166,4 +166,5 @@
   - M5.3d committed. M5.3e done (uncommitted): drag by handle (moveToPosition, edgeSpeed; --dy via setVar; dropbefore/dropafter classes). M5.3 complete.
     - A hidden browser pane draws no animation frames: requestAnimationFrame never fires, so anything per-frame cannot be checked there (ask the owner to show the pane).
   - M5.3e committed. M5.5 done (uncommitted): `sets.js` (pure ops, createSetList, setViewNode), `drag.js` (startDrag, edgeSpeed; the editor uses it), session.updateSets; main: rightTab, openSet, tabs.
-  - Next: Controle's *Ga naar* (EDT-41, GD-20): onCheck still passes () => {}. Then the M5 exit with the owner.
+  - M5.5 committed. *Ga naar* done (uncommitted): `goto.js` targetOf; main goToFinding (wrapped in leaving); editor.showLine/focusField.
+  - Next: the M5 exit look with the owner (drag to an edge for auto-scroll), M6 exit, then M7 (hardening, SC-05 other browsers, SC-06 automated storage test).

@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **Controle's *Ga naar*** (EDT-41): a message now takes you where it can be fixed.
+  - **Song lines:** a song's line opens in the code mode with that line selected.
+  - **Fields:** a missing field opens the song with that field focused; library messages focus their library field.
+  - **Sets:** set messages open the set.
+  - **Code:** `app/goto.js`.
+  - **Tests:** `goto.test.mjs`; `node --test` 374 of 374. Checked in Chromium.
 - **M5.5: sets** (`design/implementationPlan.md`).
   - **The right bar** has the tabs *Liedjes* and *Sets*.
   - **Sets:** add, rename, reorder and delete them.

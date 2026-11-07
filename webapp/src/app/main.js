@@ -25,6 +25,7 @@ import { createSession } from './session.js';
 import { createSongList, neighbourAfterDelete } from './songlist.js';
 import { libraryHomeNode, songDataNode, songViewNode } from './songview.js';
 import { createSongEditor } from './editor.js';
+import { LIBRARY_FIELD_ID, targetOf } from './goto.js';
 import { addEntry, addSet, createSetList, deleteSet, moveEntry, moveSet, removeEntry, renameSet, setNameProblem, setViewNode } from './sets.js';
 import { closeConfirm, convertedDialog, copyDialog, deleteSetConfirm, deleteSongConfirm, downloadDialog, importFailedDialog, leaveEditorDialog, setNameDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
   keyReplaceConfirm, keySaveDialog, manifestConfirm, newLibraryDialog, openFailedDialog, pickFile, saveFailedDialog,
@@ -142,7 +143,8 @@ function start() {
   }));
   const onNew = afterClose(() => newLibraryDialog(language.get(), (title, description) => session.create(title, description)));
   const onClose = () => (session.get().dirty ? closeConfirm(language.get(), () => session.close()) : session.close());
-  const onCheck = () => checkDialog(language.get(), session.get().findings || [], () => {});   // Ga naar: the targets come with M5
+  // EDT-41, GD-20: a message's *Ga naar* goes to its place (goToFinding, below)
+  const onCheck = () => checkDialog(language.get(), session.get().findings || [], (f) => goToFinding(f));
   // GD-14, EDT-60, EDT-62: a key file goes to the crypto worker; the page never holds the private key
   const onLoadKey = () => pickFile(async (file) => {
     const r = await session.loadKey(file);
@@ -205,7 +207,7 @@ function start() {
     const lang = language.get();
     const preview = await session.preview({ sign });
     const show = () => downloadDialog(lang, preview, session.get().key, {
-      onCheck: () => checkDialog(lang, preview.findings, () => {}),
+      onCheck: () => checkDialog(lang, preview.findings, (f) => goToFinding(f)),
       onSign: (on) => onDownload(on, true),
       onCopy: () => copyDialog(lang, session.get().library.title, async (title) => {
         await session.copy(title);
@@ -381,6 +383,42 @@ function start() {
   };
   const onAddToSet = (id) => (openSet === null ? null : applySets(addEntry(sets(), openSet, id)));
   const showTab = (tab) => { rightTab = tab; render(); };
+
+  // ---- EDT-41, GD-20: *Ga naar*: from a finding to where it can be fixed (goto.js); it leaves the editor (GD-36)
+  const goToFinding = leaving(async (f) => {
+    const st = session.get();
+    if (!st.library) return;
+    const target = targetOf(f);
+    if (target.kind === 'song') {
+      if (!st.library.songs.has(target.id)) return;
+      rightTab = 'songs';
+      const summary = st.songs.find((x) => x.id === target.id);
+      const editable = !session.isReadOnly() && summary && summary.editable !== false;
+      if (!editable || (!target.field && !target.line)) {
+        select(target.id);                                // read-only, not text, or nothing to point at: the song itself
+        return;
+      }
+      await startEdit(target.id);
+      if (!editing || editing.id !== target.id) return;
+      if (target.line) await editing.editor.showLine(target.line);
+      else editing.editor.focusField(target.field);
+      return;
+    }
+    if (target.kind === 'set') {
+      rightTab = 'sets';
+      const i = st.library.sets.findIndex((x) => x.name === target.name);
+      if (i >= 0) openSetAt(i);
+      else render();
+      return;
+    }
+    select(null);                                         // the library's home and its fields
+    let field = target.field ? document.getElementById(LIBRARY_FIELD_ID[target.field]) : null;
+    if (field && field.closest('[hidden]')) field = document.getElementById('lib-license');   // the SPDX field shows with Andere licentie
+    if (field && !field.disabled) {
+      field.focus();
+      field.scrollIntoView?.({ block: 'center' });
+    }
+  });
   let form = null;
   let shown = { id: null, text: undefined, details: null };   // the selected song's view, from the worker
   let lastCentre;
