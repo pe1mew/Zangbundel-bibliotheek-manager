@@ -52,6 +52,15 @@ console.log(JSON.stringify({{ same, differ }}));
     import json
     out = json.loads(r.stdout.strip().splitlines()[-1])
     ok = out['same'] == 56 and not out['differ']
+    # The library worker and its client, as the app will bundle them (TD-22): they bundle and parse.
+    for entry in ('src/workers/library-worker.js', 'src/app/library-client.js'):
+        wcode, _, wsources = bundle.bundle(os.path.join(WEBAPP, *entry.split('/')), WEBAPP)
+        wfile = os.path.join(d, 'check.mjs')
+        with open(wfile, 'w', encoding='utf-8') as fh:
+            fh.write(wcode)
+        rc = subprocess.run(['node', '--check', wfile], capture_output=True, text=True).returncode
+        print(('PASS ' if rc == 0 else 'FAIL ') + f'{entry} bundles ({len(wsources)} modules) and passes node --check')
+        ok = ok and rc == 0
     print(('PASS ' if ok else 'FAIL ') + f"bundled engine ({len(sources) - 1} modules) gives the native findings on "
           f"{out['same']} of 56 test libraries" + (f"; differs on {out['differ']}" if out['differ'] else ''))
     sys.exit(0 if ok else 1)
