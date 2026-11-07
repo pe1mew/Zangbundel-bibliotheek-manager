@@ -449,6 +449,37 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - a changed download in the browser waits for editing (M5);
   - signing in the dialog and *Opslaan als kopie* are M6.3.
 
+**M6.3 done.**
+- **The crypto worker is now part of the app.** *Sleutel laden* (bottom bar, and the read-only bar) passes the picked `File` to the crypto worker unread; the worker reads it and zeroes the raw bytes, so the page never holds a key file's bytes (SR-40).
+  - A file above 4 KiB is refused with M-31 before it is read.
+  - With a signed library open, only its author's key is accepted (M-30, EDT-62).
+- **Read-only (EDT-23, EDT-24, GD-24):** a signed library without its key gets a bar above the centre with the author's name and fingerprint and *Sleutel laden*. It downloads only unchanged; any change needs its key or a copy.
+- **Signing in the download dialog (EDT-60 to EDT-63):**
+  - with a key loaded, *Ondertekenen als <name> · <fingerprint>*;
+  - ticking it on an unsigned library makes the download a change (version + 1, the key's name as author, SG-12);
+  - a signed library with its key loaded is always signed again, and the tick cannot be cleared.
+  - The signature is made over a `MessagePort` between the library and the crypto worker, so neither the manifest nor the signature passes the main thread.
+- ***Opslaan als kopie* (EDT-70 to EDT-73):** in the download dialog. It asks for a title (proposed: `<title> (kopie)`, at most 80 characters); the copy gets a new ID, version 1 and no author, and work goes on in the copy.
+- **Tested:** `tests/unit/signing-session.test.mjs`, 7 tests with the real library and crypto handlers and a real `MessageChannel`:
+  - read-only without the key;
+  - M-30 for another key and M-31 for an oversized file;
+  - the key file read only in the worker's handler, and no private key in the result;
+  - signing an unsigned library (SIG and MAN rules pass);
+  - a copy of a signed library;
+  - SIG-03 blocking, and its copy not blocked.
+- **`node --test`:** 293 of 293. Container test: 81 of 81.
+- **In the browser pane (Chromium), through both bundled workers, under the SR-20 CSP with `connect-src 'self'` added only so the harness could fetch the test files:**
+  - `valid-signed` showed the read-only bar and downloaded unchanged, byte-identical;
+  - the RFC 8032 test key loaded while every read method of the page's `File` threw, so only the worker read it;
+  - `valid-unsigned` signed on download as version 2 with `manifest.sig`. After a reload (key gone), the file reopened as signed by that key with 0 errors;
+  - *Opslaan als kopie* gave `Zangbundel testbibliotheek (kopie)-v1.zbl`, unsigned;
+  - no stale dialogs, console clean.
+- **Security (SR-91):** the first version read the key file on the main thread, against SR-40. It was caught in this milestone's recheck and changed before staging.
+- **Open:**
+  - a changed, signed download in the browser waits for editing (M5);
+  - Firefox, Safari and Edge (SC-05);
+  - make, download and forget a key, and the inactivity timeout, are M6.4.
+
 ### M7 — Hardening and test release (M)
 
 | # | Work | Requirements |

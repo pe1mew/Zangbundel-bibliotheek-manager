@@ -80,21 +80,55 @@ export function manifestConfirm(lang, onContinue) {
 }
 
 /**
- * GD-23, FDS 7.6: the download dialog. preview comes from session.preview(); onDownload(note) saves;
- * onCheck opens *Controle*. With an Error the download is blocked (EDT-50, M-63).
+ * GD-23, GD-24, FDS 7.6 to 7.8: the download dialog. preview comes from session.preview(); key is the
+ * loaded key or null. onDownload(note) saves; onSign(on) asks for a new preview with signing on or off;
+ * onCopy() starts *Opslaan als kopie*, always offered (EDT-70); onCheck opens *Controle*.
  */
-export function downloadDialog(lang, preview, { onDownload, onCheck }) {
+export function downloadDialog(lang, preview, key, { onDownload, onCheck, onSign, onCopy }) {
   const note = preview.changed && !preview.blocked
     ? el('textarea', { id: 'dl-note', rows: 3, maxlength: 500, placeholder: t(lang, 'dlNotePh') }, []) : null;
-  const actions = preview.blocked
-    ? [{ label: t(lang, 'openCheck'), primary: true, onClick: (close) => { close(); onCheck(); } }]
-    : [{ label: t(lang, 'download'), primary: true, onClick: (close) => { const text = note ? note.value.trim() : ''; close(); onDownload(text); } }];
+  const sign = preview.canSign && key
+    ? el('input', { type: 'checkbox', id: 'dl-sign', checked: preview.sign, disabled: preview.mustSign,
+      on: { change: (event) => onSign(event.target.checked) } }, []) : null;
+  const main = preview.readOnly ? []
+    : preview.blocked ? [{ label: t(lang, 'openCheck'), primary: true, onClick: (close) => { close(); onCheck(); } }]
+      : [{ label: t(lang, 'download'), primary: true, onClick: (close) => { const text = note ? note.value.trim() : ''; close(); onDownload(text); } }];
+  const actions = [{ label: t(lang, 'saveCopy'), onClick: (close) => { close(); onCopy(); } }, ...main];
   return openDialog({ title: t(lang, 'dlTitle'), closeLabel: t(lang, 'cancel'), actions }, [
     el('p', {}, [...tParts(lang, 'dlFile', { file: el('b', {}, [preview.fileName]) }), ' ',
       t(lang, preview.changed ? 'dlVersion' : 'dlUnchanged', { v: preview.version })]),
+    sign ? el('label', { class: 'ack', for: 'dl-sign' }, [sign, t(lang, 'dlSign', { name: key.name, fp: key.fingerprint })]) : null,
+    preview.mustSign ? el('p', { class: 'muted small' }, [t(lang, 'dlSignedKeep')]) : null,
     note ? el('div', { class: 'field' }, [el('label', { for: 'dl-note' }, [t(lang, 'dlNote')]), note]) : null,
-    preview.blocked ? el('p', { class: 'blocked' }, [t(lang, 'dlErrors')]) : null,
+    preview.readOnly ? el('p', { class: 'blocked' }, [t(lang, 'dlReadOnly')])
+      : preview.blocked ? el('p', { class: 'blocked' }, [t(lang, 'dlErrors')]) : null,
   ]);
+}
+
+/** EDT-70, EDT-71: *Opslaan als kopie*: the copy's title, proposed as <title> (kopie), at most 80 characters. */
+export function copyDialog(lang, title, onCopy) {
+  const proposed = `${[...title].slice(0, 80 - 1 - [...t(lang, 'copySuffix')].length).join('').trimEnd()} ${t(lang, 'copySuffix')}`;
+  const input = el('input', { id: 'cp-title', type: 'text', maxlength: 80, autocomplete: 'off', value: proposed }, []);
+  const go = (close) => {
+    const value = input.value.trim();
+    if (!value) {
+      input.focus();
+      return;
+    }
+    close();
+    onCopy(value);
+  };
+  return openDialog({ title: t(lang, 'copyTitle'), closeLabel: t(lang, 'cancel'),
+    actions: [{ label: t(lang, 'saveCopy'), primary: true, onClick: go }] }, [
+    el('p', {}, [t(lang, 'copyText')]),
+    el('div', { class: 'field' }, [el('label', { for: 'cp-title' }, [t(lang, 'titleLabel')]), input]),
+  ]);
+}
+
+/** EDT-60, EDT-62: a key file that was refused, in the FDS's words (M-30, M-31). */
+export function keyFailedDialog(lang, result) {
+  const text = result.message === 'M-30' ? t(lang, 'M30') : result.message === 'selftest' ? t(lang, 'keySelftest') : t(lang, 'M31');
+  return openDialog({ title: t(lang, 'keyFailedTitle'), closeLabel: t(lang, 'close') }, [el('p', {}, [text])]);
 }
 
 /** EDT-56: what was saved, its size, and above the sharing threshold M-08 (PKG-09). */

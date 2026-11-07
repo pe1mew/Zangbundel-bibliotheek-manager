@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M6.3: signing, read-only signed libraries, *Opslaan als kopie*** (`design/implementationPlan.md`).
+  - ***Sleutel laden*:** loads a `.zbkey` into the crypto worker, which reads the file itself; the page never holds its bytes. With a signed library open, only its author's key is accepted (M-30).
+  - **Read-only:** a signed library without its key shows its author and fingerprint, and downloads only unchanged.
+  - **Signing:** a tick in the download dialog signs an unsigned library (version + 1); a signed library with its key is always signed again.
+  - ***Opslaan als kopie*:** a new library with a new ID, version 1, no author, under a title of your choice.
+  - **Tests:** `tests/unit/signing-session.test.mjs`; `node --test` 293 of 293. Checked in Chromium.
 - **M6.2: *Downloaden*** (`design/implementationPlan.md`).
   - **The dialog:** the file name and version; a change note when the version goes up; with errors it shows *Controle openen* instead of a download (M-63).
   - **Manifest differences:** a library whose files differ from its manifest is saved anew after M-61.

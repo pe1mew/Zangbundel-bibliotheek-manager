@@ -91,7 +91,7 @@ function checkButton(lang, findings, onCheck) {
  * The bottom bar's groups (GD-04): the library, *Controle*, the key (GD-14, GD-39) and the general
  * buttons. key is { name, fingerprint, saved } or null; until M6 there is none.
  */
-export function bottomBar({ lang, onLanguage, onAndroid, onAbout, onCheck, onOpen, onNew, onClose, onDownload, hasLibrary = false, busy = false,
+export function bottomBar({ lang, onLanguage, onAndroid, onAbout, onCheck, onOpen, onNew, onClose, onDownload, onLoadKey, hasLibrary = false, busy = false,
   findings = null, key = null }) {
   const soon = t(lang, 'tileSoon');
   const wait = (name, label) => navButton(name, label, { disabled: true, title: `${label}: ${soon}` });
@@ -111,7 +111,10 @@ export function bottomBar({ lang, onLanguage, onAndroid, onAbout, onCheck, onOpe
     checkButton(lang, findings, onCheck),
     sep(),
     el('div', { class: 'navgroup keys', role: 'group', 'aria-label': `${t(lang, 'keyGroup')}: ${keyLabel}` }, [
-      wait('key', t(lang, 'keyMake')), wait('upload', t(lang, 'keyLoad')), wait('download', t(lang, 'keyDownload')),
+      wait('key', t(lang, 'keyMake')), onLoadKey
+        ? navButton('upload', t(lang, 'keyLoad'), { onClick: onLoadKey, disabled: busy })
+        : wait('upload', t(lang, 'keyLoad')),
+      wait('download', t(lang, 'keyDownload')),
       wait('close', t(lang, 'keyForget')),
       el('span', { class: 'navgroup-label', 'aria-hidden': 'true' }, [keyLabel]),
     ]),

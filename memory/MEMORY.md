@@ -123,8 +123,12 @@
     - `openDialog` returns {dlg, close}; actions get `close`. Always close through it, never dlg.close(), or a stale <dialog> lingers in the pane.
     - Browser test of opening: stub HTMLInputElement.prototype.click for type=file, then set input.files via DataTransfer and dispatch change.
     - The owner still owes the M4 exit look (the shell beside the mock).
-  - M6.2 done (uncommitted).
+  - M6.2 done (committed).
     - `session.preview()` gives {changed, version, fileName, needsConfirm, findings, blocked}; `session.save({changed, changes})` reopens the saved bytes as the open library.
     - `download.js` has offerDownload(bytes, name, mime), LIBRARY_MIME and KEY_MIME. No TT policy is needed for blob links.
     - Browser check: stub URL.createObjectURL and HTMLAnchorElement.prototype.click to catch the download.
-  - Next: M6.3 signing in the download dialog, read-only signed libraries, *Opslaan als kopie*; M6.4 the key group, with the crypto worker wired in (not bundled into the app yet).
+  - M6.3 done (uncommitted).
+    - `session.loadKey(file)` passes the File to the crypto worker unread (SR-40); `crypto-handler` `load({file})` reads it and zeroes the bytes.
+    - `isReadOnly()`, `preview({sign})` → {…, sign, mustSign, canSign, readOnly}, `save({sign})` signs over a MessagePort, `copy(title)`.
+    - Browser harness: the page's CSP has connect-src 'none', so serve `scratchpad/csp_server_harness.py` (adds connect-src 'self') and fetch test files from `m3build/__test/`; never paste big base64 by hand. The read-only bar may need over 1.5 s after opening.
+  - Next: M6.4 the key group (make, download with M-64, forget, 30-minute idle warning, SR-41/SR-46).

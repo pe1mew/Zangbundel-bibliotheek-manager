@@ -5,7 +5,8 @@
 // in a window narrower than 980 px (GD-32). The language switches at once (GD-17, M4.2).
 // M4.4: the bottom bar's groups, the *Android-app* panel and *Over* (panels.js).
 // M6.1: a library is opened, started and closed (session.js, library-ui.js); the right bar shows it
-// and *Controle* its findings. Editing (M5) and downloading (M6.2) come next.
+// and *Controle* its findings. M6.2: *Downloaden*. M6.3: a key loaded into the crypto worker signs;
+// a signed library is read-only without its key; *Opslaan als kopie*. Editing comes with M5.
 
 import { el, extLink, icon, replace } from './dom.js';
 import { createLanguage, t } from './i18n.js';
@@ -13,9 +14,10 @@ import { createLayout } from './layout.js';
 import { aboutDialog, androidContent, androidDialog, bottomBar, privacyUrl } from './panels.js';
 import { checkDialog } from './check.js';
 import { createLibraryClient } from './library-client.js';
+import { createCryptoClient } from './crypto-client.js';
 import { createSession } from './session.js';
-import { closeConfirm, convertedDialog, downloadDialog, manifestConfirm, newLibraryDialog, openFailedDialog, pickFile, saveFailedDialog,
-  savedDialog } from './library-ui.js';
+import { closeConfirm, convertedDialog, copyDialog, downloadDialog, keyFailedDialog, manifestConfirm, newLibraryDialog, openFailedDialog,
+  pickFile, saveFailedDialog, savedDialog } from './library-ui.js';
 import { LIBRARY_MIME, offerDownload } from './download.js';
 import { VERSION } from './version.js';
 
@@ -114,7 +116,7 @@ function start() {
   const root = document.getElementById('app');
   const language = createLanguage({ preferred: navigator.languages });
   const layout = createLayout({ getLang: language.get });
-  const session = createSession({ client: createLibraryClient() });
+  const session = createSession({ client: createLibraryClient(), crypto: createCryptoClient() });
   const narrow = el('div', { class: 'narrow' }, []);
   const banner = isTestInstance(location.hostname)
     ? el('div', { class: 'testbanner', role: 'note', lang: 'nl' }, [TEST_BANNER])
@@ -135,14 +137,24 @@ function start() {
   const onNew = () => newLibraryDialog(language.get(), (title, description) => session.create(title, description));
   const onClose = () => (session.get().dirty ? closeConfirm(language.get(), () => session.close()) : session.close());
   const onCheck = () => checkDialog(language.get(), session.get().findings || [], () => {});   // Ga naar: the targets come with M5
-  // GD-23, FDS 7.6: Downloaden keeps the library open
-  const onDownload = async () => {
+  // GD-14, EDT-60, EDT-62: a key file goes to the crypto worker; the page never holds the private key
+  const onLoadKey = () => pickFile(async (file) => {
+    const r = await session.loadKey(file);
+    if (!r.ok) keyFailedDialog(language.get(), r);
+  }, '.zbkey,application/json');
+  // GD-23, GD-24, FDS 7.6 to 7.8: Downloaden keeps the library open; signing is a tick box
+  const onDownload = async (sign = false, confirmed = false) => {
     const lang = language.get();
-    const preview = await session.preview();
-    const show = () => downloadDialog(lang, preview, {
+    const preview = await session.preview({ sign });
+    const show = () => downloadDialog(lang, preview, session.get().key, {
       onCheck: () => checkDialog(lang, preview.findings, () => {}),
+      onSign: (on) => onDownload(on, true),
+      onCopy: () => copyDialog(lang, session.get().library.title, async (title) => {
+        await session.copy(title);
+        onDownload(false, true);                          // EDT-73: the copy is saved by the rules of 7.6
+      }),
       onDownload: async (note) => {
-        const saved = await session.save({ changed: preview.changed, changes: note });
+        const saved = await session.save({ changed: preview.changed, changes: note, sign: preview.sign });
         if (!saved.ok) {
           saveFailedDialog(lang, saved);
           return;
@@ -151,9 +163,15 @@ function start() {
         savedDialog(lang, saved);
       },
     });
-    if (preview.needsConfirm) manifestConfirm(lang, show);
+    if (preview.needsConfirm && !confirmed) manifestConfirm(lang, show);
     else show();
   };
+  /** EDT-23, GD-24: above the centre while a signed library lacks its key. */
+  const readOnlyBar = (lang, state) => (session.isReadOnly() ? el('div', { class: 'robar', role: 'status' }, [
+    icon('lock', 'inl'),
+    el('span', {}, [t(lang, 'readOnly', { name: state.library.author.name, fp: state.authorFingerprint || '' })]),
+    el('button', { type: 'button', class: 'btn btn-outline btn-small', on: { click: onLoadKey } }, [t(lang, 'keyLoad')]),
+  ]) : null);
 
   const render = () => {
     const lang = language.get();
@@ -162,12 +180,12 @@ function start() {
     document.title = state.library ? `${state.library.title} · ${t(lang, 'appName')}` : t(lang, 'appName');
     layout.setSplash(screen === 'splash');
     replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); })
-      : home(lang, { onOpen, onNew, onDownload, hasLibrary: Boolean(state.library), busy: state.busy }));
+      : el('div', {}, [readOnlyBar(lang, state), home(lang, { onOpen, onNew, onDownload: () => onDownload(), hasLibrary: Boolean(state.library), busy: state.busy })]));
     replace(layout.right, ...rightBar(lang, state));
     replace(layout.left, el('p', { class: 'empty' }, [t(lang, state.library ? 'libHomeLead' : 'tileNeedLib')]));
     replace(layout.bottom, ...bottomBar({ lang, onLanguage: () => language.next(),
       onAndroid: () => androidDialog(language.get()), onAbout: () => aboutDialog(language.get()),
-      onOpen, onNew, onClose, onCheck, onDownload, hasLibrary: Boolean(state.library), busy: state.busy,
+      onOpen, onNew, onClose, onCheck, onDownload: () => onDownload(), onLoadKey, key: state.key, hasLibrary: Boolean(state.library), busy: state.busy,
       findings: state.library ? state.findings || [] : null }));
     replace(narrow, narrowPage(lang));
   };

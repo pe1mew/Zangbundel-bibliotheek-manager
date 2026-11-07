@@ -281,6 +281,9 @@ export const TEXTS = {
     continue: "Doorgaan",
     dlSaved: "Gedownload: {file} ({size}).",
     dlFailed: "Downloaden lukte niet.",
+    M31: "Dit sleutelbestand is beschadigd.",
+    keyFailedTitle: "Sleutel niet geladen",
+    keySelftest: "Ondertekenen werkt niet in deze browser.",
   },
   en: {
     appName: "Zangbundel library manager",
@@ -557,6 +560,9 @@ export const TEXTS = {
     continue: "Continue",
     dlSaved: "Downloaded: {file} ({size}).",
     dlFailed: "The download did not work.",
+    M31: "This key file is damaged.",
+    keyFailedTitle: "Key not loaded",
+    keySelftest: "Signing does not work in this browser.",
   },
   de: {
     appName: "Zangbundel Bibliotheksverwaltung",
@@ -833,5 +839,8 @@ export const TEXTS = {
     continue: "Fortfahren",
     dlSaved: "Heruntergeladen: {file} ({size}).",
     dlFailed: "Das Herunterladen hat nicht geklappt.",
+    M31: "Diese Schlüsseldatei ist beschädigt.",
+    keyFailedTitle: "Schlüssel nicht geladen",
+    keySelftest: "Signieren funktioniert in diesem Browser nicht.",
   },
 };

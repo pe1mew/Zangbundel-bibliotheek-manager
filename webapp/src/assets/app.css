@@ -193,6 +193,12 @@ svg.sev-ok { fill: var(--fire-orange); }
 .vwhere { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vgo { color: var(--fire-orange); white-space: nowrap; }
 .allclear { display: flex; align-items: center; }
+.robar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 16px 32px 0; padding: 10px 14px;
+  background: var(--night-blue); border-left: 4px solid var(--fire-orange); border-radius: 0 10px 10px 0; }
+.robar span { flex: 1; min-width: 200px; }
+.btn-small { min-height: 36px; padding: 0 14px; font-size: 14px; }
+.ack { display: flex; gap: 10px; align-items: center; margin: 12px 0; cursor: pointer; min-height: 44px; }
+.ack input { width: 20px; height: 20px; accent-color: var(--fire-orange); flex: none; }
 .blocked { border-left: 3px solid var(--fire-orange); padding: 6px 12px; background: var(--bg); border-radius: 0 8px 8px 0; }
 
 /* ---- The Android panel (GD-15, GD-35) ---- */

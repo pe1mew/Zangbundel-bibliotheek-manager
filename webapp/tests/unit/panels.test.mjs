@@ -72,4 +72,13 @@ test('GD-04, GD-14: the bottom bar draws every group; buttons that wait for M5/M
   const open = bottomBar({ lang: 'nl', hasLibrary: true, findings: [], onClose: () => {}, onCheck: () => {} }).flatMap((n) => [...walk(n)]).filter((n) => n.tag === 'button');
   assert.equal(open.filter((b) => 'disabled' in b.attrs).length, 5);   // with a library: Downloaden, Sluiten and Controle work
   assert.ok(items.flatMap((n) => [...walk(n)]).some((n) => n.text === 'geen sleutel'));   // GD-14: no key yet
+  // M6.3: Sleutel laden works once wired; the loaded key's name and fingerprint replace "geen sleutel"
+  const loaded = [];
+  const withKey = bottomBar({ lang: 'nl', onLoadKey: () => loaded.push('key'), key: { name: 'Leiding', fingerprint: '21FE-31DF-A154-A261' } })
+    .flatMap((n) => [...walk(n)]);
+  const load = withKey.filter((n) => n.tag === 'button').find((b) => b.attrs.title === 'Sleutel laden');
+  assert.ok(load && !('disabled' in load.attrs));
+  load.listeners.click();
+  assert.deepEqual(loaded, ['key']);
+  assert.ok(withKey.some((n) => n.text === 'Leiding · 21FE-31DF-A154-A261'));
 });

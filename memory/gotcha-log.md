@@ -111,6 +111,11 @@
 **Root cause**: The default chosen for consensus systems is not the RFC 8032 strictness every other verifier of this format uses.
 **Fix**: `{ zip215: false }`; a regression test with the identity key. Rule: when two implementations must agree (FDS principle 2), pin the verification mode explicitly and test a known forgery.
 
+### Reading a file to hand it to a worker puts its bytes in the page (2026-11-07) [RESOLVED]
+**Problem**: The first M6.3 `session.loadKey` did `file.arrayBuffer()` on the main thread and transferred the buffer to the crypto worker. Transferring detaches the buffer, so it looked safe, but the page had held the private key's bytes: against SR-40.
+**Root cause**: The library path (read, then transfer) was copied to the key path, where the rule is stricter: library bytes may pass the page, key bytes may not.
+**Fix**: Post the `File` itself (structured-cloneable); the worker reads it and zeroes the bytes. Tested by making every read method of the page's `File` throw. Rule: when data must stay in a worker, send the handle (File, Blob, port), never its contents.
+
 ## Promoted
 
 <!-- Track gotchas that have been promoted to topic files or the memory index.

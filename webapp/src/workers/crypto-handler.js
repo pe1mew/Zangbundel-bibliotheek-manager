@@ -12,7 +12,7 @@
 // A key the user refuses is answered with { accepted: false, message, reason }, never an error.
 
 import { derivePublicKey, importNonExtractable, selfTest, sign } from '../core/ed25519.js';
-import { readKeyFile, writeKeyFile } from '../core/keyfile.js';
+import { KEY_FILE_MAX, readKeyFile, writeKeyFile } from '../core/keyfile.js';
 import { fingerprint } from '../core/fingerprint.js';
 import { safeFileName } from '../core/names.js';
 
@@ -82,11 +82,25 @@ export function createCryptoHandler({ useWebCrypto = true } = {}) {
       return { accepted: true, bytes, fileName };
     },
 
-    /** SG-11, EDT-62: load a key file; with expect (a library's author key) it must be that key. */
-    async load({ bytes, expect } = {}) {
+    /**
+     * SG-11, EDT-62: load a key file; with expect (a library's author key) it must be that key. The page
+     * passes the picked File (file), which is read here, so the key file's bytes never exist in the main
+     * thread (SR-40); bytes is for tests. The raw bytes are zeroed once read.
+     */
+    async load({ bytes, file, expect } = {}) {
       const t = await tested();
       if (!t.ok) return refuse('selftest', t.failures.join('; '));
-      const r = readKeyFile(bytes);
+      if (file) {
+        if (typeof file.arrayBuffer !== 'function') throw new TypeError('load: file must be a Blob');
+        if (file.size > KEY_FILE_MAX) return refuse('M-31', 'too large for a key file');
+        bytes = new Uint8Array(await file.arrayBuffer());
+      }
+      let r;
+      try {
+        r = readKeyFile(bytes);
+      } finally {
+        if (file && bytes) bytes.fill(0);
+      }
       if (!r.ok) return refuse(r.message, r.reason);
       const k = { ...r.key, cryptoKey: null, needsExport: false };
       if (!equal(await derivePublicKey(k.seed), k.publicKey)) {
