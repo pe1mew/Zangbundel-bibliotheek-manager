@@ -163,4 +163,6 @@
     - Editor buttons resolve their block's index at click time (no redraw after a field write).
   - M5.3c committed. M5.3d done (uncommitted): `names.js` proposeSongId; worker adoptSong/importSong (ops addSong, importSong); session.adoptSong/importSong/addSong; main makeEditor/startNew/importFile; editing.isNew.
     - No unit test loads main.js (it starts the page): `syntax.test.mjs` runs node --check on every module.
-  - Next: M5.3e drag with auto-scroll (GD-08, GD-11), via setVar, not style.
+  - M5.3d committed. M5.3e done (uncommitted): drag by handle (moveToPosition, edgeSpeed; --dy via setVar; dropbefore/dropafter classes). M5.3 complete.
+    - A hidden browser pane draws no animation frames: requestAnimationFrame never fires, so anything per-frame cannot be checked there (ask the owner to show the pane).
+  - Next: M5.5 sets (GD-21, EDT-31, SET-01 to SET-05).

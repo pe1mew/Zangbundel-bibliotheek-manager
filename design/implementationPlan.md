@@ -572,7 +572,21 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - a new *Vader Jacob* added as `vader-jacob-2`, the search *lorem* that hid it cleared with the GD-25 notice;
   - `import.cho` added as `uit-een-bestand`; a file that is not UTF-8 refused with M-50;
   - a typed new song named in the leave question and thrown away; an untouched one left without a question.
-- **Next:** M5.3e, dragging with auto-scroll (GD-08, GD-11).
+
+**M5.3e done; with it M5.3.**
+- **Dragging (GD-08):** each block has a handle (`aria-hidden`; the keyboard has *Omhoog* and *Omlaag*, GD-33).
+  - The block follows the pointer and cannot leave the song; a line shows where it will land; on release it lands there and stays in view (GD-11).
+  - `moveToPosition` puts it among the shown blocks, metadata lines keeping their place.
+  - The help line *Sleep een blok aan … of gebruik … …* shows the handle and buttons as icons.
+- **Auto-scroll (GD-11):** within 72 px of the top or bottom of the centre (the bottom above the *Toepassen* bar), the song scrolls towards that edge, faster the closer, at most 18 px a frame, stopping at the start and end (`edgeSpeed`).
+- **Styling (SR-24, SR-32):** the offset is the custom property `--dy` (`dom.js` `setVar`), never a style attribute, and the drop line is a class (`dropbefore`, `dropafter`), not an inline shadow as in the mock. The console showed no CSP report.
+- **Tested:** `tests/unit/editor.test.mjs`, 2 more: `moveToPosition` around metadata, and `edgeSpeed` at and between the edges. `node --test`: 367 of 367. Container test: 81 of 81.
+- **In the browser pane (Chromium), with synthetic pointer events on *Fire in the Night*:**
+  - *Bridge* dragged above *Verse 1*, the line on *Verse 1*;
+  - *Verse 1* dragged below *Bridge*, the line before *Chorus (2x)*;
+  - *Toepassen* showed the new order.
+- **Not seen:** the auto-scroll itself. The pane was hidden, so the page drew no animation frames (0 in 700 ms) and the scrolling, which runs per frame, could not run. Its rule is unit-tested; the owner's look at the M5 exit should include dragging a block to an edge.
+- **Left in M5:** M5.5 sets; then the M5 exit on the test instance (each GD of M5 against its text) and M6's exit.
 
 ### M6 — Open, save and sign (M)
 

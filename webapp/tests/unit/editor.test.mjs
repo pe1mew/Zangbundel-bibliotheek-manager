@@ -119,3 +119,38 @@ test('EDT-51: applying a song that did not change is no change to download', asy
   assert.equal(s.get().dirty, false);
   assert.equal((await s.preview()).changed, false);
 });
+
+const { moveToPosition } = await import('../../src/app/editor.js');
+
+test('GD-08: a dragged block lands at its place among the shown blocks; metadata lines keep theirs', () => {
+  const m1 = { type: 'meta', name: 'title' };
+  const a = { type: 'section', kind: 'verse' };
+  const m2 = { type: 'meta', name: 'tag' };
+  const b = { type: 'section', kind: 'chorus' };
+  const c = { type: 'repeat' };
+  const form = { blocks: [m1, a, m2, b, c] };
+  const order = (f) => f.blocks.map((x) => (x.type === 'meta' ? x.name : x.kind || x.type));
+  assert.deepEqual(order(moveToPosition(form, c, 0)), ['title', 'repeat', 'verse', 'tag', 'chorus']);
+  assert.deepEqual(order(moveToPosition(form, a, 2)), ['title', 'tag', 'chorus', 'repeat', 'verse']);   // after the last
+  assert.deepEqual(order(moveToPosition(form, a, 1)), ['title', 'tag', 'chorus', 'verse', 'repeat']);
+  assert.deepEqual(order(moveToPosition(form, b, 0)), ['title', 'chorus', 'verse', 'tag', 'repeat']);
+  assert.equal(moveToPosition(form, a, 5), form);                                  // no such place
+  assert.equal(moveToPosition(form, { type: 'section' }, 0), form);                // not in the song
+  const one = { blocks: [m1, a] };
+  assert.deepEqual(order(moveToPosition(one, a, 0)), ['title', 'verse']);
+});
+
+const { edgeSpeed } = await import('../../src/app/editor.js');
+
+test('GD-11: within 72 px of an edge the song scrolls towards it, faster the closer; elsewhere it stands still', () => {
+  const [top, bottom] = [100, 700];                                  // bottom: above the Toepassen bar
+  assert.equal(edgeSpeed(400, top, bottom), 0);
+  assert.equal(edgeSpeed(top + 72, top, bottom), 0);
+  assert.equal(edgeSpeed(bottom - 72, top, bottom), 0);
+  assert.equal(edgeSpeed(top + 36, top, bottom), -9);                 // half way: half speed
+  assert.equal(edgeSpeed(top, top, bottom), -18);
+  assert.equal(edgeSpeed(top - 50, top, bottom), -18);                // beyond the edge: no faster than the most
+  assert.equal(edgeSpeed(bottom - 36, top, bottom), 9);
+  assert.equal(edgeSpeed(bottom + 30, top, bottom), 18);
+  assert.ok(edgeSpeed(bottom - 10, top, bottom) > edgeSpeed(bottom - 60, top, bottom));
+});

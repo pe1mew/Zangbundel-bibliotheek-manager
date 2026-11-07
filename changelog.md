@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M5.3e: dragging blocks** (`design/implementationPlan.md`).
+  - **Dragging:** a block moves by its handle and lands where the line shows.
+  - **Auto-scroll:** near the top or bottom of the song, the song scrolls along.
+  - **Tests:** `node --test` 367 of 367. The drop was checked in Chromium; the auto-scroll only by unit test, as the browser pane was hidden.
 - **M5.3d: adding and importing songs** (`design/implementationPlan.md`).
   - ***Lied toevoegen*** opens the editor on an empty song; on *Toepassen* it gets an ID from its title, unique in the library.
   - ***Lied importeren*** takes in a `.cho` file at once.

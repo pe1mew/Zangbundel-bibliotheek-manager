@@ -416,3 +416,13 @@ svg.sev-ok { fill: var(--fire-orange); }
 /* M5.3d: adding and importing songs (EDT-32) */
 .listfoot { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 20px 24px; }
 .home .addrow { margin-top: 8px; }
+
+/* M5.3e: dragging a block (GD-08, GD-11); the offset is a custom property, never a style attribute (SR-24) */
+.handle { cursor: grab; color: var(--secondary); display: inline-flex; padding: 8px 4px; touch-action: none; user-select: none; }
+.handle svg { width: 22px; height: 22px; fill: currentColor; }
+.section.dragging { position: relative; z-index: 3; opacity: .92; transform: translateY(var(--dy, 0px));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .5); border-color: var(--fire-orange); }
+.section.dragging .handle { cursor: grabbing; }
+.section.dropbefore { box-shadow: 0 -3px 0 var(--sky-blue); }
+.section.dropafter { box-shadow: 0 3px 0 var(--sky-blue); }
+.edithelp svg.inl { width: 16px; height: 16px; fill: currentColor; vertical-align: -3px; }

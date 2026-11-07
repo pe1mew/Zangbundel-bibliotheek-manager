@@ -6,8 +6,8 @@
 // text is only kept free of characters a lyric line cannot hold (GD-07), and the worker writes the song
 // back (fromBlocks), refusing what would change meaning.
 
-import { el, icon, listen, setAttrs } from './dom.js';
-import { t } from './i18n.js';
+import { el, icon, listen, setAttrs, setVar, toggleClass } from './dom.js';
+import { t, tParts } from './i18n.js';
 import { messageFor, severityGroup, severityIcon } from './check.js';
 import { createSongFields } from './songfields.js';
 import { metaValues } from '../core/blockmeta.js';
@@ -57,6 +57,30 @@ export function moveBlock(form, i, dir) {
   const blocks = form.blocks.slice();
   [blocks[i], blocks[other]] = [blocks[other], blocks[i]];
   return { ...form, blocks };
+}
+
+/**
+ * GD-11: how far the song scrolls in one frame while a block is dragged with the pointer at y, in a
+ * scroll area from top to bottom (bottom already above the Toepassen bar): within edge px of an edge,
+ * towards it, faster the closer the pointer is, at most max; elsewhere not at all.
+ */
+export function edgeSpeed(y, top, bottom, edge = 72, max = 18) {
+  if (y < top + edge) return -max * Math.min(1, (top + edge - y) / edge);
+  if (y > bottom - edge) return max * Math.min(1, (y - (bottom - edge)) / edge);
+  return 0;
+}
+
+/**
+ * GD-08: move block to place `to` among the other shown blocks (0 is before the first of them; their
+ * count is after the last). Metadata lines keep their place.
+ */
+export function moveToPosition(form, block, to) {
+  const rest = form.blocks.filter((b) => b !== block);
+  const others = rest.filter((b) => b.type !== 'meta');
+  if (!form.blocks.includes(block) || to < 0 || to > others.length) return form;
+  const at = to < others.length ? rest.indexOf(others[to]) : rest.indexOf(others[others.length - 1]) + 1;
+  rest.splice(others.length ? at : rest.length, 0, block);
+  return { ...form, blocks: rest };
 }
 
 /** The first lyric line of the chorus a repeat at form index i repeats (7.2: the most recent above it). */
@@ -154,6 +178,73 @@ export function createSongEditor({ lang, id, isNew = false, text: original, form
     return [...body, hintBox];
   }
 
+  // ---- GD-08, GD-11: drag a block by its handle; near the top or bottom of the centre the song scrolls
+  const EDGE = 72;                                       // px from the edge, above the Toepassen bar
+  const MAX_SPEED = 18;                                  // px per frame at the very edge
+  function startDrag(e, block, handle) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const card = handle.closest('.section');
+    const cards = [...sections.children];
+    const from = cards.indexOf(card);
+    const scroller = node.closest('.centre') || node.parentElement || node;
+    const foot = node.querySelector('.editfoot');
+    try { handle.setPointerCapture(e.pointerId); } catch { /* a synthetic pointer */ }
+    toggleClass(card, 'dragging', true);
+    const startY = e.clientY;
+    const startScroll = scroller.scrollTop;
+    const box = sections.getBoundingClientRect();
+    const own = card.getBoundingClientRect();
+    const minDy = box.top - own.top;                     // the block cannot leave the song
+    const maxDy = box.bottom - own.bottom;
+    const others = cards.filter((c) => c !== card);
+    let y = e.clientY;
+    let to = from;
+    let frame = 0;
+    const clear = () => others.forEach((c) => { toggleClass(c, 'dropbefore', false); toggleClass(c, 'dropafter', false); });
+    const place = () => {
+      const dy = Math.max(minDy, Math.min(maxDy, y - startY + scroller.scrollTop - startScroll));
+      setVar(card, '--dy', `${dy}px`);
+      let k = others.findIndex((c) => y < c.getBoundingClientRect().top + c.offsetHeight / 2);
+      if (k === -1) k = others.length;
+      to = k;
+      clear();                                            // a line shows where it will land
+      if (k < others.length) toggleClass(others[k], 'dropbefore', true);
+      else if (others.length) toggleClass(others[others.length - 1], 'dropafter', true);
+    };
+    const tick = () => {
+      const r = scroller.getBoundingClientRect();
+      const bottom = r.bottom - (foot ? foot.offsetHeight : 0);
+      const max = scroller.scrollHeight - scroller.clientHeight;
+      const v = edgeSpeed(y, r.top, bottom, EDGE, MAX_SPEED);
+      const next = Math.max(0, Math.min(max, scroller.scrollTop + v));   // stops at the start and end
+      if (next !== scroller.scrollTop) {
+        scroller.scrollTop = next;
+        place();
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    const stops = [];
+    const end = () => {
+      cancelAnimationFrame(frame);
+      stops.forEach((stop) => stop());
+      clear();
+      toggleClass(card, 'dragging', false);
+      setVar(card, '--dy', '0px');
+      if (to === from) return;
+      form = moveToPosition(form, block, to);
+      const keep = scroller.scrollTop;
+      draw();
+      scroller.scrollTop = keep;                          // it lands where it was dropped and stays in view
+      const landed = sections.children[to];
+      landed?.scrollIntoView?.({ block: 'nearest' });
+    };
+    stops.push(listen(handle, 'pointermove', (ev) => { y = ev.clientY; place(); }));
+    stops.push(listen(handle, 'pointerup', end));
+    stops.push(listen(handle, 'pointercancel', end));
+    frame = requestAnimationFrame(tick);
+  }
+
   function bar(i, block, shown) {
     const pos = shown.indexOf(i);
     const kind = block.type === 'section'
@@ -175,7 +266,10 @@ export function createSongEditor({ lang, id, isNew = false, text: original, form
     // the block's place is looked up when a button is used: a metadata field written from the left bar
     // (M5.3c) adds or removes lines above it without drawing the blocks again
     const move = (dir) => () => { form = moveBlock(form, form.blocks.indexOf(block), dir); draw(block, dir); };
-    return el('div', { class: 'secbar' }, [kind, label, el('span', { class: 'grow' }, []),
+    // GD-08: the handle is for the pointer; the keyboard has Omhoog and Omlaag (GD-33)
+    const handle = el('span', { class: 'handle', title: t(lang, 'dragTitle'), 'aria-hidden': 'true' }, [icon('drag')]);
+    if (shown.length > 1) listen(handle, 'pointerdown', (e) => startDrag(e, block, handle));
+    return el('div', { class: 'secbar' }, [handle, kind, label, el('span', { class: 'grow' }, []),
       btn('up', t(lang, 'up'), pos === 0, move(-1)),
       btn('down', t(lang, 'down'), pos === shown.length - 1, move(1)),
       btn('delete', t(lang, 'deleteBlock'), false, () => { form = { ...form, blocks: form.blocks.filter((x) => x !== block) }; draw(); }),
@@ -262,7 +356,10 @@ export function createSongEditor({ lang, id, isNew = false, text: original, form
     checkTimer = setTimeout(runChecks, 300);              // EDT-42: as the user types, without a check per key
   });
   const codeBody = el('div', { class: 'codebody' }, [el('p', { class: 'muted small' }, [t(lang, 'textHelp')]), codeArea, codeHint, checks]);
-  const blocksBody = el('div', { class: 'blocksbody' }, [sections, addRow]);
+  // GD-08, GD-33: how blocks move, with the handle and the buttons as they look
+  const small = (name) => icon(name, 'inl');
+  const help = el('p', { class: 'muted small edithelp' }, tParts(lang, 'editHelp', { drag: small('drag'), up: small('up'), down: small('down') }));
+  const blocksBody = el('div', { class: 'blocksbody' }, [help, sections, addRow]);
 
   // ---- the two modes (GD-38): a radio group, one Tab stop, the arrow keys move between them
   const radios = {};
