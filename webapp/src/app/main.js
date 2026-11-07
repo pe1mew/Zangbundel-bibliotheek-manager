@@ -23,6 +23,7 @@ import { createLibraryClient } from './library-client.js';
 import { createCryptoClient } from './crypto-client.js';
 import { createSession } from './session.js';
 import { createSongList, neighbourAfterDelete } from './songlist.js';
+import { libraryHomeNode, songDataNode, songViewNode } from './songview.js';
 import { closeConfirm, convertedDialog, copyDialog, deleteSongConfirm, downloadDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
   keyReplaceConfirm, keySaveDialog, manifestConfirm, newLibraryDialog, openFailedDialog, pickFile, saveFailedDialog,
   savedDialog } from './library-ui.js';
@@ -241,19 +242,40 @@ function start() {
     if (await session.deleteSong(id)) select(next);
   });
   let form = null;
+  let shown = { id: null, text: undefined, details: null };   // the selected song's view, from the worker
+  let lastCentre;
   const render = () => {
     const lang = language.get();
     const state = session.get();
     document.documentElement.lang = lang;
     document.title = state.library ? `${state.library.title} · ${t(lang, 'appName')}` : t(lang, 'appName');
     layout.setSplash(screen === 'splash');
-    replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); })
-      : el('div', {}, [readOnlyBar(lang, state), home(lang, { onOpen, onNew, onDownload: () => onDownload(), hasLibrary: Boolean(state.library), busy: state.busy })]));
     const readOnly = session.isReadOnly();
     // the selection goes with another library, or with its song
     const libraryId = state.library ? state.library.libraryId : null;
     if (libraryId !== selectedLibrary || (selected && !state.songs.some((s) => s.id === selected))) selected = null;
     selectedLibrary = libraryId;
+    // GD-13, GD-19: the selected song, parsed by the worker once per text; a late answer for another song is dropped
+    const text = selected ? state.library.songs.get(selected) : undefined;
+    if (!selected) shown = { id: null, text: undefined, details: null };
+    else if (shown.id !== selected || shown.text !== text) {
+      const want = { id: selected, text, details: null };
+      shown = want;
+      const done = (details) => { if (shown === want) { want.details = details || { sections: null, meta: null }; render(); } };
+      session.songDetails(selected).then(done, () => done(null));
+    }
+    // the centre is redrawn only when what it shows changes, so the reader keeps their place in a song
+    const centreKey = JSON.stringify([screen, lang, readOnly, state.authorFingerprint, Boolean(state.library), state.busy,
+      state.library ? [state.library.title, state.songs.length] : null, selected, shown.details ? shown.text : null]);
+    if (centreKey !== lastCentre) {
+      lastCentre = centreKey;
+      const content = !state.library ? home(lang, { onOpen, onNew, onDownload: () => onDownload(), hasLibrary: false, busy: state.busy })
+        : !selected ? libraryHomeNode(lang, state)
+          : shown.details ? songViewNode(lang, selected, shown.details, { readOnly, onDelete: onDeleteSong })
+            : el('p', { class: 'empty' }, ['…']);
+      replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); })
+        : el('div', {}, [readOnlyBar(lang, state), content]));
+    }
     // GD-13: the song list, built once per library, language and read-only state; its node stays in place
     // so the search field keeps its focus while the list follows the typing
     const listKey = state.library ? `${state.generation}|${lang}|${readOnly}` : null;
@@ -264,9 +286,15 @@ function start() {
     }
     replace(head, ...libHead(lang, state, () => select(null)));
     if (songList) songList.update(state, selected);
-    // GD-22: the library's fields, built once per library and language, then only updated (library-form.js)
+    // GD-05: a selected song's data, read-only until the song editor (M5.3); GD-22: otherwise the library's
+    // fields, built once per library and language, then only updated (library-form.js)
+    if (selected) {
+      leftKey = `song|${selected}`;
+      form = null;
+      replace(layout.left, shown.details ? songDataNode(lang, selected, shown.details) : el('p', { class: 'empty' }, ['…']));
+    }
     const formKey = state.library ? `${state.generation}|${lang}|${readOnly}` : null;
-    if (formKey !== leftKey) {
+    if (!selected && formKey !== leftKey) {
       leftKey = formKey;
       form = state.library ? createLibraryForm({ lang, library: state.library, readOnly, onChange: (patch) => session.updateLibrary(patch) }) : null;
       replace(layout.left, form ? form.node : el('p', { class: 'empty' }, [t(lang, 'tileNeedLib')]));

@@ -2,7 +2,7 @@
 // The library worker's work, as a plain module so it can be tested without a browser
 // (securityAssessment SR-30; implementationPlan M2.8). library-worker.js wires it to messages.
 //
-// Request  { id, op, payload }            op: 'validate' | 'open' | 'check' | 'save' | 'copy' | 'new'
+// Request  { id, op, payload }            op: 'validate' | 'open' | 'check' | 'save' | 'copy' | 'new' | 'song'
 // Response { id, ok: true, result }  or  { id, ok: false, error }
 //
 // Every library byte is read here, never on the main thread. Results are structured data only
@@ -13,7 +13,7 @@
 
 import { validateLibrary } from '../core/validate.js';
 import { copyLibrary, newLibrary, openLibrary, saveLibrary } from '../core/library.js';
-import { parseSong } from '../core/chordpro.js';
+import { parseSong, songView } from '../core/chordpro.js';
 
 /** The songs as the screens list them: { id, title }, read here so the main thread never parses a song (SR-30). */
 export function songSummary(library) {
@@ -25,6 +25,23 @@ export function songSummary(library) {
     return { id, title: first('title'), sortTitle: first('sorttitle'), language: first('language'), lyricist: first('lyricist'),
       tags: [...new Set(song.meta.get('tag') || [])], words: song.lines.join('\n') };
   });
+}
+
+/**
+ * GD-05, GD-19 (M5.2): one song for the song view and the left bar: its sections (chordpro.js songView)
+ * and its metadata (song format 6.1). A song that is not text (SNG-01, SNG-18) has neither.
+ */
+export function songDetails(text) {
+  if (typeof text !== 'string') return { sections: null, meta: null };
+  const song = parseSong(text);
+  const one = (name) => (song.meta.get(name) || [null])[0] || null;
+  const all = (name) => song.meta.get(name) || [];
+  return {
+    sections: songView(text),
+    meta: { id: one('id'), title: one('title'), subtitle: one('subtitle'), language: one('language'), lyricists: all('lyricist'),
+      composers: all('composer'), copyright: one('copyright'), license: one('license'), source: one('source'),
+      tags: [...new Set(all('tag'))] },
+  };
 }
 
 const SIGN_TIMEOUT_MS = 10000;
@@ -92,6 +109,8 @@ export async function handleMessage(message) {
       case 'save':
         return { id, ok: true, result: await saveLibrary(payload.library, { changed: payload.changed, now: payload.now, changes: payload.changes,
           signer: payload.signer ? portSigner(payload.signer) : undefined }) };
+      case 'song':
+        return { id, ok: true, result: songDetails(payload.text) };
       case 'copy':
         return { id, ok: true, result: copyLibrary(payload.library, { now: payload.now, title: payload.title }) };
       case 'new':

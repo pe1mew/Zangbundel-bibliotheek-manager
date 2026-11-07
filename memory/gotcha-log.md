@@ -121,6 +121,11 @@
 **Root cause**: The checks ran in the order the work was done, and an edit made after a check was never checked again. Local Node 26 hid the difference.
 **Fix**: `File` imported from `node:buffer`; M6.4 ran every check after its last edit. Rule: a reported check result describes the tree it ran on; rerun the whole set after the last edit, before staging.
 
+### The container's upload-lock test is timing-sensitive (2026-11-07) [OPEN]
+**Problem**: During M5.2, `run.sh` failed "the slow upload holds the lock", "second upload while one runs: was accepted" and "the slow upload completed" once; the rerun passed 81 of 81. No server file had changed.
+**Root cause**: Not yet known. Likely the test's slow upload finished before the second one started while the machine was busy (`node --test` and the build had just run).
+**Fix**: None yet. Rule until then: a failure of only these three checks is rerun once before it is reported as a fault; report both runs. Fix by making the slow upload wait on a signal instead of a delay.
+
 ## Promoted
 
 <!-- Track gotchas that have been promoted to topic files or the memory index.

@@ -117,6 +117,13 @@ export function createSession({ client, crypto = null, now = () => new Date() })
       return true;
     },
 
+    /** GD-05, GD-19: one song's sections and metadata, parsed in the worker (SR-30); null when it is gone. */
+    async songDetails(id) {
+      const lib = state.library;
+      if (!lib || !lib.songs.has(id)) return null;
+      return client.request('song', { text: lib.songs.get(id) });
+    },
+
     /**
      * EDT-32, GD-16: delete a song (the caller asked M-62 first); it leaves every set as well. A
      * read-only library is not changed (EDT-23). Returns true when the song was deleted.

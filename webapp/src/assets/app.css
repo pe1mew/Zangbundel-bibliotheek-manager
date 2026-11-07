@@ -320,3 +320,25 @@ svg.sev-ok { fill: var(--fire-orange); }
 @media (prefers-reduced-motion: reduce) {
   .app, .edge, .splash, .toast { transition: none; animation: none; }
 }
+
+/* M5.2: the song view (GD-13, GD-19) and the song's data (GD-05), as the mock */
+.view { max-width: 720px; margin: 0 auto; padding: 32px 40px 64px; overflow-wrap: anywhere; }
+.viewhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.viewhead h1 { font-size: 30px; margin: 0 0 4px; }
+.headbtns { display: flex; gap: 8px; align-items: center; flex: none; }
+.lyrics { font-size: 20px; line-height: 1.6; }
+.lyrics .sec { margin: 0 0 22px; }
+.lyrics .lbl { font-size: 15px; color: var(--secondary); margin-bottom: 2px; }
+.lyrics .line { white-space: pre-wrap; }
+.lyrics .gap { height: .8em; }
+.chord { color: var(--fire-orange); font-size: .7em; font-weight: 600; vertical-align: super; margin: 0 1px; }
+.annot { color: var(--secondary); font-size: .7em; font-style: italic; vertical-align: super; margin: 0 1px; }
+.remark { color: var(--secondary); font-style: italic; margin: 0 0 18px; }
+.sec .remark { margin: 0; }
+.remark.box { font-style: normal; border: 1px solid var(--grey); border-radius: 6px; padding: 0 8px; display: inline-block; }
+.home h1 { overflow-wrap: anywhere; }
+.songdata .flabel { font-size: 13px; color: var(--secondary); margin-bottom: 4px; }
+.field .value { min-height: 22px; overflow-wrap: anywhere; }
+.field .value.none { color: var(--secondary); font-style: italic; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--grey); color: var(--secondary); border-radius: 999px; padding: 2px 10px; font-size: 13px; }

@@ -445,7 +445,26 @@ Each milestone ends with its exit checks passing and the result written to `desi
 - **Open:**
   - the Sets tab of the right bar comes with M5.5;
   - (done) closing the browser tab with work that would be lost asks first, the owner's GD-42: `app/leave-guard.js` listens to `beforeunload` only while there are changes not yet downloaded or a new key not yet downloaded. Tested with `tests/unit/leave-guard.test.mjs` and in the browser pane with a dispatched `beforeunload` (no question before a change, one after a delete, none after downloading, one for a new key); the browser's own dialog itself was not shown.
-- **Next:** M5.2 song view; M5.3 needs the M2.3 block form first.
+
+**M5.2 done.**
+- **`chordpro.js`:**
+  - `lineSegments(line)`: a content line as chord, annotation and text segments, by the escape and bracket rules of 5.4 and the trailing-space rule of 9.1.
+  - `songView(text)`: the song as the view shows it, in file order. Verse, chorus and bridge come with their own label or none; verses are numbered with the implicit ones (7.1, 7.3); a `{chorus}` repeat carries the chorus's lines again (7.2); comments become remarks in place (7.4); blank lines inside an environment become gaps. Tab, grid, ABC and unknown blocks, file comments and other directives are not shown.
+  - One set of rules: over all 401 songs of the test libraries, the view's lines are exactly `parseSong`'s canonical line list (`tests/unit/songview.test.mjs`).
+- **The worker's `song` op** (`songDetails`) gives a song's sections and its metadata (6.1); the page never parses a song (SR-30).
+- **`app/songview.js`:**
+  - The centre shows the selected song (GD-13): title, subtitle, words and music; *Verwijderen* (GD-16, M-62, then the next song) and *Bewerken* (waits for M5.3); the lyrics with labels generated in the interface language where the song has none, chords highlighted inline, annotations greyed, remarks in place.
+  - The left bar shows the song's data read-only (GD-05; editing them is M5.3): title, language, words, music, copyright, licence (empty: the library's), source, tags, song ID.
+  - With no song selected, the centre shows the library's title, a lead and *Lied toevoegen* (M5.3), as the mock.
+- **`main.js`:** the centre is redrawn only when what it shows changes, so the reader keeps their place in a long song; a late answer from the worker for a song no longer selected is dropped.
+- **Tested:** `tests/unit/songview.test.mjs`, 9 tests: segments, environments and numbering, repeats, remarks and hidden blocks, the corpus check, `songDetails`, generated labels, the view, the song's data. `node --test`: 334 of 334. Container test: 81 of 81 (a first run failed the server's upload-lock timing test, unrelated to this change; the rerun passed, see the gotcha log).
+- **In the browser pane (Chromium), on `valid-unsigned`:**
+  - the library's home; *Vuur in de nacht* with *Couplet 1*, *Refrein*, *Couplet 2*, *Brug* and the chorus repeated, its data in the left bar;
+  - *Fire in the Night* with 30 chords inline and its own labels as written;
+  - the reading position kept while searching the list;
+  - deleting from the view after M-62, the next song shown; the library title back to the library;
+  - console clean, apart from Chrome refusing a leave prompt when the tool reloaded a tab with changes (Chrome shows it only after a user gesture).
+- **Next:** M2.3 block form, then M5.3 song editor; M5.5 sets.
 
 ### M6 — Open, save and sign (M)
 

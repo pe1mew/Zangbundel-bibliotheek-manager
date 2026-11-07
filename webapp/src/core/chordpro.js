@@ -231,3 +231,127 @@ export function parseSong(text) {
   }
   return { meta, unknown, lines, problems, metaLines, unknownAt };
 }
+
+/**
+ * A content line as segments for the song view (5.4; webappGUI GD-19): [{ chord, annotation, text }],
+ * each segment a chord or annotation with the text that follows it, the first possibly without either.
+ * The texts together are exactly the display text of 9.1 (displayText), so the view shows what the
+ * rules check; a bracket that is not a chord stays text, as there.
+ */
+export function lineSegments(line) {
+  const segs = [];
+  let cur = { chord: null, annotation: null, text: '' };
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '\\' && i + 1 < line.length) {
+      const next = line[i + 1];
+      cur.text += '[]{}\\'.includes(next) ? next : ch + next;
+      i++;
+    } else if (ch === '[') {
+      const j = line.indexOf(']', i + 1);
+      if (j < 0 || line.slice(i + 1, j).includes('[')) {
+        cur.text += ch;
+        continue;
+      }
+      const token = line.slice(i + 1, j);
+      if (cur.chord !== null || cur.annotation !== null || cur.text !== '') segs.push(cur);
+      cur = token.startsWith('*') ? { chord: null, annotation: token.slice(1), text: '' } : { chord: token, annotation: null, text: '' };
+      i = j;
+    } else {
+      cur.text += ch;
+    }
+  }
+  segs.push(cur);
+  for (const s of segs) s.text = s.text.replace(/\t/g, ' ');
+  // 9.1: trailing spaces go from the end of the line, across segments; the chords stay
+  for (let k = segs.length - 1; k >= 0; k--) {
+    const kept = trimEndSpace(segs[k].text);
+    const whole = kept.length === 0;
+    segs[k].text = kept;
+    if (!whole) break;
+  }
+  return segs.filter((s, k) => k === 0 || s.chord !== null || s.annotation !== null || s.text !== '');
+}
+
+const REMARKS = { comment: 'plain', comment_italic: 'italic', comment_box: 'box' };
+
+/**
+ * The song as the song view shows it (7.1 to 7.4; webappGUI GD-19), in file order:
+ *   { kind: 'verse' | 'chorus' | 'bridge', label, number, implicit, repeat, lines }  and  { kind: 'remark', text, style }
+ * where a line is { segments } (lineSegments), { remark, style } or { gap: true } (a blank line inside an
+ * environment). label is the environment's own label or null (the app then generates one); number counts
+ * verses, implicit ones included (7.1); a {chorus} repeat carries the chorus's lines again (7.2). Tab, grid,
+ * ABC and unknown environments, file comments and other directives are not shown, as in the app.
+ */
+export function songView(text) {
+  const sections = [];
+  const choruses = [];
+  let env = null;
+  let section = null;                                     // the open environment's section
+  let implicit = null;                                    // the implicit verse being collected (7.3)
+  let verses = 0;
+  const open = (s) => {
+    if (s.kind === 'verse') s.number = ++verses;
+    sections.push(s);
+    return s;
+  };
+  const dropTrailingGap = (s) => {
+    while (s && s.lines.length && s.lines[s.lines.length - 1].gap) s.lines.pop();
+  };
+  for (const raw of text.split('\n')) {
+    const line = trimBlank(raw);
+    if (raw.startsWith('#')) continue;                    // a file comment is never shown (7.4)
+    if (line === '') {
+      if (section && section.lines.length && !section.lines[section.lines.length - 1].gap) section.lines.push({ gap: true });
+      if (env === null) implicit = null;                  // 7.3: a blank line ends an implicit verse
+      continue;
+    }
+    const starts = line.startsWith('{');
+    const ends = line.endsWith('}') && !escaped(line, line.length - 1);
+    const inner = starts && ends ? line.slice(1, -1) : '';
+    if (starts !== ends || [...inner].some((c, i) => (c === '{' || c === '}') && !escaped(inner, i))) continue;   // SNG-04
+    if (starts) {
+      const colon = inner.indexOf(':');
+      let name = trimBlank(colon < 0 ? inner : inner.slice(0, colon)).toLowerCase();
+      const value = colon < 0 ? '' : trimBlank(inner.slice(colon + 1));
+      name = ALIASES[name] || name;
+      if (name.startsWith('start_of_')) {
+        dropTrailingGap(section);
+        implicit = null;
+        env = name.slice('start_of_'.length);
+        section = SHOWN_ENVS.has(env) ? open({ kind: env, label: value || null, number: null, implicit: false, repeat: false, lines: [] }) : null;
+      } else if (name.startsWith('end_of_')) {
+        dropTrailingGap(section);
+        if (env === 'chorus' && section) choruses.push(section);
+        env = null;
+        section = null;
+      } else if (name === 'chorus') {
+        implicit = null;
+        if (choruses.length) {
+          const labelled = value ? choruses.filter((c) => c.label === value) : [];
+          const picked = labelled.length ? labelled[labelled.length - 1] : choruses[choruses.length - 1];
+          sections.push({ kind: 'chorus', label: value || picked.label, number: null, implicit: false, repeat: true, lines: picked.lines });
+        }
+      } else if (REMARKS[name]) {
+        const remark = { remark: value, style: REMARKS[name] };
+        if (section) section.lines.push(remark);
+        else if (env === null) {
+          implicit = null;
+          sections.push({ kind: 'remark', text: value, style: REMARKS[name] });
+        }
+      }
+      continue;
+    }
+    if (env !== null && !section) continue;               // tab, grid, abc, unknown: not shown (7.1, 10.1)
+    const segments = lineSegments(raw);
+    if (!segments.some((s) => s.text !== '' || s.chord !== null || s.annotation !== null)) continue;
+    if (section) {
+      section.lines.push({ segments });
+    } else {
+      if (!implicit) implicit = open({ kind: 'verse', label: null, number: null, implicit: true, repeat: false, lines: [] });
+      implicit.lines.push({ segments });
+    }
+  }
+  dropTrailingGap(section);
+  return sections;
+}

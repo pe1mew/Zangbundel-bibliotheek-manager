@@ -145,4 +145,7 @@
     - *Openen*/*Nieuw* now ask M-60 with undownloaded changes (afterClose). GD-42 (owner): `leave-guard.js` adds beforeunload only while changes or a new key are not downloaded.
     - Node 18 (container): a plain Event's returnValue is read-only; tests use a subclass with returnValue as a field.
     - Python heredoc patches turn '\\n' in JS into a real newline: use the Edit tool for JS string literals.
-  - Next: M5.2 song view; then M2.3 block form before M5.3, M5.5 sets.
+  - M5.2 done (uncommitted): `chordpro.js` lineSegments/songView (sections in file order; lines {segments} | {remark, style} | {gap}); worker op `song` → songDetails(text) {sections, meta}; `songview.js` (songViewNode, songDataNode, libraryHomeNode, sectionLabel); `session.songDetails(id)`.
+    - main.js: centre redrawn only on a key change (centreKey); `shown` holds the selected song's details; the left bar shows song data when a song is selected, else the cached form.
+    - The browser pane caps its tabs (about 9): close old test tabs before a new check.
+  - Next: M2.3 block form (needed by M5.3), then M5.3 song editor, M5.5 sets.

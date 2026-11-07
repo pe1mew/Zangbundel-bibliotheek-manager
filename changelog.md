@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M5.2: the song view** (`design/implementationPlan.md`).
+  - **The centre:** a selected song shows with its labels, chords, repeated choruses and remarks, as the app shows it; *Verwijderen* works there too.
+  - **The left bar:** the song's data, read-only for now.
+  - **Library home:** without a song selected, the centre shows the library's title.
+  - **Engine:** `chordpro.js` `songView` and `lineSegments`; the worker's `song` op. Over all 401 songs of the test libraries the view shows exactly the canonical line list.
+  - **Tests:** `songview.test.mjs`; `node --test` 334 of 334. Checked in Chromium.
 - **M5.1: the song list** (`design/implementationPlan.md`).
   - **Finding songs:** search, *Ook in de tekst*, A–Z/Z–A, and language and tag chips, as in the app's songbook; *Wis filters*.
   - **Rows:** each shows the song's worst finding, its language and lyricist.
