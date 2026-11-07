@@ -389,3 +389,26 @@ svg.sev-ok { fill: var(--fire-orange); }
   padding: 14px 32px; background: linear-gradient(transparent, var(--bg) 30%);
 }
 .editfoot .delsong { margin-right: auto; }
+
+/* M5.3b: the two editing modes (GD-38) and the code mode with its checks (EDT-33), as the mock */
+.modes { display: flex; align-items: center; gap: 10px; }
+.segmented { display: inline-flex; border: 1px solid var(--fire-orange); border-radius: 999px; overflow: hidden; }
+.segmented button {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 16px; border: none; background: none;
+  color: var(--fire-orange); font: inherit; font-weight: 600; cursor: pointer;
+}
+.segmented button + button { border-left: 1px solid var(--fire-orange); }
+.segmented button svg { width: 18px; height: 18px; fill: currentColor; }
+.segmented button.on { background: var(--fire-orange); color: var(--night-blue-dark); }
+.segmented button:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: -3px; }
+.codebody { margin-top: 16px; }
+.cptext {
+  display: block; width: 100%; min-height: 55vh; margin-top: 8px; padding: 14px; border-radius: 12px; border: 1px solid var(--grey);
+  background: var(--bg); color: var(--white); font: 15px/1.6 ui-monospace, Consolas, monospace; resize: vertical;
+}
+.cptext:focus { outline: none; border-color: var(--fire-orange); }
+.problems { list-style: none; padding: 0; margin: 8px 0; }
+.problems li { display: flex; gap: 6px; align-items: flex-start; margin: 4px 0; }
+.problems li svg { width: 18px; height: 18px; flex: none; }
+.problems li.ok { color: var(--secondary); }
+.problems li.ok svg { fill: var(--secondary); }

@@ -8,6 +8,7 @@
 
 import { el, icon, listen, setAttrs } from './dom.js';
 import { t } from './i18n.js';
+import { messageFor, severityGroup, severityIcon } from './check.js';
 
 const KINDS = ['verse', 'chorus', 'bridge'];
 const KIND_TEXT = { verse: 'kVerse', chorus: 'kChorus', bridge: 'kBridge' };
@@ -68,13 +69,42 @@ function repeatedChorus(form, i, label) {
 
 const rowsFor = (text) => Math.max(2, text.split('\n').length);
 
+/** The song code as it compares: no spaces or tabs at line ends, no blank lines at the end (song format 8.1). */
+export const sameCode = (a, b) => {
+  const trimEnd = (s) => {                                // linear, unlike /[ \t]+$/ on a long run (SR-33)
+    let i = s.length;
+    while (i > 0 && (s[i - 1] === ' ' || s[i - 1] === '\t')) i--;
+    return s.slice(0, i);
+  };
+  const norm = (s) => {
+    const lines = s.replace(/\r\n?/g, '\n').split('\n').map(trimEnd);
+    while (lines.length && lines[lines.length - 1] === '') lines.pop();
+    return lines.join('\n');
+  };
+  return norm(a) === norm(b);
+};
+// code mode: no control characters but tab and line ends (SNG-01); braces are directives there
+const CODE_FORBIDDEN = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/g;
+export const cleanCode = (text) => String(text).replace(/\r\n?/g, '\n').replace(CODE_FORBIDDEN, '');
+const CODE_MAX = 64 * 1024;                               // FDS 3.5: a larger song is refused anyway (SNG-18)
+
 /**
- * createSongEditor({ lang, form, title, onApply(form), onCancel(), onDelete() }) → { node, form(),
- * changed(), showProblem(text) }. form is the worker's block form; it is edited in a copy.
+ * createSongEditor({ lang, id, text, form, title, onApply(state), onCancel(), onDelete(), onMode(mode),
+ * toText(form), toForm(text), checkCode(text) }) → { node, state(), mode(), changed(), showProblem(text) }.
+ * text and form are the song as opened, as text and as the worker's block form; the form is edited in a
+ * copy. state() is { mode: 'blocks', form } or { mode: 'code', text }. toText, toForm and checkCode go to
+ * the worker: blocks to text ({ text } or { problem }), canonical text to blocks, the song rules over code.
+ * GD-38: switching keeps every change, and switching without changes leaves the song exactly as it was.
  */
-export function createSongEditor({ lang, form: initial, title, onApply, onCancel, onDelete }) {
+export function createSongEditor({ lang, text: original, form: initial, title, onApply, onCancel, onDelete,
+  onMode = () => {}, toText, toForm, checkCode }) {
   let form = structuredClone(initial);
   const start = JSON.stringify(initial);
+  let mode = 'blocks';
+  let code = '';
+  let codeFrom = '';                                      // the code as the code mode opened it
+  let formAtCode = null;                                  // the blocks as they were then
+  let switching = false;
   const sections = el('div', { class: 'sections' }, []);
   const problem = el('p', { class: 'blocked', role: 'alert', hidden: true }, []);
 
@@ -184,31 +214,132 @@ export function createSongEditor({ lang, form: initial, title, onApply, onCancel
     el('button', { type: 'button', class: 'btn btn-outline', on: { click: () => add({ type: 'repeat', label: null }) } }, [icon('add'), t(lang, 'kRepeat')]),
   ]);
 
+  const showProblem = (text) => {
+    problem.replaceChildren(...(text ? [text] : []));
+    problem.hidden = !text;
+    if (text) problem.scrollIntoView?.({ block: 'nearest' });
+  };
+
+  // ---- the code mode (GD-38, EDT-33): the song as ChordPro code, with the song rules while typing
+  const codeArea = el('textarea', { class: 'cptext', spellcheck: 'false', autocomplete: 'off', maxlength: CODE_MAX,
+    'aria-label': t(lang, 'modeCode'), 'aria-describedby': 'code-checks' }, []);
+  const checks = el('ul', { class: 'problems', id: 'code-checks', 'aria-live': 'polite' }, []);
+  const codeHint = el('div', { class: 'hint', hidden: true }, []);
+  let checkSeq = 0;
+  let checkTimer = null;
+  const runChecks = () => {
+    const mine = ++checkSeq;
+    checkCode(code).then((findings) => {
+      if (mine !== checkSeq) return;                      // a newer check is on its way
+      const shown = findings || [];                       // as Controle shows them, Info included
+      checks.replaceChildren(...(shown.length
+        ? shown.map((f) => el('li', {}, [severityIcon(severityGroup(f.severity)), messageFor(lang, f)]))
+        : [el('li', { class: 'ok' }, [icon('check'), t(lang, 'checkNone')])]));
+    }, () => {});
+  };
+  listen(codeArea, 'input', () => {
+    const clean = cleanCode(codeArea.value);
+    if (clean !== codeArea.value) {
+      const at = Math.max(0, codeArea.selectionStart - (codeArea.value.length - clean.length));
+      codeArea.value = clean;
+      codeArea.setSelectionRange(at, at);
+      hint(codeHint, t(lang, 'pasted'));
+    }
+    code = codeArea.value;
+    setAttrs(codeArea, { rows: Math.max(12, code.split('\n').length + 1) });
+    clearTimeout(checkTimer);
+    checkTimer = setTimeout(runChecks, 300);              // EDT-42: as the user types, without a check per key
+  });
+  const codeBody = el('div', { class: 'codebody' }, [el('p', { class: 'muted small' }, [t(lang, 'textHelp')]), codeArea, codeHint, checks]);
+  const blocksBody = el('div', { class: 'blocksbody' }, [sections, addRow]);
+
+  // ---- the two modes (GD-38): a radio group, one Tab stop, the arrow keys move between them
+  const radios = {};
+  const radio = (name, iconName, text) => {
+    const b = el('button', { type: 'button', role: 'radio', 'data-mode': name, on: {
+      click: () => switchTo(name),
+      keydown: (e) => {
+        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+        e.preventDefault();
+        const other = name === 'blocks' ? 'code' : 'blocks';
+        switchTo(other).then(() => radios[other].focus());
+      },
+    } }, [icon(iconName), text]);
+    radios[name] = b;
+    return b;
+  };
+  const modes = el('div', { class: 'modes' }, [
+    el('span', { class: 'muted small', id: 'mode-label' }, [t(lang, 'modeLabel')]),
+    el('div', { class: 'segmented', role: 'radiogroup', 'aria-labelledby': 'mode-label' }, [
+      radio('blocks', 'list', t(lang, 'modeBlocks')), radio('code', 'edit', t(lang, 'modeCode'))]),
+  ]);
+  const body = el('div', {}, [blocksBody]);
+  const markMode = () => {
+    for (const [name, b] of Object.entries(radios)) {
+      setAttrs(b, { 'aria-checked': name === mode ? 'true' : 'false', tabindex: name === mode ? 0 : -1, class: name === mode ? 'on' : null });
+    }
+  };
+
+  async function switchTo(next) {
+    if (next === mode || switching) return;
+    switching = true;
+    try {
+      showProblem(null);
+      if (next === 'code') {
+        const r = await toText(form);
+        if (r.problem) {
+          showProblem(t(lang, 'switchProblem'));         // a line or label the blocks cannot write: fix it first
+          return;
+        }
+        code = r.text;
+        codeFrom = r.text;
+        formAtCode = form;
+        codeArea.value = code;
+        setAttrs(codeArea, { rows: Math.max(12, code.split('\n').length + 1) });
+        hint(codeHint, null);
+        mode = 'code';
+        body.replaceChildren(codeBody);
+        runChecks();
+        codeArea.focus();
+      } else {
+        // GD-38: code that was not changed gives back exactly the blocks it came from
+        form = code === codeFrom ? formAtCode : structuredClone(await toForm(code));
+        mode = 'blocks';
+        body.replaceChildren(blocksBody);
+        draw();
+        sections.querySelector('textarea')?.focus();
+      }
+      markMode();
+      onMode(mode);
+    } finally {
+      switching = false;
+    }
+  }
+
   const node = el('div', { class: 'editwrap' }, [
     el('div', { class: 'edit' }, [
-      el('div', { class: 'edithead' }, [el('h2', {}, [t(lang, 'editing', { t: title })])]),
+      el('div', { class: 'edithead' }, [el('h2', {}, [t(lang, 'editing', { t: title })]), modes]),
       problem,
-      sections,
-      addRow,
+      body,
     ]),
     el('div', { class: 'editfoot' }, [
       el('button', { type: 'button', class: 'btn btn-text delsong', on: { click: () => onDelete() } }, [icon('delete'), t(lang, 'deleteSong')]),
       el('button', { type: 'button', class: 'btn btn-text', on: { click: () => onCancel() } }, [t(lang, 'cancel')]),
-      el('button', { type: 'button', class: 'btn btn-primary', on: { click: () => onApply(form) } }, [icon('check'), t(lang, 'apply')]),
+      el('button', { type: 'button', class: 'btn btn-primary', on: { click: () => onApply(mode === 'code' ? { mode, text: code } : { mode, form }) } },
+        [icon('check'), t(lang, 'apply')]),
     ]),
   ]);
+  markMode();
   draw();
 
   return {
     node,
-    form: () => form,
+    /** What Toepassen applies, in the mode that is open (GD-38). */
+    state: () => (mode === 'code' ? { mode, text: code } : { mode, form }),
+    mode: () => mode,
     /** GD-36: whether there is anything to apply or throw away. */
-    changed: () => JSON.stringify(form) !== start,
-    /** A block form the worker could not write (fromBlocks): shown above the blocks. */
-    showProblem(text) {
-      problem.replaceChildren(...(text ? [text] : []));
-      problem.hidden = !text;
-      if (text) problem.scrollIntoView?.({ block: 'nearest' });
-    },
+    changed: () => (mode === 'code' ? !sameCode(code, original) : JSON.stringify(form) !== start),
+    /** What the worker could not write: shown above the song. */
+    showProblem,
   };
 }

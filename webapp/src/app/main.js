@@ -253,7 +253,9 @@ function start() {
     if (!editing) return true;
     const { id, editor } = editing;
     const lang = language.get();
-    const r = await session.unblocks(editor.form());
+    // GD-38: the song is applied in the mode that is open; code is stored canonically (EDT-57)
+    const st = editor.state();
+    const r = st.mode === 'code' ? await session.canonicalSong(st.text) : await session.unblocks(st.form);
     if (r.problem) {
       editor.showProblem(t(lang, 'applyProblem'));       // a form the worker cannot write: nothing applied
       return false;
@@ -269,12 +271,17 @@ function start() {
   const startEdit = async (id) => {
     if (session.isReadOnly() || (editing && editing.id === id)) return;
     const [form, details] = await Promise.all([session.songBlocks(id), session.songDetails(id)]);
-    if (!form) return;                                    // not text: the code mode only (M5.3b)
+    if (!form) return;                                    // not text (SNG-01, SNG-18): nothing to show or edit
     const lang = language.get();
     const title = (details && details.meta && details.meta.title) || t(lang, 'noTitle');
     selected = id;
-    editing = { id, title, token: ++editTokens, editor: createSongEditor({ lang, form, title,
-      onApply: () => applyEdit(), onCancel: stopEditing, onDelete: () => onDeleteSong(id, title) }) };
+    editing = { id, title, token: ++editTokens, editor: createSongEditor({ lang, text: session.get().library.songs.get(id), form, title,
+      onApply: () => applyEdit(), onCancel: stopEditing, onDelete: () => onDeleteSong(id, title), onMode: () => render(),
+      // GD-38, EDT-33: the worker turns blocks into code and code into blocks, and checks the code as it is typed
+      toText: (f) => session.unblocks(f),
+      toForm: async (code) => session.blocksOf((await session.canonicalSong(code)).text),
+      checkCode: async (code) => (await session.songCheck(id, code)).findings,
+    }) };
     render();
   };
   // GD-36: an action that leaves the editor asks first when there is something to apply or throw away
@@ -350,7 +357,9 @@ function start() {
     if (selected) {
       leftKey = `song|${selected}`;
       form = null;
-      replace(layout.left, shown.details ? songDataNode(lang, selected, shown.details) : el('p', { class: 'empty' }, ['…']));
+      replace(layout.left, editing && editing.editor.mode() === 'code'
+        ? el('div', { class: 'libform' }, [el('h3', {}, [t(lang, 'songData')]), el('p', { class: 'muted' }, [t(lang, 'textModeLeft')])])
+        : shown.details ? songDataNode(lang, selected, shown.details) : el('p', { class: 'empty' }, ['…']));
     }
     const formKey = state.library ? `${state.generation}|${lang}|${readOnly}` : null;
     if (!selected && formKey !== leftKey) {

@@ -125,6 +125,7 @@ export function createSession({ client, crypto = null, now = () => new Date() })
     async updateSong(id, text) {
       const lib = state.library;
       if (!lib || isReadOnly() || typeof text !== 'string' || !lib.songs.has(id)) return false;
+      if (lib.songs.get(id) === text) return true;        // nothing changed: no change to download (EDT-51)
       const library = { ...lib, songs: new Map(lib.songs), rawSongs: new Map(lib.rawSongs || []) };
       library.songs.set(id, text);
       library.rawSongs.delete(id);
@@ -143,6 +144,21 @@ export function createSession({ client, crypto = null, now = () => new Date() })
     /** M2.3: blocks back to text in the worker: { text } or { problem }. */
     unblocks(form) {
       return client.request('unblocks', { form });
+    },
+
+    /** M5.3b, GD-38: typed code as blocks, when the user switches back to *Blokken*. */
+    blocksOf(text) {
+      return client.request('blocks', { text });
+    },
+
+    /** M5.3b, EDT-33: the song rules over typed code, with their lines: { findings }. */
+    songCheck(id, text) {
+      return client.request('songCheck', { id, text });
+    },
+
+    /** M5.3b, EDT-57: typed code as it will be stored: { text }. */
+    canonicalSong(text) {
+      return client.request('canonical', { text });
     },
 
     /** GD-05, GD-19: one song's sections and metadata, parsed in the worker (SR-30); null when it is gone. */

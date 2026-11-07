@@ -155,4 +155,7 @@
     - `editor.js` createSongEditor({lang, form, title, onApply, onCancel, onDelete}) → {node, form(), changed(), showProblem()}.
     - main.js: `editing`, `startEdit`, `applyEdit`, `leaving(fn)` wraps every action that leaves the editor (GD-36).
     - session.updateSong/songBlocks/unblocks; song summary has `editable`.
-  - Next: M5.3b Code (ChordPro) mode (GD-18, GD-38).
+  - M5.3a committed. M5.3b done (uncommitted).
+    - editor modes: state() {mode, form|text}, mode(), changed() (code: sameCode vs the opened text); callbacks toText/toForm/checkCode go to the worker.
+    - Worker ops `songCheck` (validate.js checkSongText) and `canonical`. session.updateSong is a no-op for identical text.
+  - Next: M5.3c song fields in the left bar (EDT-34, GD-05) via setMeta on the block form.

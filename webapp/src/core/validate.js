@@ -88,6 +88,18 @@ function checkSong(id, bytes, add) {
   return title || null;
 }
 
+/**
+ * FDS 6.6 for one song as typed in the code mode (EDT-33, M5.3b): the song rules of checkSong over the
+ * text as it will be stored, so the editor shows the same messages, with their lines, as Controle.
+ */
+export function checkSongText(id, text) {
+  const findings = [];
+  const add = (code, severity, where, params) => findings.push({ code, severity, ...(where == null ? {} : { where }),
+    ...(params ? { params } : {}) });
+  checkSong(id, new TextEncoder().encode(String(text)), add);
+  return findings;
+}
+
 function deepEqual(a, b, depth = 0) {
   if (a === b) return true;
   if (depth > 32) return false;                       // deeper than any manifest field: not equal

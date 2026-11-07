@@ -510,7 +510,32 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - the bridge moved up with focus kept; a new chorus added and typed in;
   - *Toepassen* showed the song in its new order with *Wijzigingen toegepast*, the library *gewijzigd*;
   - GD-36: no question without changes; *Verder bewerken*, *weggooien* (notice, then the click) and *toepassen* (then the click); *Annuleren* without a question.
-- **Next:** M5.3b, the *Code (ChordPro)* mode.
+
+**M5.3b done.**
+- ***Bewerken als* (GD-38):** *Blokken* and *Code (ChordPro)* above the song, a radio group with one Tab stop; the arrow keys switch, and the open mode is filled orange.
+- **Switching:**
+  - To the code, the worker writes the blocks out (`unblocks`); a line or label it cannot write keeps the editor in *Blokken* with *Wisselen kan nog niet*.
+  - Back to the blocks, code that was not changed gives back exactly the blocks it came from; changed code is made canonical and read as blocks again (`canonical`, `blocks`).
+  - So every change made in one mode is in the other, and switching without a change leaves the song as it was.
+- **The code mode (EDT-33):**
+  - the song's ChordPro code in a monospace field (at most 64 KiB, the limit of SNG-18); control characters are taken out, braces stay;
+  - 300 ms after typing stops, the worker checks the code by the song rules of FDS 6.6 (`songCheck`, `validate.js` `checkSongText`) and the editor lists the messages with their lines, as Controle shows them, or *Geen fouten of waarschuwingen*;
+  - the left bar says the data is now in the code (*Je bewerkt nu de ChordPro-tekst*).
+- ***Toepassen*** applies in the mode that is open; code is stored canonically (EDT-57).
+- **No-op apply:** a song applied without a change is no change: the library is not marked changed and the next download stays unchanged (EDT-51).
+- **GD-36:** in the code mode, changes are compared with the song as opened, ignoring line-end spaces and blank lines at the end.
+- **Not text:** a song that is not text (SNG-01, SNG-18) still cannot be edited: its bytes cannot be shown as code. It can be deleted.
+- **Tested:**
+  - `tests/unit/editor.test.mjs`, 4 more: comparing and cleaning code, the code checks against Controle's findings for all songs of the test libraries (identical), checks with their lines and canonical storage, the unchanged apply.
+  - `node --test`: 355 of 355. Container test: 81 of 81.
+- **In the browser pane (Chromium):**
+  - *Vader Jacob* to code and back without a question;
+  - `{c: open` reported as line 7, gone once fixed;
+  - a remark typed in the code shown as a locked block in *Blokken*;
+  - *Toepassen* in code mode;
+  - the arrow keys switching with focus following;
+  - *Fire in the Night* through both modes and applied: the library not marked changed.
+- **Next:** M5.3c, the song's fields in the left bar.
 
 ### M6 — Open, save and sign (M)
 

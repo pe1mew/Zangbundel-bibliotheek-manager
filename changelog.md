@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M5.3b: the *Code (ChordPro)* mode** (`design/implementationPlan.md`).
+  - **Bewerken als:** switch between *Blokken* and *Code (ChordPro)* at any moment; changes come along, and switching without a change leaves the song as it was.
+  - **Checks while typing:** the code mode checks the song as you type, with the same messages and lines as Controle.
+  - ***Toepassen*** works in either mode; applying an unchanged song changes nothing.
+  - **Tests:** `editor.test.mjs`; `node --test` 355 of 355. Checked in Chromium.
 - **M5.3a: editing a song in blocks** (`design/implementationPlan.md`).
   - ***Bewerken*** opens the song's verses, choruses and bridges as blocks, each with its kind and label.
   - **Blocks:** move them up and down, delete them, add new ones; remarks and notes stay locked in their place.

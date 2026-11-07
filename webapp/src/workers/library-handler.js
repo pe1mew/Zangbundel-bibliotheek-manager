@@ -2,7 +2,7 @@
 // The library worker's work, as a plain module so it can be tested without a browser
 // (securityAssessment SR-30; implementationPlan M2.8). library-worker.js wires it to messages.
 //
-// Request  { id, op, payload }            op: 'validate' | 'open' | 'check' | 'save' | 'copy' | 'new' | 'song' | 'blocks' | 'unblocks'
+// Request  { id, op, payload }            op: 'validate' | 'open' | 'check' | 'save' | 'copy' | 'new' | 'song' | 'blocks' | 'unblocks' | 'songCheck' | 'canonical'
 // Response { id, ok: true, result }  or  { id, ok: false, error }
 //
 // Every library byte is read here, never on the main thread. Results are structured data only
@@ -11,9 +11,9 @@
 // { name, publicKey, port }, the port from app/crypto-client.js signerPort(): the manifest bytes go
 // to the crypto worker over it and the signature comes back (FDS SG-02, EDT-60, EDT-62).
 
-import { validateLibrary } from '../core/validate.js';
+import { checkSongText, validateLibrary } from '../core/validate.js';
 import { copyLibrary, newLibrary, openLibrary, saveLibrary } from '../core/library.js';
-import { parseSong, songView } from '../core/chordpro.js';
+import { canonicalize, parseSong, songView } from '../core/chordpro.js';
 import { fromBlocks, toBlocks } from '../core/blocks.js';
 
 /** The songs as the screens list them: { id, title }, read here so the main thread never parses a song (SR-30). */
@@ -112,6 +112,10 @@ export async function handleMessage(message) {
           signer: payload.signer ? portSigner(payload.signer) : undefined }) };
       case 'song':
         return { id, ok: true, result: songDetails(payload.text) };
+      case 'songCheck':                               // M5.3b, EDT-33: the song rules while typing in the code mode
+        return { id, ok: true, result: { findings: checkSongText(payload.id, payload.text) } };
+      case 'canonical':                               // M5.3b, EDT-57: typed code as it will be stored
+        return { id, ok: true, result: { text: canonicalize(new TextEncoder().encode(String(payload.text))).text } };
       case 'blocks':                                  // M2.3: a song's text as blocks for the section editor (GD-19)
         return { id, ok: true, result: toBlocks(payload.text) };
       case 'unblocks': {                              // and back: { text } or { problem }, never a half-written song

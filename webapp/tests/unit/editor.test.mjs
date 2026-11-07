@@ -68,3 +68,54 @@ test('EDT-23: a signed library without its key gives no blocks to apply', async 
   assert.equal(await s.updateSong('vader-jacob', `${text}la\n`), false);
   assert.equal(s.get().library.songs.get('vader-jacob'), text);
 });
+
+const { cleanCode, sameCode } = await import('../../src/app/editor.js');
+const { validateLibrary } = await import('../../src/core/validate.js');
+const { openLibrary } = await import('../../src/core/library.js');
+const { readdirSync } = await import('node:fs');
+
+test('GD-38: code compares without line-end spaces or blank lines at the end; typed code keeps braces, not control characters', () => {
+  assert.ok(sameCode('{title: X}\nla  \n\n', '{title: X}\nla\n'));
+  assert.ok(sameCode('a\r\nb', 'a\nb\n'));
+  assert.ok(!sameCode('a\nb\n', 'a\n b\n'));
+  assert.equal(cleanCode('{c: x}\r\n\tla\u0000\u001b'), '{c: x}\n\tla');
+  assert.ok(sameCode(`${' '.repeat(60000)}x\n`, `${' '.repeat(60000)}x`));   // linear on a long run (SR-33)
+});
+
+test('EDT-33: the code mode checks a song by the rules Controle uses: the same findings for every song of the test libraries', async () => {
+  const LIBS = join(HERE, '..', '..', '..', 'test-libraries');
+  let songs = 0;
+  for (const name of readdirSync(LIBS).filter((n) => n.endsWith('.zbl')).sort()) {
+    const bytes = new Uint8Array(readFileSync(join(LIBS, name)));
+    const r = await openLibrary(bytes);
+    if (!r.library) continue;
+    const all = (await validateLibrary(bytes)).findings;
+    for (const [id, text] of r.library.songs) {
+      if (text === null) continue;
+      const fromCode = (await handleMessage({ id: 1, op: 'songCheck', payload: { id, text } })).result.findings;
+      const fromLibrary = all.filter((f) => /^SNG-/.test(f.code) && f.where === id);
+      assert.deepEqual(fromCode, fromLibrary, `${name}: ${id}`);
+      songs += 1;
+    }
+  }
+  assert.ok(songs >= 400, `only ${songs} songs`);
+});
+
+test('EDT-33, EDT-57: typed code is checked with its lines, and stored canonically', async () => {
+  const typed = '{title: X}\r\n{meta: id x}\r\n{meta: language nl}\r\n{c: open\r\nla  \r\n\r\n\r\n';
+  const { findings } = (await handleMessage({ id: 1, op: 'songCheck', payload: { id: 'x', text: typed } })).result;
+  assert.deepEqual(findings.find((f) => f.code === 'SNG-04').params.line, 4);
+  const { text } = (await handleMessage({ id: 2, op: 'canonical', payload: { text: typed } })).result;
+  assert.equal(text, '{title: X}\n{meta: id x}\n{meta: language nl}\n{c: open\nla\n');
+});
+
+test('EDT-51: applying a song that did not change is no change to download', async () => {
+  const s = createSession({ client, now: () => NOW });
+  await s.open(new File([corpus('valid-unsigned')], 'v.zbl'));
+  const text = s.get().library.songs.get('vader-jacob');
+  const r = await s.unblocks(await s.songBlocks('vader-jacob'));
+  assert.equal(r.text, text);
+  assert.equal(await s.updateSong('vader-jacob', r.text), true);
+  assert.equal(s.get().dirty, false);
+  assert.equal((await s.preview()).changed, false);
+});
