@@ -233,6 +233,31 @@ export function parseSong(text) {
 }
 
 /**
+ * What one line of a song is, by the same rules as parseSong (5.2, 5.3): 'blank', 'comment' (a file
+ * comment, # in the first column), 'malformed' (SNG-04), 'directive' with its name (aliases resolved,
+ * lower case; for {meta: x …} the name is 'meta' and meta holds x) and value, or 'content'.
+ */
+export function readLine(raw) {
+  const line = trimBlank(raw);
+  if (raw.startsWith('#')) return { type: 'comment' };
+  if (line === '') return { type: 'blank' };
+  const starts = line.startsWith('{');
+  const ends = line.endsWith('}') && !escaped(line, line.length - 1);
+  const inner = starts && ends ? line.slice(1, -1) : '';
+  if (starts !== ends || [...inner].some((c, i) => (c === '{' || c === '}') && !escaped(inner, i))) return { type: 'malformed' };
+  if (!starts) return { type: 'content' };
+  const colon = inner.indexOf(':');
+  let name = trimBlank(colon < 0 ? inner : inner.slice(0, colon)).toLowerCase();
+  const value = colon < 0 ? '' : trimBlank(inner.slice(colon + 1));
+  name = ALIASES[name] || name;
+  if (name === 'meta') {
+    const m = /^([^ \t]+)[ \t]*(.*)$/.exec(value);
+    return { type: 'directive', name, meta: m ? m[1].toLowerCase() : '', value: m ? trimBlank(m[2]) : '' };
+  }
+  return { type: 'directive', name, value };
+}
+
+/**
  * A content line as segments for the song view (5.4; webappGUI GD-19): [{ chord, annotation, text }],
  * each segment a chord or annotation with the text that follows it, the first possibly without either.
  * The texts together are exactly the display text of 9.1 (displayText), so the view shows what the

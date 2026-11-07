@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M2.3: the block form of a song** (`core/blocks.js`), for the section editor of M5.3.
+  - **Blocks:** a song becomes sections, chorus repeats, metadata lines and locked blocks, and back to text.
+  - **Nothing lost:** unchanged blocks come back byte for byte, for all 401 songs of the test libraries; locked blocks are never rewritten.
+  - **Edits:** changed blocks are written in canonical form; typed lines that would turn into directives or comments are refused.
+  - **Tests:** `blocks.test.mjs`; the fuzz now also covers the song view and the block round trip. `node --test` 343 of 343.
 - **M5.2: the song view** (`design/implementationPlan.md`).
   - **The centre:** a selected song shows with its labels, chords, repeated choruses and remarks, as the app shows it; *Verwijderen* works there too.
   - **The left bar:** the song's data, read-only for now.

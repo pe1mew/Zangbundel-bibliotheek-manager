@@ -18,7 +18,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateLibrary } from '../src/core/validate.js';
 import { openLibrary, saveLibrary } from '../src/core/library.js';
-import { canonicalize, parseSong } from '../src/core/chordpro.js';
+import { canonicalize, parseSong, songView } from '../src/core/chordpro.js';
+import { fromBlocks, toBlocks } from '../src/core/blocks.js';
 import { readCentralDirectory, readEntry, writeZip } from '../src/core/zip.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -210,7 +211,13 @@ export function fuzzChordPro({ iterations = 2000, seed = 1 } = {}) {
     const t0 = performance.now();
     try {
       const c = canonicalize(enc.encode(text));
-      if (c.text !== null) parseSong(c.text);
+      if (c.text !== null) {
+        parseSong(c.text);
+        songView(c.text);                                 // M5.2: the song view reads the same text
+        if (fromBlocks(toBlocks(c.text)) !== c.text) {    // M2.3: the block form loses nothing
+          failures.push({ iteration: i, problem: 'block form round trip differs' });
+        }
+      }
     } catch (e) {
       failures.push({ iteration: i, problem: `threw: ${e.message}` });
     }

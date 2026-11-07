@@ -148,4 +148,6 @@
   - M5.2 done (uncommitted): `chordpro.js` lineSegments/songView (sections in file order; lines {segments} | {remark, style} | {gap}); worker op `song` → songDetails(text) {sections, meta}; `songview.js` (songViewNode, songDataNode, libraryHomeNode, sectionLabel); `session.songDetails(id)`.
     - main.js: centre redrawn only on a key change (centreKey); `shown` holds the selected song's details; the left bar shows song data when a song is selected, else the cached form.
     - The browser pane caps its tabs (about 9): close old test tabs before a new check.
-  - Next: M2.3 block form (needed by M5.3), then M5.3 song editor, M5.5 sets.
+  - M2.3 done (uncommitted): `core/blocks.js` toBlocks/fromBlocks (unchanged block → its raw lines; changed → canonical), lyricLineProblem, valueProblem, metaValues, setMeta; `chordpro.js` readLine; worker ops `blocks`/`unblocks`.
+    - An environment with anything but lyric/blank lines (e.g. {c: …} inside) is one locked block; the Code mode edits it.
+  - Next: M5.3 song editor (Blokken and Code modes, GD-06 to GD-09, GD-11, GD-18, GD-19, GD-33, GD-36, GD-38); then M5.5 sets.

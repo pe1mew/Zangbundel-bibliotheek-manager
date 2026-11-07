@@ -250,7 +250,16 @@ Each milestone ends with its exit checks passing and the result written to `desi
 - **Whitespace as song format v0.24** (FDS draft 0.9, O-11): directive names and values, the `meta` split, setlist lines and the set-name check trim or test spaces and tabs only, no longer JavaScript's `trim()` and `\s`, which also remove a no-break space and U+FEFF. Four regression tests in `tests/unit/whitespace.test.mjs` fail on the code before.
 - **Comments and display text as song format v0.25** (FDS draft 0.9, O-11): a comment is a line whose first character is `#`, so `  # x` is a lyric line; the display text drops trailing spaces and Unicode Zs, Zl and Zp, so a no-break space too. The app's vectors `comment-indented` and `nbsp-display` give its line lists and canonical hashes (`tests/unit/whitespace.test.mjs`). W014, the validator's warning for an indented `#`, is not shown: the owner chose no new Editor rule.
 - **Tag labels** (FDS draft 0.10, D-44): the manifest's optional `tags` is checked by MAN-02 (`tagsProblem` in `manifest.js`), kept in the model as `tags`, written into the manifest and never into the view, copied by Save as copy, and carried over from `zangbundel.json` on conversion, with what breaks §4.1 left out and listed as `tagsLeftOut`. The test libraries `tag-labels` and `tag-label-invalid` bring the corpus to 58 (SC-04: 58 of 58); `tests/unit/tags.test.mjs` has 5 tests. Editing the labels is a screen (M4 or M5, webappGUI GQ-20).
-- **To do:** M2.3's block form and its round trip (GD-18, GD-19, locked blocks byte-exact); it may move to M5, where the editor needs it.
+- **Done since (2026-11-07):** M2.3's block form, `core/blocks.js`, before M5.3 needs it.
+  - `toBlocks(text)`: the song in file order as metadata lines, sections (verse, chorus, bridge, implicit verses), chorus repeats and locked blocks.
+  - An environment is an editable section only when it holds nothing but lyric and blank lines. One with a `{comment}`, a `#` note or anything else inside is locked as a whole, for the *Code (ChordPro)* mode (GD-38). So are tab, grid, ABC and unknown blocks, comments, layout and unknown directives, and malformed lines; locked runs of lines are merged.
+  - `fromBlocks(form)`: a block that still equals how it was read is written back as its original lines, so switching modes without a change gives the song back byte for byte (GD-38). A changed block is written canonically (EDT-57): `{start_of_<kind>[: label]}`, `{chorus[: label]}`, `{name: value}` or `{meta: name value}`. An implicit verse stays implicit while it has no label and no blank line. Locked blocks are never rewritten (GD-19).
+  - It refuses what would change meaning: a typed line that would be a directive, a `#` comment or contain a control character (`lyricLineProblem`, GD-07), a label or value with a brace (`valueProblem`). The editor will check these while typing.
+  - `metaValues` and `setMeta` read and set a metadata field in place; a new field joins the song's head (EDT-34, GD-05).
+  - `chordpro.js` `readLine` classifies one line by the parser's own rules; the worker has ops `blocks` and `unblocks` (the latter answers a problem, never half a song).
+  - **Tested:** `tests/unit/blocks.test.mjs`, 9 tests. All 401 songs of the test libraries come back byte for byte, also after `structuredClone`. Others cover: edits written canonically with the locked blocks byte-exact; kinds, labels and implicit verses; new and reordered blocks; refused lines and values; metadata; 3,000 random songs round-tripped and edited; the worker ops.
+  - **Fuzz:** the ChordPro part of `fuzz.mjs` now also runs `songView` and the block round trip. `--iterations 20000` passed: 20,000 library and 2,000 ChordPro iterations, no failures.
+  - `node --test`: 343 of 343. Container test: 81 of 81.
 
 ### M3 — Keys and signing (M)
 
@@ -464,7 +473,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - the reading position kept while searching the list;
   - deleting from the view after M-62, the next song shown; the library title back to the library;
   - console clean, apart from Chrome refusing a leave prompt when the tool reloaded a tab with changes (Chrome shows it only after a user gesture).
-- **Next:** M2.3 block form, then M5.3 song editor; M5.5 sets.
+- **Next:** M5.3 song editor (the block form of M2.3 is ready); M5.5 sets.
 
 ### M6 — Open, save and sign (M)
 

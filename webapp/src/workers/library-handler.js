@@ -2,7 +2,7 @@
 // The library worker's work, as a plain module so it can be tested without a browser
 // (securityAssessment SR-30; implementationPlan M2.8). library-worker.js wires it to messages.
 //
-// Request  { id, op, payload }            op: 'validate' | 'open' | 'check' | 'save' | 'copy' | 'new' | 'song'
+// Request  { id, op, payload }            op: 'validate' | 'open' | 'check' | 'save' | 'copy' | 'new' | 'song' | 'blocks' | 'unblocks'
 // Response { id, ok: true, result }  or  { id, ok: false, error }
 //
 // Every library byte is read here, never on the main thread. Results are structured data only
@@ -14,6 +14,7 @@
 import { validateLibrary } from '../core/validate.js';
 import { copyLibrary, newLibrary, openLibrary, saveLibrary } from '../core/library.js';
 import { parseSong, songView } from '../core/chordpro.js';
+import { fromBlocks, toBlocks } from '../core/blocks.js';
 
 /** The songs as the screens list them: { id, title }, read here so the main thread never parses a song (SR-30). */
 export function songSummary(library) {
@@ -111,6 +112,15 @@ export async function handleMessage(message) {
           signer: payload.signer ? portSigner(payload.signer) : undefined }) };
       case 'song':
         return { id, ok: true, result: songDetails(payload.text) };
+      case 'blocks':                                  // M2.3: a song's text as blocks for the section editor (GD-19)
+        return { id, ok: true, result: toBlocks(payload.text) };
+      case 'unblocks': {                              // and back: { text } or { problem }, never a half-written song
+        try {
+          return { id, ok: true, result: { text: fromBlocks(payload.form) } };
+        } catch (e) {
+          return { id, ok: true, result: { problem: e instanceof Error ? e.message : String(e) } };
+        }
+      }
       case 'copy':
         return { id, ok: true, result: copyLibrary(payload.library, { now: payload.now, title: payload.title }) };
       case 'new':
