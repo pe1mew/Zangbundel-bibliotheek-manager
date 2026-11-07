@@ -48,7 +48,7 @@ App: the Songbook app's verdict (APP-01), with the rules that refuse it. Editor:
 | `stray-file` | STR-01 | `README.txt` in the library folder, listed | Refused: STR-01 | STR-01 Error | Accepted as a snapshot |
 | `no-songs` | STR-02 | No songs and no sets | Accepted, W013 | STR-02 Warning (no shared findings) | Refused: L008 (unless the user confirms an empty library) |
 | `song-file-misnamed` | STR-05 | The song file of `lorem-ipsum` named `lorem-ipsm.cho` | Refused: STR-05 | STR-05 Error | Accepted; the song skipped (S004) |
-| `song-two-files` | STR-06 | A copy `lorem-ipsum-oud.cho` next to `lorem-ipsum.cho`, listed | Refused: STR-06 | STR-06 Error | Accepted; S004, S005 |
+| `song-two-files` | STR-06 | A copy `lorem-ipsum-oud.cho` next to `lorem-ipsum.cho`, listed | Refused: STR-06 | STR-06 Error | Accepted; the copy skipped (S004), the song itself imported (song format v0.23, S005) |
 | `song-subfolder` | STR-07 | A subfolder `oud/` with a copy of the song, listed | Refused: STR-07 | STR-07 Error | Accepted; S005 |
 | `song-extra-file` | STR-08 | `notities.txt` in the folder of `lorem-ipsum`, listed | Refused: STR-08 | STR-08 Error | Accepted as a snapshot |
 | `song-folder-invalid` | STR-10 | An extra song in the folder `Testlied` with `{meta: id testlied}` | Refused: STR-10, SNG-12 | STR-10 Error, SNG-12 Info | Accepted; the song skipped (S004) |
@@ -122,7 +122,7 @@ VIEW-01 and VIEW-02 are `view-missing` and `view-mismatch` above.
 - **STR-06 and STR-08:** a second `.cho` file is STR-06 only. STR-08 ("no file other than its .cho file") would also cover it if read literally; its message M-17 ("is not a song file") shows it is about other files.
 - **Ignored system files** are left out before any other rule: no PKG-05, STR-01, STR-08 or MAN-05 for them.
 - **PKG-05:** the Editor takes the top-level folder that holds `manifest.json` as the library folder. In the app, APP-02 recognises this format by `manifest.json` "in the single top-level folder", which `two-top-folders` lacks; an app that recognises the format first answers M-20 instead of M-05. The import is refused either way.
-- **PKG-02:** FDS 3.5 bounds the ratio by the ZIP file size, song format 12.2 by the compressed size. `zip-ratio` exceeds both, `song-too-large` neither.
+- **PKG-02:** the ratio is bounded by the ZIP file size, in FDS 3.5 and, since song format v0.23, in 12.2 and A003 too (settled 2026-11-06, FDS O-11). `zip-ratio` exceeds it, `song-too-large` does not.
 - **MAN-07** is "part of MAN-02" in the app, by the FDS. The cases expect the app to name MAN-07, as it names MAN-08 (with M-75). In the Editor a missing licence is MAN-07, not also MAN-02.
 - **VIEW-02** compares the fields the rule names with the manifest; `format`, `format_version` and `min_app_version` are fixed by PF-41 and belong to VIEW-03 (song format L003 to L005). One VIEW-02 finding per file that disagrees (M-37 names one file).
 - **An empty set** (SET-03) is written as `setlists/set-<n>.zbs` with only its title and id lines: PF-43 asks for an empty line before the songs and for the canonical form, and the canonical form has no trailing empty line.

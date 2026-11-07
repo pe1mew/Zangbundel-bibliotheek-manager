@@ -29,11 +29,9 @@
     "verdict": "accepted as snapshot",
     "codes": [
       "A102",
-      "S004",
-      "S005",
-      "SL101"
+      "S004"
     ],
-    "note": "The copy's id differs from its file name and duplicates the song's id."
+    "note": "The copy's id differs from its file name (S004), so the copy is skipped; a skipped file takes no part in the duplicate-id check (song format v0.23, 11.3 S005), so lorem-ipsum.cho itself imports and its setlist entry is found."
   },
   "sha256": "cf639c5c39dae1dd7f851628371168edd185517b3942dd24ff15b9867f24132b"
 }

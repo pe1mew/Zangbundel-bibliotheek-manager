@@ -583,8 +583,10 @@ def rule_cases(base):
     extra_file('song-two-files', 'songs/lorem-ipsum/lorem-ipsum-oud.cho', lorem, 'STR-06', 'songs/lorem-ipsum',
                'A second .cho file, "lorem-ipsum-oud.cho" (a copy of the song), in the folder of lorem-ipsum, listed '
                'in the manifest. STR-06, not STR-08: STR-08 is about files that are not song files (M-17).',
-               f11('accepted as snapshot', ['A102', 'S004', 'S005', 'SL101'],
-                   "The copy's id differs from its file name and duplicates the song's id."))
+               f11('accepted as snapshot', ['A102', 'S004'],
+                   "The copy's id differs from its file name (S004), so the copy is skipped; a skipped file takes no "
+                   "part in the duplicate-id check (song format v0.23, 11.3 S005), so lorem-ipsum.cho itself imports "
+                   "and its setlist entry is found."))
 
     extra_file('song-subfolder', 'songs/lorem-ipsum/oud/lorem-ipsum.cho', lorem, 'STR-07', 'songs/lorem-ipsum',
                'A subfolder "oud/" with a copy of the song in the folder of lorem-ipsum, listed in the manifest.',
