@@ -1,0 +1,35 @@
+{
+  "description": "As tag-labels, but the Dutch label of \"kampvuur\" holds a line break: section 4.1 asks for one line.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "MAN-02"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "MAN-02",
+        "severity": "Error"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ],
+    "note": "An app before packages never reads the manifest's labels."
+  },
+  "sha256": "c577df4a268e80763adca4fa29f3ca0f2a60b68d49160cc62806306b8b416bb4"
+}

@@ -6,11 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
-### Changed
-- **Whitespace is spaces and tabs only** (FDS draft 0.9, O-11; song format v0.24, approved by the owner). The engine no longer trims a no-break space or U+FEFF from directive names, values, the `meta` split or setlist lines, and a set name may begin or end with one. `tests/unit/whitespace.test.mjs` adds 4 tests.
-- **Comments and display text as the app reads them** (song format v0.25, approved by the owner). An indented `#` line is a lyric line, and the display text drops trailing Unicode spaces, the no-break space included, so the line list matches app 0.4.0. The app's vectors `comment-indented` and `nbsp-display` are tested; `node --test` 238 of 238, container 81 of 81, the long fuzz 0 failures.
-
 ### Added
+- **Tag labels in the manifest** (FDS draft 0.10, D-44; song format v0.26, decided by the owner). The optional manifest field `tags` holds a label per language for each tag of the songs; MAN-02 checks it.
+  - **The engine** keeps the labels through open, save and Save as copy. It writes them into the manifest only, never into the 1.1 view, because current apps refuse an extra view field.
+  - **Conversion** carries them over from `zangbundel.json` and lists what it leaves out (EDT-26).
+  - **Test libraries** `tag-labels` and `tag-label-invalid`: 58 cases, all conformant. `tests/unit/tags.test.mjs` adds 5 tests; `node --test` 249 of 249, container 81 of 81, the long fuzz on the 58 libraries 0 failures.
+  - **webappGUI draft 0.13** asks where the labels are edited (GQ-20).
 - **M2.7: conversion** (`design/implementationPlan.md` draft 0.15). `webapp/src/core/convert.js` opens a ZIP without `manifest.json` as a new, unsigned library (EDT-21).
   - **Release archives and snapshots** keep their song IDs, title, description, licence and maintainer; setlists become sets, and entries of other libraries are reported (EDT-26).
   - **Plain ZIPs** of `<set>/<song>/<file>.cho` folders become sets, with a song of identical text stored once (EDT-25).
@@ -75,6 +76,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - `design/securityAssessment.md` draft 0.1: a security and privacy assessment of the web app's design. It names the assets, attackers and 20 findings (among them: the site's code as the root of trust, the shared host with end-of-life PHP sites, CVE-2026-45820 in `fflate` before 0.8.3, the unaudited `@noble/ed25519` v3, DOM injection from library content, missing security headers, no CAA, registrar lock, SPF or DMARC on the new domain), and specifies 67 binding requirements (SR-01 to SR-93), the nginx, DNS, application and release implementation, a release gate of 13 checks, accepted risks and eight open questions. webappTDS draft 0.6 makes it binding (TD-18).
 
 ### Changed
+- **DNS set (M0.1, M0.2) with two accepted deviations** (`design/securityAssessment.md` draft 0.13).
+  - **No MX record:** Openprovider refuses the null MX, so the domain publishes no MX, and port 25 on contabo6 is closed (SR-07).
+  - **No transfer lock:** `.nl` has none, so two-factor authentication on the registrar account protects the domain (SR-05).
+  - **Runbook step 1** also deletes the parked `mail`, `ftp`, `webmail` and `www` records.
+- **Whitespace is spaces and tabs only** (FDS draft 0.9, O-11; song format v0.24, approved by the owner). The engine no longer trims a no-break space or U+FEFF from directive names, values, the `meta` split or setlist lines, and a set name may begin or end with one. `tests/unit/whitespace.test.mjs` adds 4 tests.
+- **Comments and display text as the app reads them** (song format v0.25, approved by the owner). An indented `#` line is a lyric line, and the display text drops trailing Unicode spaces, the no-break space included, so the line list matches app 0.4.0. The app's vectors `comment-indented` and `nbsp-display` are tested; `node --test` 238 of 238, container 81 of 81, the long fuzz 0 failures.
 - **Review of M2** (`/review-changes`, three lenses on 0f87a7e..8c22e37), with fixes (`design/implementationPlan.md` draft 0.13, FDS draft 0.8 O-11). Each fix has a regression test that fails on the reviewed code (`node --test` 220 of 220).
   - **Inflation stops at the declared size.** fflate with a fixed buffer bounded memory but decoded the whole stream: minutes of CPU for a ZIP within every limit, and silent truncation (SR-31).
   - **Signatures are verified by strict RFC 8032.** noble's ZIP-215 default accepted a forged signature under a small-order key.

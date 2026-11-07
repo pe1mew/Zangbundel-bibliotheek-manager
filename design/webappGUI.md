@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.12 |
-| **Date** | 2026-11-06 |
+| **Status** | Draft 0.13 |
+| **Date** | 2026-11-07 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
 
@@ -335,6 +335,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | GQ-17 | 2026-11-06 | *Resolved 2026-11-06 by GD-25.* When a new song is applied (GD-09) that the current search or filter hides, does the list clear the filter, or show the song anyway with a note? The mock clears the filter, so that the new song is never invisible. |
 | GQ-18 | 2026-11-06 | *Resolved 2026-11-06 by GD-24.* Where and how the open library is signed with the key in memory (*Bibliotheek ondertekenen*, EDT-60, EDT-53), how a signed library that opens read-only (EDT-23) asks for its key (EDT-62, M-30), and where the identity in use (name and fingerprint, SG-21) is shown. |
 | GQ-19 | 2026-11-06 | *Resolved 2026-11-06 by GD-35.* The links of GD-15 while the app is not public: hide the Google Play and F-Droid badges until the app is in the store, or show them with a line *binnenkort* (*coming soon*)? And where does the manager's manual live: this repository's GitHub wiki, or pages on `zangbundel.nl`? |
+| GQ-20 | 2026-11-07 | Where and how the author edits the labels of tags (FDS EDT-30, `tags` in §4.1, D-44): a *Labels* part of the library fields of GD-22, listing each tag the songs use with a label per language (nl, en, de), and also the tags that have labels but no songs? Or from the tag chips of the song list (GD-13)? |
 
 ---
 
@@ -354,3 +355,4 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.10 | 2026-11-06 | Depends on FDS draft 0.6: the maintainer is required, the title at most 80 characters, and the terms *signed by* and *not signed* (GD-37); the mock follows. Equal spacing in the section editor (section 2.2). This draft is the design of version 0.1.0 (webappTDS TD-16). |
 | Draft 0.11 | 2026-11-06 | The owner's feedback on the mock: the two editing modes are a named segmented control, *Blokken* and *Code (ChordPro)* (GD-38), instead of the switch of GD-18. |
 | Draft 0.12 | 2026-11-06 | From the security assessment's SQ-08: *Sleutel vergeten* (GD-39) and forgetting the key after 30 minutes without input (GD-40); the mock follows. |
+| Draft 0.13 | 2026-11-07 | FDS draft 0.10 adds tag labels to the library (EDT-30, D-44): where they are edited is open (GQ-20). |

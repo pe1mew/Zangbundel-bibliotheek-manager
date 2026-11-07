@@ -14,7 +14,7 @@
 // reported at the later set; VIEW-02 once per view file that disagrees.
 
 import { readCentralDirectory, readEntry, ZipError } from './zip.js';
-import { caseClashes, compareOrdinal, isIgnored, isSongId, nameProblem, pathTooLong } from './names.js';
+import { caseClashes, compareOrdinal, isIgnored, isLanguageTag, isSongId, nameProblem, pathTooLong } from './names.js';
 import { readManifest, readSignature } from './manifest.js';
 import { canonicalize, parseSong, SINGLE } from './chordpro.js';
 import { licenseBytes, setlistBytes } from './view.js';
@@ -30,7 +30,6 @@ const LIBRARY_TOP = new Set(['manifest.json', 'manifest.sig', 'zangbundel.json',
 
 const SONG_MAX = 64 * 1024;                           // FDS 3.5, SNG-18
 const SONG_RECOMMENDED = 8 * 1024;                    // SNG-17
-const LANGUAGE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/;
 const SONG_LICENSE = /^[A-Za-z0-9.+-]+$/;             // SPDX, public-domain or proprietary (W010)
 const VIEW_APP_VERSION = [0, 1, 0];                   // PF-41: an app from 0.1.0 on must accept the view
 const SHARING = 16 * 1024 * 1024;                     // FDS 3.5, PKG-09 (Editor only)
@@ -59,7 +58,7 @@ function checkSong(id, bytes, add) {
   if (problems.chordName) add('SNG-08', 'Warning', id);
   if (lines.length === 0) add('SNG-09', 'Error', id);
   const lang = get('language');
-  if (lang.length !== 1 || !LANGUAGE.test(lang[0])) add('SNG-11', 'Error', id);
+  if (lang.length !== 1 || !isLanguageTag(lang[0])) add('SNG-11', 'Error', id);
   if (get('id').length !== 1 || get('id')[0] !== id) add('SNG-12', 'Info', id);
   if (problems.chorusEarly) add('SNG-13', 'Error', id);
   if (problems.newSong) add('SNG-14', 'Error', id);

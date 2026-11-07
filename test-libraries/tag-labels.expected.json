@@ -1,0 +1,33 @@
+{
+  "description": "The manifest carries labels for the tags \"kampvuur\" (nl, en, de) and \"avond\" (nl, en), and one for \"winter\", a tag no song uses, which is allowed. The tag \"demo\" has no label and is shown as its id. The view is unchanged: it carries no labels (PF-41).",
+  "app": {
+    "verdict": "accepted",
+    "codes": [],
+    "signed": false,
+    "song_format_warnings": [
+      "W013"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ],
+    "note": "An app before packages reads the view only and shows the tags as their ids."
+  },
+  "sha256": "88a429b5315e5ba43232ef1ecd7331d5d6d0d397deae16f948042924a889b7e7"
+}

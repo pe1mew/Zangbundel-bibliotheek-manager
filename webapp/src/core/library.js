@@ -21,7 +21,7 @@ import { viewFiles } from './view.js';
 import { convertZip } from './convert.js';
 
 const KNOWN_FIELDS = new Set(['formatVersion', 'libraryId', 'version', 'title', 'description', 'created', 'modified',
-  'changes', 'license', 'maintainer', 'author', 'sets', 'files']);
+  'changes', 'license', 'maintainer', 'tags', 'author', 'sets', 'files']);
 const enc = new TextEncoder();
 
 /** The FDS 4.1 time format: UTC, whole seconds. */
@@ -115,6 +115,7 @@ export async function openLibrary(bytes, options = {}) {
     modified: m.modified,
     license: m.license && typeof m.license === 'object' ? clone(m.license) : null,
     maintainer: m.maintainer && typeof m.maintainer === 'object' ? clone(m.maintainer) : null,
+    tags: m.tags !== undefined ? clone(m.tags) : null,          // FDS 4.1, D-44: tag → language → label
     author,
     signed: Boolean(r.signed),
     sets: Array.isArray(m.sets) ? m.sets.filter((s) => s && Array.isArray(s.songs)).map((s) => ({ name: s.name, songs: [...s.songs] })) : [],
@@ -137,7 +138,7 @@ function clone(v) {
 export function newLibrary({ title, description, now = new Date(), libraryId = crypto.randomUUID() }) {
   return {
     libraryId, version: 1, title, description, created: isoSeconds(now), modified: isoSeconds(now),
-    license: null, maintainer: null, author: null, signed: false, sets: [], songs: new Map(), rawSongs: new Map(),
+    license: null, maintainer: null, tags: null, author: null, signed: false, sets: [], songs: new Map(), rawSongs: new Map(),
     extra: [], dropped: [], isNew: true, opened: null,
   };
 }
@@ -153,6 +154,7 @@ export function copyLibrary(library, { now = new Date(), libraryId = crypto.rand
     title: title ?? proposed,
     license: clone(library.license),
     maintainer: clone(library.maintainer),
+    tags: clone(library.tags ?? null),
     created: isoSeconds(now),
     modified: isoSeconds(now),
     author: null,
@@ -205,6 +207,10 @@ export async function buildLibrary(library, { now = new Date(), changes, signer 
   if (changes) m.changes = changes;                      // EDT-58: one version only, never carried over
   m.license = library.license;
   m.maintainer = library.maintainer;
+  if (library.tags !== null && library.tags !== undefined) {
+    m.tags = library.tags;                               // FDS 4.1: optional; an empty object is left out
+    if (typeof m.tags === 'object' && !Array.isArray(m.tags) && Object.keys(m.tags).length === 0) delete m.tags;
+  }
   if (author) m.author = author;
   m.sets = library.sets;
   for (const [k, v] of library.extra) {

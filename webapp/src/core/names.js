@@ -6,6 +6,13 @@ const RESERVED = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/i;
 const SONG_ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const IGNORED_NAMES = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
 
+const LANGUAGE = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$/;              // song format 6.2: BCP 47 well-formed
+
+/** SNG-11 and the language keys of `tags` (FDS 4.1): a well-formed BCP 47 language tag. */
+export function isLanguageTag(s) {
+  return typeof s === 'string' && LANGUAGE.test(s);
+}
+
 /** PF-14: the song ID syntax of the ChordPro profile, at most 64 characters. */
 export function isSongId(s) {
   return typeof s === 'string' && s.length <= 64 && SONG_ID.test(s);

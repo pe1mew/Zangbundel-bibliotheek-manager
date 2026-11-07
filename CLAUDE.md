@@ -10,7 +10,7 @@ framework: agent-ready-projects v1.49.2
 <!-- Canonical project file for Claude Code. No AGENTS.md exists; if one is
      added later, this file stays canonical and AGENTS.md should say so. -->
 
-The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.9. The Editor is built as a web app in `webapp/` (static files on nginx); its designs are written. In the repository: M0 (placeholder, server set-up, signed release chain), M1 (bundler, minimal app, vendoring, test runner), and most of M2 (the library engine: every rule of FDS section 6, open, save and conversion; the block form is left). Not yet: the screens (M4 onwards); nothing is deployed until the owner's M0 server steps are done.
+The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.10. The Editor is built as a web app in `webapp/` (static files on nginx); its designs are written. In the repository: M0 (placeholder, server set-up, signed release chain), M1 (bundler, minimal app, vendoring, test runner), and most of M2 (the library engine: every rule of FDS section 6, open, save and conversion; the block form is left). Not yet: the screens (M4 onwards); nothing is deployed until the owner's M0 server steps are done.
 
 ## Before You Start
 
@@ -100,8 +100,8 @@ python webapp/tools/build.py build --src webapp/placeholder --name placeholder -
 python webapp/tests/test_build.py
 python webapp/tests/test_bundle.py
 python webapp/tests/test_vendor.py
-python webapp/tests/test_engine_bundle.py           # the bundled engine = the native engine on all 56 test libraries
-node --test webapp/tests/                          # unit tests + test-library conformance (SC-04: all 56 cases, every rule family) + a short fuzz
+python webapp/tests/test_engine_bundle.py           # the bundled engine = the native engine on all 58 test libraries
+node --test webapp/tests/                          # unit tests + test-library conformance (SC-04: all 58 cases, every rule family) + a short fuzz
 node webapp/tests/fuzz.mjs --iterations 20000      # the long fuzz (SR-35, SC-11): before a release and after changing a reader
 python webapp/tools/vendor.py check                # vendored files against VENDOR.md (vendor.py add needs npm and the network)
 

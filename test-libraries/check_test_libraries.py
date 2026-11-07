@@ -58,6 +58,8 @@ SONG_ID = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
 UUID4 = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')
 UTC = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$')
 HEX64 = re.compile(r'^[0-9a-f]{64}$')
+LANGUAGE = re.compile(r'^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$')                # song format 6.2
+LABEL_BAD = re.compile('[\u0000-\u001f\u007f-\u009f]')                       # FDS 4.1 tags: one line, no controls
 RESERVED = re.compile(r'^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$', re.IGNORECASE)
 LANGUAGE = re.compile(r'^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{1,8})*$')
 CHORD = re.compile(r'^[A-G](#|b)?[^/\s\[\]]*(/[A-G](#|b)?)?$')
@@ -322,6 +324,13 @@ def check_manifest(m):
     ok = ok and isinstance(m.get('sets'), list) and all(
         isinstance(s, dict) and text(s, 'name', 1, 60) and isinstance(s.get('songs'), list)
         and all(isinstance(x, str) and SONG_ID.match(x) and len(x) <= 64 for x in s['songs']) for s in m['sets'])
+    if 'tags' in m:                                     # FDS 4.1 (draft 0.10, D-44)
+        t = m['tags']
+        ok = ok and isinstance(t, dict) and len(t) <= 200 and all(
+            isinstance(tag, str) and SONG_ID.match(tag) and len(tag) <= 64 and isinstance(ls, dict) and 1 <= len(ls) <= 20
+            and all(isinstance(lang, str) and LANGUAGE.match(lang) and isinstance(lb, str) and 1 <= len(lb) <= 60
+                    and not LABEL_BAD.search(lb) and unicodedata.normalize('NFC', lb) == lb for lang, lb in ls.items())
+            for tag, ls in t.items())
     if 'author' in m:
         a = m['author']
         ok = ok and isinstance(a, dict) and text(a, 'name', 1, 100) and isinstance(a.get('publicKey'), str) \

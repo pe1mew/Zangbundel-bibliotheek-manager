@@ -51,7 +51,7 @@ Directories: `/srv/zangbundel/releases/` and `/srv/zangbundel-test/releases/` (r
 |---|---|---|
 | `zangbundel.nl.` | A | `169.58.68.107` (replaces `127.0.0.1`) |
 | `test.zangbundel.nl.` | A | `169.58.68.107` |
-| `zangbundel.nl.` | MX | `0 .` (null MX; replaces `10 mail.zangbundel.nl`) |
+| `zangbundel.nl.` | MX | none: delete `10 mail.zangbundel.nl`. Openprovider refuses the null MX `0 .` (SR-07, deviation of 2026-11-07) |
 | `zangbundel.nl.` | TXT | `v=spf1 -all` |
 | `_dmarc.zangbundel.nl.` | TXT | `v=DMARC1; p=reject; adkim=s; aspf=s` |
 | `*._domainkey.zangbundel.nl.` | TXT | `v=DKIM1; p=` |
@@ -59,15 +59,19 @@ Directories: `/srv/zangbundel/releases/` and `/srv/zangbundel-test/releases/` (r
 | `zangbundel.nl.` | CAA | `0 issuewild ";"` |
 | `zangbundel.nl.` | CAA | `0 iodef "mailto:<an address the owner reads>"` |
 
+- **Delete the parked records** the domain came with: `mail` (A `127.0.0.1`), and the CNAMEs `ftp`, `webmail` and `www`. nginx serves no such names and the certificates do not cover them.
+- **Port 25 must stay closed.** Without an MX, a sender tries the A record. Check from outside: `nc -vz -w 5 169.58.68.107 25` must be refused or time out.
 - **AAAA only if IPv6 works.** contabo6 publishes no IPv6 address today. Add AAAA records only when `ip -6 addr show scope global` shows one and `curl -6 https://zangbundel.nl/` works from another network. A broken AAAA record is worse than none.
 - **CAA covers `test.zangbundel.nl` as well**, because CAA is inherited by subdomains.
 - **Check.** `dig +dnssec zangbundel.nl A MX TXT CAA`, `dig test.zangbundel.nl A`, `dig _dmarc.zangbundel.nl TXT`. Then check the DNSSEC chain at https://dnsviz.net/d/zangbundel.nl/dnssec/.
 
 ## 2. Registrar (M0.2, SR-05)
 
-1. Switch the transfer lock on for `zangbundel.nl`.
-2. Confirm two-factor authentication on the registrar account; the DNS account already has it.
-3. Check with `whois zangbundel.nl`: the status shows the lock instead of only `active`.
+1. Confirm two-factor authentication on the registrar account; the DNS account already has it.
+2. Make sure the registrant e-mail address is one you read: a transfer token goes there.
+3. There is no transfer lock to set. A `.nl` domain has none, so `whois zangbundel.nl` keeps showing only `Status: active` (SR-05, deviation of 2026-11-07).
+
+*Done 2026-11-07:* step 1 and step 2 (two-factor authentication on; DNS checked from outside).
 
 ## 3. Keys, on the owner's computer (M0.7, SR-11, SR-74)
 

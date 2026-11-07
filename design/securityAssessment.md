@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.12 |
-| **Date** | 2026-11-06 |
+| **Status** | Draft 0.13 |
+| **Date** | 2026-11-07 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
 
@@ -168,9 +168,9 @@ Every requirement applies to the production site and, unless stated, to the test
 | SR-02 | Every HTTPS response MUST carry `Strict-Transport-Security: max-age=31536000; includeSubDomains`, rolled out as hstspreload.org advises (5 minutes, 1 week, 1 month, then 1 year). After three months at one year without problems, `preload` MUST be added and the domain submitted to the HSTS preload list (SQ-03, decided); from then on every subdomain MUST serve HTTPS. |
 | SR-03 | The DNS MUST carry CAA records that allow only Let's Encrypt, bound to the owner's ACME account (`accounturi`), with an `iodef` contact: `0 issue "letsencrypt.org; accounturi=<account URL>"`, `0 issuewild ";"`, `0 iodef "mailto:<security contact>"`. |
 | SR-04 | DNSSEC MUST stay enabled (it is today); a key roll-over at the DNS provider MUST be checked for a working chain afterwards. |
-| SR-05 | The domain MUST have the registrar's transfer lock (`clientTransferProhibited`) and, where the registrar offers it, the update and delete locks; the registrar and DNS accounts MUST use two-factor authentication. *2026-11-06: two-factor authentication is enabled at the DNS provider (the owner). The registry still showed only `active`, without a lock, on 2026-11-06; check again with SC-12.* |
+| SR-05 | The domain MUST have the registrar's transfer lock (`clientTransferProhibited`) and, where the registrar offers it, the update and delete locks; the registrar and DNS accounts MUST use two-factor authentication. *2026-11-06: two-factor authentication is enabled at the DNS provider (the owner). The registry still showed only `active`, without a lock, on 2026-11-06; check again with SC-12. 2026-11-07, deviation accepted by the owner: a `.nl` domain has no transfer, update or delete lock. SIDN has no such status, so the whois shows only `active`; SIDN's `.nl Control` comes closest and Openprovider does not support it. A transfer needs the transfer token, which only the registrar issues to the registrant. So the protection is the registrar account: two-factor authentication on (the owner, 2026-11-07) and a registrant e-mail address the owner reads.* |
 | SR-06 | Certificates issued for `zangbundel.nl` and its subdomains MUST be watched in Certificate Transparency logs (for example a crt.sh or provider alert), with an alert to the owner for any certificate the owner did not request. |
-| SR-07 | `zangbundel.nl` sends and receives no mail (SQ-06, decided). It MUST publish a null MX (`0 .`), `v=spf1 -all`, `v=DMARC1; p=reject; adkim=s; aspf=s`, and an empty DKIM key, so mail claiming to be from the domain is rejected. A later mail use (for example a honeypot address) is a new decision; it needs a real MX instead of the null MX, while SPF `-all` and DMARC `reject` stay as long as the domain sends nothing. |
+| SR-07 | `zangbundel.nl` sends and receives no mail (SQ-06, decided). It MUST publish a null MX (`0 .`), `v=spf1 -all`, `v=DMARC1; p=reject; adkim=s; aspf=s`, and an empty DKIM key, so mail claiming to be from the domain is rejected. A later mail use (for example a honeypot address) is a new decision; it needs a real MX instead of the null MX, while SPF `-all` and DMARC `reject` stay as long as the domain sends nothing. *2026-11-07, deviation accepted by the owner: Openprovider refuses a null MX (it rejects `0 .` as an invalid MX record), so the domain publishes no MX record. A sender then falls back to the A record, and contabo6 does not accept mail there: port 25 on 169.58.68.107 was closed or filtered from outside on 2026-11-07. SPF `-all`, DMARC `reject` and the empty DKIM key are published, so forged mail is still rejected. If contabo6 ever listens on port 25, it MUST NOT accept mail for `zangbundel.nl`.* |
 | SR-08 | The canonical address `https://zangbundel.nl` MUST be stated in the repository's README, in the app's About screen and manual, and on the site's own About dialog, so users have independent places to check it. The site MUST NOT ask users to send, upload or mail a key file anywhere, and its texts say so (SR-44). |
 
 ### 6.2 Code integrity and supply chain (SF-01, SF-03, SF-14)
@@ -366,14 +366,14 @@ The test instance (`test.zangbundel.nl`) uses the same file with `root /srv/zang
 zangbundel.nl.        CAA  0 issue     "letsencrypt.org; accounturi=https://acme-v02.api.letsencrypt.org/acme/acct/<id>"
 zangbundel.nl.        CAA  0 issuewild ";"
 zangbundel.nl.        CAA  0 iodef     "mailto:<security contact>"
-; the domain sends and receives no mail (SR-07, SQ-06 decided):
-zangbundel.nl.        MX   0 .
+; the domain sends and receives no mail (SR-07, SQ-06 decided); no MX record, as the DNS
+; provider refuses the null MX "0 ." (SR-07, deviation of 2026-11-07)
 zangbundel.nl.        TXT  "v=spf1 -all"
 _dmarc.zangbundel.nl. TXT  "v=DMARC1; p=reject; adkim=s; aspf=s"
 *._domainkey.zangbundel.nl. TXT "v=DKIM1; p="
 ```
 
-The current MX record (`10 mail.zangbundel.nl`) is replaced by the null MX. The A record (now `127.0.0.1`) and an AAAA record point at contabo6 when the site goes live; `test.zangbundel.nl` gets its own records at the same time. At the registrar: transfer lock on (SR-05); two-factor authentication is already on at the DNS provider.
+*Set on 2026-11-07:* the A records of `zangbundel.nl` and `test.zangbundel.nl` point at contabo6 (169.58.68.107); no AAAA while contabo6 has no working IPv6. The old MX (`10 mail.zangbundel.nl`) and the parked records `mail` (A), `ftp`, `webmail` and `www` (CNAME) are deleted. The CAA `accounturi` is added once the certificates exist (runbook step 5). No null MX and no transfer lock: the provider and the `.nl` registry offer neither (SR-05, SR-07). Two-factor authentication is on at the registrar and DNS accounts.
 
 ### 7.3 Application structure (SR-30, SR-32, SR-40 to SR-43)
 
@@ -454,7 +454,7 @@ No release goes live, on the test instance or in production, unless these checks
 | SC-09 | The signed manifest verifies on the server and every live file matches it | SF-01, SF-14 |
 | SC-10 | No vendored package has a known advisory affecting a used function (SR-14) | SF-03 |
 | SC-11 | The ZIP and ChordPro readers have been fuzzed since their last change, without crash, hang or unbounded memory (SR-35) | SF-05 |
-| SC-12 | DNS: CAA, DNSSEC chain, SPF, DMARC and null MX (or mail authentication) as in section 7.2; registrar lock set | SF-07, SF-08 |
+| SC-12 | DNS: CAA, DNSSEC chain, SPF, DMARC and no MX with port 25 closed (SR-07; or mail authentication) as in section 7.2; registrar account with two-factor authentication (`.nl` has no transfer lock, SR-05) | SF-07, SF-08 |
 | SC-13 | `security.txt` present and not expired; privacy statement matches the actual logging | SF-11, SF-20 |
 
 ---
@@ -605,3 +605,4 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 | Draft 0.10 | 2026-11-06 | The owner's decision on webappTDS TQ-08 (TD-23): SR-20's CSP lists a second Trusted Types policy, `zbm-worker`, for starting the two workers; SR-32 and 7.3 say what each policy accepts. |
 | Draft 0.11 | 2026-11-06 | 7.4 records the vendoring of M1.2 (`vendor.py`): SR-12 checks as run, fflate 0.8.3 without published provenance (accepted, recorded), SR-14's GitLab check by hand. |
 | Draft 0.12 | 2026-11-06 | The owner keeps `fflate` 0.8.3 although it publishes no provenance: an accepted risk in section 9, noted in 7.4. |
+| Draft 0.13 | 2026-11-07 | DNS set by the owner. Two deviations accepted: no null MX, because Openprovider refuses one, so no MX and port 25 closed (SR-07); no transfer lock, because `.nl` has none, so the registrar account's two-factor authentication protects the domain (SR-05). Section 7.2 and SC-12 follow. |

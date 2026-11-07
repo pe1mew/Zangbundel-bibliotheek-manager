@@ -794,6 +794,26 @@ def rule_cases(base):
              'test (testlied-001 to testlied-198). Each song appears once, so SET-04 holds.', None,
              f11('accepted as snapshot', ['A102', 'SL103']), extra_songs=many)
 
+    # ---- tag labels in the manifest (FDS 4.1, D-44; song format 12.11, v0.26) ----
+
+    labels = {'kampvuur': {'nl': 'Kampvuur', 'en': 'Campfire', 'de': 'Lagerfeuer'},
+              'avond': {'nl': 'Avond', 'en': 'Evening'},
+              'winter': {'nl': 'Winter'}}
+    cases['tag-labels'] = (unsigned(base, dict(MANIFEST, tags=labels)), expect(
+        'The manifest carries labels for the tags "kampvuur" (nl, en, de) and "avond" (nl, en), and one for '
+        '"winter", a tag no song uses, which is allowed. The tag "demo" has no label and is shown as its id. The '
+        'view is unchanged: it carries no labels (PF-41).',
+        None, shared,
+        f11('accepted as snapshot', ['A102'], 'An app before packages reads the view only and shows the tags as '
+                                              'their ids.')))
+
+    bad = copy.deepcopy(labels)
+    bad['kampvuur']['nl'] = 'Kampvuur\nen avond'
+    cases['tag-label-invalid'] = (unsigned(base, dict(MANIFEST, tags=bad)), expect(
+        'As tag-labels, but the Dutch label of "kampvuur" holds a line break: section 4.1 asks for one line.',
+        ['MAN-02'], [finding('MAN-02', 'Error')] + shared,
+        f11('accepted as snapshot', ['A102'], 'An app before packages never reads the manifest\'s labels.')))
+
     # ---- VIEW: VIEW-01 and VIEW-02 are view-missing and view-mismatch ----
 
     view = json.loads(base['zangbundel.json'])

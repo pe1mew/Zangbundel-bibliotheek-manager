@@ -2,7 +2,7 @@
 // manifest.json and manifest.sig (FDS 4.1, 5.2; rules MAN-02, MAN-03, MAN-07, MAN-08, SIG-02).
 // Pure functions. Lengths count Unicode code points, as the FDS's "characters".
 
-import { compareOrdinal } from './names.js';
+import { compareOrdinal, isLanguageTag, isSongId } from './names.js';
 
 export const FORMAT_VERSION = 1;
 const UUID4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -15,11 +15,35 @@ const LICENSE_ID = /^[A-Za-z0-9][A-Za-z0-9.+-]*$/;
 // control characters, no braces, no spaces at either end (a directive value is trimmed of spaces and
 // tabs, song format 5.3 v0.24; a tab is a control character here), NFC.
 const SET_NAME_BAD = /[\u0000-\u001f\u007f-\u009f{}]|^ | $/;
+// Tag labels (FDS 4.1, D-44; song format 12.11 v0.26): one line, NFC, no control characters.
+const LABEL_BAD = /[\u0000-\u001f\u007f-\u009f]/;
+export const TAGS_MAX = 200;
+export const LABELS_MAX = 20;
 
 const len = (s) => [...s].length;
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isInt = (v) => Number.isInteger(v);
 const str = (v, min, max) => typeof v === 'string' && len(v) >= min && len(v) <= max;
+
+/** FDS 4.1: one label of `tags` — its language key and its text. */
+export function tagLabelOk(lang, label) {
+  return isLanguageTag(lang) && str(label, 1, 60) && !LABEL_BAD.test(label) && label === label.normalize('NFC');
+}
+
+/** FDS 4.1: why a `tags` value breaks the rules, or null. */
+export function tagsProblem(tags) {
+  if (!isObject(tags)) return 'tags is not an object';
+  const entries = Object.entries(tags);
+  if (entries.length > TAGS_MAX) return `tags has more than ${TAGS_MAX} tags`;
+  for (const [tag, labels] of entries) {
+    if (!isSongId(tag)) return `tag ${JSON.stringify(tag)} is not in song ID syntax`;
+    const list = isObject(labels) ? Object.entries(labels) : null;
+    if (list === null || list.length < 1 || list.length > LABELS_MAX) return `tag ${tag} does not have 1–${LABELS_MAX} labels`;
+    const bad = list.find(([lang, label]) => !tagLabelOk(lang, label));
+    if (bad) return `label ${JSON.stringify(bad[0])} of tag ${tag} is not a language with a 1–60 character label on one line, NFC`;
+  }
+  return null;
+}
 
 /** Strict standard base64 with padding; the decoded bytes, or null. */
 export function base64Bytes(s) {
@@ -116,6 +140,11 @@ export function readManifest(bytes) {
         break;
       }
     }
+  }
+
+  if ('tags' in m) {
+    const why = tagsProblem(m.tags);
+    if (why) man02(why);
   }
 
   if ('author' in m) {

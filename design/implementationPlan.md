@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.15 |
+| **Status** | Draft 0.16 |
 | **Date** | 2026-11-07 |
-| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.12, `test-libraries/` (56 cases) |
+| **Depends on** | `design/FDS.md` draft 0.10, `design/webappGUI.md` draft 0.13, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.12, `test-libraries/` (58 cases) |
 
 ---
 
@@ -150,8 +150,8 @@ Each milestone ends with its exit checks passing and the result written to `desi
 
 | # | Work | Requirements |
 |---|---|---|
-| M0.1 | DNS: A for `zangbundel.nl` and `test.zangbundel.nl` to contabo6, AAAA once contabo6 has working IPv6; CAA (Let's Encrypt, `accounturi`, `iodef`); null MX replacing the current MX; SPF `-all`; DMARC `reject`; empty DKIM | SR-03, SR-07, §7.2 |
-| M0.2 | Registrar: transfer lock; confirm two-factor authentication on registrar and DNS accounts | SR-05 |
+| M0.1 | DNS: A for `zangbundel.nl` and `test.zangbundel.nl` to contabo6, AAAA once contabo6 has working IPv6; CAA (Let's Encrypt, `accounturi`, `iodef`); no MX, because Openprovider refuses a null MX (securityAssessment SR-07), with port 25 closed; SPF `-all`; DMARC `reject`; empty DKIM | SR-03, SR-07, §7.2 |
+| M0.2 | Registrar: confirm two-factor authentication on registrar and DNS accounts; `.nl` has no transfer lock (SR-05) | SR-05 |
 | M0.3 | Certificates for both hosts with certbot; check certbot left the headers intact | SR-01 |
 | M0.4 | nginx vhosts for both hosts as securityAssessment §7.1: headers, HSTS (start at 5 minutes, ramp up), method and dot-file rules, rate limits, shortened IP logs with 14-day rotation | SR-01, SR-02, SR-20 to SR-25, SR-51, SR-60, SR-61 |
 | M0.5 | Basic authentication for `test.zangbundel.nl`, `X-Robots-Tag: noindex`, a holding page until M1 | SR-80, SR-81 |
@@ -162,7 +162,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
 
 **Exit:** SC-01, SC-02, SC-09, SC-12 and SC-13 pass for both hosts; the placeholder is live on `zangbundel.nl`.
 
-**State (2026-11-06).** The repository part of M0 is done: M0.4 to M0.6 and M0.8 are in `webapp/server/`, `webapp/placeholder/`, `webapp/test-holding/` and `webapp/tools/`. It was tested in an Ubuntu 24.04 container with nginx 1.24.0, throwaway keys and self-signed certificates (`webapp/server/test/run.sh`, 68 of 68 checks, SC-01 for both hosts; `webapp/tests/test_build.py`), and reviewed in two rounds with `/review-changes` (drafts 0.4 and 0.5). M0.1 to M0.3, M0.7, M0.9, the installation and the exit checks are the owner's steps, in the order of the runbook `webapp/server/README.md`.
+**State (2026-11-06).** The repository part of M0 is done: M0.4 to M0.6 and M0.8 are in `webapp/server/`, `webapp/placeholder/`, `webapp/test-holding/` and `webapp/tools/`. It was tested in an Ubuntu 24.04 container with nginx 1.24.0, throwaway keys and self-signed certificates (`webapp/server/test/run.sh`, 68 of 68 checks, SC-01 for both hosts; `webapp/tests/test_build.py`), and reviewed in two rounds with `/review-changes` (drafts 0.4 and 0.5). M0.1 to M0.3, M0.7, M0.9, the installation and the exit checks are the owner's steps, in the order of the runbook `webapp/server/README.md`. **2026-11-07: M0.1 and M0.2 done by the owner**, apart from the CAA `accounturi`, which waits for the certificates. Two deviations, accepted: no MX, and no transfer lock (securityAssessment draft 0.13, SR-05, SR-07).
 
 ### M1 — Toolchain and release pipeline (M)
 
@@ -198,10 +198,10 @@ Each milestone ends with its exit checks passing and the result written to `desi
 | M2.8 | `library-worker.js` with a 20-second time limit per file; the Trusted Types policy `zbm-worker` that starts it (webappTDS TD-23) | SR-30, SR-31, SR-20 |
 | M2.9 | Fuzzing of the ZIP and ChordPro readers, corpus from `test-libraries/` | SR-35 |
 
-**Exit:** all 56 test libraries give exactly their expected findings (SC-04); a valid library opened and saved without changes is byte-identical (EDT-51); fuzzing ran without crash or hang (SC-11).
+**Exit:** all 58 test libraries give exactly their expected findings (SC-04); a valid library opened and saved without changes is byte-identical (EDT-51); fuzzing ran without crash or hang (SC-11).
 
 **State (2026-11-06).**
-- **SC-04 met:** all 56 test libraries give exactly their expected Editor findings, every rule family of FDS section 6 (`webapp/tests/conformance.test.mjs`, 0 to-dos). Seeded defects turn cases red: SIG-03 skipped, STR-08 for a second `.cho`, SNG-10 case-sensitive, SET-03 skipped, phase 2 directives not listed.
+- **SC-04 met:** all 58 test libraries (56 until FDS draft 0.10 added the two tag-label cases) give exactly their expected Editor findings, every rule family of FDS section 6 (`webapp/tests/conformance.test.mjs`, 0 to-dos). Seeded defects turn cases red: SIG-03 skipped, STR-08 for a second `.cho`, SNG-10 case-sensitive, SET-03 skipped, phase 2 directives not listed.
 - **Done:** M2.1, M2.2, M2.4 and M2.6, and the reading half of M2.3 and M2.5.
   - `webapp/src/core/`: `zip.js`, `names.js`, `manifest.js`, `fingerprint.js`, `validate.js`.
   - `chordpro.js` gives the canonical form, the metadata, the environments, the chorus repeats and the canonical line list. On the corpus's `vuur-in-de-nacht` it gives the 18 lines of the song format's worked example (§9.3): the count, the first and last line, and lines 15–18 repeating 5–8 are tested; the section labels and the lines in between are not.
@@ -249,6 +249,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - **Tested in `tests/unit/convert.test.mjs`:** the corpus snapshot (`manifest-missing`, saved cleanly), a release archive built in the test, plain folders with a shared song, a proposed and a colliding ID, a left-out file, and a non-UTF-8 song. The fuzzer opens every mutated ZIP that lost its manifest through conversion and reports how many: the long run (seed 1, 2026-11-07) converted 101 of 20,000 inputs, with 0 failures, slowest input 531 ms, at most 299 MB.
 - **Whitespace as song format v0.24** (FDS draft 0.9, O-11): directive names and values, the `meta` split, setlist lines and the set-name check trim or test spaces and tabs only, no longer JavaScript's `trim()` and `\s`, which also remove a no-break space and U+FEFF. Four regression tests in `tests/unit/whitespace.test.mjs` fail on the code before.
 - **Comments and display text as song format v0.25** (FDS draft 0.9, O-11): a comment is a line whose first character is `#`, so `  # x` is a lyric line; the display text drops trailing spaces and Unicode Zs, Zl and Zp, so a no-break space too. The app's vectors `comment-indented` and `nbsp-display` give its line lists and canonical hashes (`tests/unit/whitespace.test.mjs`). W014, the validator's warning for an indented `#`, is not shown: the owner chose no new Editor rule.
+- **Tag labels** (FDS draft 0.10, D-44): the manifest's optional `tags` is checked by MAN-02 (`tagsProblem` in `manifest.js`), kept in the model as `tags`, written into the manifest and never into the view, copied by Save as copy, and carried over from `zangbundel.json` on conversion, with what breaks §4.1 left out and listed as `tagsLeftOut`. The test libraries `tag-labels` and `tag-label-invalid` bring the corpus to 58 (SC-04: 58 of 58); `tests/unit/tags.test.mjs` has 5 tests. Editing the labels is a screen (M4 or M5, webappGUI GQ-20).
 - **To do:** M2.3's block form and its round trip (GD-18, GD-19, locked blocks byte-exact); it may move to M5, where the editor needs it.
 
 ### M3 — Keys and signing (M)
@@ -337,7 +338,7 @@ M0 ──▶ M1 ──▶ M2 ──┬──▶ M5 ──▶ M6 ──▶ M7
 | Level | What | Where it runs | Gate |
 |---|---|---|---|
 | Unit | `core/` functions: ZIP, manifest, ChordPro, names, view, validation rules | `node --test` | Every change |
-| Conformance | All 56 test libraries against `expected.json` | `node --test` with the conformance runner | SC-04, every change to `core/` |
+| Conformance | All 58 test libraries against `expected.json` | `node --test` with the conformance runner | SC-04, every change to `core/` |
 | Round trip | Open and save unchanged gives identical bytes; blocks to text and back gives identical songs | `node --test` | Every change to `core/` |
 | Crypto | Known-answer tests, cross-check, `valid-signed` reproduction | `node --test` and every browser | SC-05 |
 | Fuzz | ZIP and ChordPro readers with the test libraries as corpus | A fuzz harness under `node` | SC-11, before each release |
@@ -408,3 +409,4 @@ The placeholder and the manager have separate release directories and separate m
 | Draft 0.13 | 2026-11-07 | M2 reviewed: findings fixed and listed under M2; the §9.3 test described as far as it goes. |
 | Draft 0.14 | 2026-11-07 | M2.8 (library worker, client, `zbm-worker` policy, 20 s limit) and M2.9 (fuzzing, SC-11: 20,000 inputs, 0 failures) done. |
 | Draft 0.15 | 2026-11-07 | M2.7 (conversion of release archives, snapshots and plain ZIPs) done; left in M2: the block form. |
+| Draft 0.16 | 2026-11-07 | The engine follows song format v0.24 to v0.26: whitespace, comments, display text, and tag labels in the manifest (FDS draft 0.10); 58 test libraries. |

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Functional Design Specification (FDS) |
-| **Status** | Draft 0.9 |
+| **Status** | Draft 0.10 |
 | **Date** | 2026-11-07 |
 | **Scope** | Library package format, Editor, Songbook app import |
 
@@ -196,6 +196,9 @@ Every library carries a copy of itself in the format that Songbook apps before l
     "name": "Troop 12 leaders",
     "url": "https://troop12.example.org/songs"
   },
+  "tags": {
+    "kampvuur": { "nl": "Kampvuur", "en": "Campfire" }
+  },
   "author": {
     "name": "Remko",
     "publicKey": "11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo="
@@ -232,6 +235,9 @@ Every library carries a copy of itself in the format that Songbook apps before l
 | `maintainer` | object | yes | Who looks after the library, for rights holders and users with a correction. Copied into every copy of the library and shown by the Songbook app. Required because the 1.1 view needs it (PF-41, D-36); was optional until draft 0.4 (D-32). |
 | `maintainer.name` | string | yes | 1–100 characters. |
 | `maintainer.email`, `maintainer.url` | string | at least one | An e-mail address; an `https:` URL. |
+| `tags` | object | no | Labels for the tags of the songs (`{meta: tag}`, song format §6.1), per language: `{ "<tag>": { "<lang>": "<label>", … } }`, the shape of `tags` in `zangbundel.json` (song format §4.2, §12.11). At most 200 tags. A tag without a label is shown as its id; a label for a tag no song uses is allowed. Key order carries no meaning. The 1.1 view carries no labels (PF-41). *Added in draft 0.10* (D-44). |
+| `tags.<tag>` | object | — | The key is a tag in the syntax of a song ID (PF-14, song format §3.2). 1–20 labels. |
+| `tags.<tag>.<lang>` | string | — | The key is a language tag as in `{meta: language}` (SNG-11). The label is 1–60 Unicode code points, one line, NFC, without control characters (U+0000 to U+001F, tab and line feed included, and U+007F to U+009F; song format §12.11). |
 | `sets` | array | yes | The sets, in display order. May be empty. |
 | `sets[].name` | string | yes | 1–60 characters, as a setlist title (song format §13). Unique in the library, case-insensitive. |
 | `sets[].songs` | array | yes | Song IDs (PF-14), in the order they are sung. |
@@ -456,13 +462,13 @@ The view (§3.7) is generated, so an Editor-saved library never fails these rule
 | EDT-23 | A **signed** library opens **read-only**. The user can view, validate, load the key file, or use Save as copy. |
 | EDT-24 | After a matching key file is loaded (§7.7), the signed library becomes editable, including one with manifest or signature errors. |
 | EDT-25 | **A ZIP of folders and song files** (for example made with the operating system's *Compress* command): when the ZIP has no single top-level folder, its root is taken as the library folder. Every `.cho` file becomes a song. When the folder two levels above a `.cho` file lies inside the library folder, as in `<set>/<song>/<song>.cho`, that folder becomes a set containing the song, in alphabetical order of the song folders. A song found in several set folders with identical text is stored once and placed in each of those sets. The Editor proposes song IDs (EDT-36), leaves out all files that are not `.cho` files (M-42), and reports what it took over (M-41). The rules of §6 then apply to the result. |
-| EDT-26 | **A release archive or a library repository snapshot** (a `.zbl` with `zangbundel-archive.json`, or a ZIP with `zangbundel.json`; song format §12): the songs are taken over with their song IDs; title, description, licence (`license.id`, `license.summary`, and the licence file as `license.text`) and maintainer come from `zangbundel.json`. Setlists (`.zbs`) whose entries are songs of this library become sets; other entries are left out and reported. The library gets a new `libraryId` (EDT-21); the original stays readable by the Songbook app (D-23). Reported with M-41 and M-42. |
+| EDT-26 | **A release archive or a library repository snapshot** (a `.zbl` with `zangbundel-archive.json`, or a ZIP with `zangbundel.json`; song format §12): the songs are taken over with their song IDs; title, description, licence (`license.id`, `license.summary`, and the licence file as `license.text`), maintainer and tag labels (`tags`) come from `zangbundel.json`; tags and labels that break the rules of §4.1 are left out and named (*changed in draft 0.10*, D-44). Setlists (`.zbs`) whose entries are songs of this library become sets; other entries are left out and reported. The library gets a new `libraryId` (EDT-21); the original stays readable by the Songbook app (D-23). Reported with M-41 and M-42. |
 
 ### 7.4 Editing
 
 | ID | Requirement |
 |---|---|
-| EDT-30 | Library: edit title, description, licence and maintainer. |
+| EDT-30 | Library: edit title, description, licence, maintainer and the labels of tags (`tags`, §4.1). *Changed in draft 0.10* (D-44): tag labels added. |
 | EDT-31 | Sets: add, rename, reorder, delete (with confirmation, M-62). Within a set: add songs, remove songs, reorder songs. Deleting a set or removing a song from a set does not delete the song. |
 | EDT-32 | Songs: add (empty template or import an existing `.cho` file), edit, delete (with confirmation, M-62). Deleting a song removes it from every set. |
 | EDT-33 | Song text: edit the ChordPro text directly, with validation while typing. |
@@ -584,6 +590,7 @@ The table is for libraries in this format. A release archive, snapshot or `zangb
 | APP-24 | When an update carries `changes`, the app shows the note once after the update and keeps it on the library screen until the next version. |
 | APP-25 | The app shows the licence (`license.summary`, and `license.text` when present) when a library is first imported and on request afterwards (FR-LIB-21). |
 | APP-26 | When `maintainer` is present, the library screen shows its name and contact. |
+| APP-27 | The app shows a tag of a song in this format by a label from `tags` (§4.1), chosen among the tag's languages as it chooses the labels of `zangbundel.json` (song format §4.2, §12.11; FR-LIB-30); a tag without any label is shown by its id. *Added in draft 0.10* (D-44). |
 
 ---
 
@@ -752,6 +759,7 @@ These limitations are accepted and must be stated in the user documentation.
 | D-41 | A release archive, snapshot or `zangbundel.json` library carrying the ID of a library in this format is an unsigned copy of it (APP-06). The app asks M-71 (without the version sentence) or M-72, and never replaces silently. Refusing it with L006 was the alternative; the owner chose the question (2026-11-06, the app's assessment SP-39). |
 | D-42 | The app shows a MAN-08 failure as M-75, worded for someone importing; M-39 is the Editor's wording for someone saving. |
 | D-43 | The fixed terms are *signed by* and *not signed*, as in the app's glossary, which keeps a bare *signed* apart from *signed in* (EDT-83, APP-21, APP-22). |
+| D-44 | Tag labels travel in a package in the optional manifest field `tags` (§4.1), so tags and their labels work alike in every library format; the 1.1 view does not carry them, because every app that reads packages refuses an extra view field (VIEW-02). `formatVersion` stays 1: the field is optional and an app ignores unknown manifest fields. Decided by the owner on 2026-11-07, after first sunsetting tags and then retracting that: *"manager shall support labels to stay consistent over all"*; the format is written by the library session (the app repository's `design/proposals/2026-11-07-tag-labels-in-packages.md`, song format v0.26). |
 
 Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangbundel-bibliotheek#1 (2026-11-04). Decisions D-22 to D-28 are the owner's (2026-11-04). Decisions D-29 and D-30 come from the app repository's proposal `design/proposals/2026-11-04-library-package-id-and-file-type.md`, approved by the owner; D-31 to D-33 are the owner's answers to the differences that proposal found between this specification and the app's FRD (2026-11-04). Decisions D-34 to D-39 come from the app repository's proposal `design/proposals/2026-11-06-backward-compatible-packages.md`, approved by the owner on 2026-11-06. D-40 answers a question from the app's implementation on the same day. D-41 to D-43 come from the app session on 2026-11-06: D-41 is the owner's decision on that session's assessment SP-39, and D-42 and D-43 follow from writing the app's import questions (GUI design D-88).
 
@@ -768,5 +776,6 @@ Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangb
 | Draft 0.5 | 2026-11-06 | Libraries that Songbook apps before this format can read, from the app repository's proposal approved by the owner (D-34 to D-39). New §3.7: the format 1.1 view (PF-40 to PF-46), generated by the Editor, listed in the manifest. Songs move under `songs/` (§3.2, PF-10, PF-12, STR-01, new STR-11). New §6.8: view rules VIEW-01 to VIEW-03 with messages M-36 to M-38. `maintainer` required: §4.1, EDT-14, new MAN-08, M-39. `title` at most 80 characters (§4.1, EDT-10). Licence: a generated `LICENSE` in the view. EDT-52 writes the view; APP-02 recognises a library with a view as this format; APP-22 adds W013 for unsigned libraries. Limitation 9; O-04 extended. Keys: new SG-05 (raw Ed25519 keys), SG-20 refers to it, the `author.publicKey` example corrected from an X.509 wrapper to the RFC 8032 test key (D-40). D-29, D-31 and D-32 superseded in part. |
 | Draft 0.6 | 2026-11-06 | From the app session. New APP-06: a release archive, snapshot or `zangbundel.json` library with the ID of a library in this format is an unsigned copy of it; the app asks M-71 (without `{versionNote}`) or M-72, never silently (D-41, the owner's decision); a sentence below the §8.3 table points to it. New M-75, the app's wording of a MAN-08 failure (D-42). Fixed terms *signed by* and *not signed* (EDT-83, APP-21, APP-22, D-43). O-04: the first six test libraries exist in `test-libraries/`. After the app's first run of them: PF-42 made byte-exact, and an *Archive* column in §6.2 mapping PKG-01 to PKG-09 to the shared archive checks, with FDS codes reported for packages. |
 | Draft 0.7 | 2026-11-06 | O-04: 56 test libraries cover every rule of section 6 except PKG-09 and some forms of PKG-02 and PKG-03. New O-11: the readings the test libraries made where the rules leave room, to be confirmed. No rule changed. |
+| Draft 0.10 | 2026-11-07 | Tag labels in the manifest (D-44, song format v0.26): optional field `tags` (§4.1), checked by MAN-02; EDT-26 carries them over from `zangbundel.json`; EDT-30 edits them; APP-27 shows them. The 1.1 view is unchanged; `formatVersion` stays 1. |
 | Draft 0.9 | 2026-11-07 | O-11: the engine readings of draft 0.8 are settled with the app (song format v0.24); whitespace in directive names, values, the `meta` split and setlist lines means spaces and tabs only; an indented `#` line is a lyric line, and the display text drops trailing Unicode spaces (song format v0.25). No rule of this specification changed. |
 | Draft 0.8 | 2026-11-07 | O-11: the PKG-02 ratio reading is settled (the ZIP file size, §3.5), as song format v0.23 now bounds the release archive; and the readings of the manager's engine that the test libraries do not exercise are listed for the app to confirm (strict Ed25519 for SIG-03, set names as setlist titles, C1 controls, the brace rule of song format §5.2, among others). PF-20's list of forbidden characters is escaped so its table row renders whole. Song format v0.23 also settles S005 for a format 1.1 app, which changes the format 1.1 expectation of the test library `song-two-files`; no rule of this specification changed. |

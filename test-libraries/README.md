@@ -2,7 +2,7 @@
 
 Shared test libraries in the format of FDS draft 0.6, for FDS open item O-04. Every Editor implementation and the Songbook app must give each library the result in its `<case>.expected.json`.
 
-**Status:** 56 cases. Two valid libraries with sets (signed and unsigned) and at least one invalid case for every rule of FDS section 6 except PKG-09, for which see [Not covered](#not-covered). The unsigned copy of APP-06 (a `zangbundel.json` library with a package's id) is `manifest-missing`.
+**Status:** 58 cases. Two valid libraries with sets (signed and unsigned), a valid library with tag labels (FDS draft 0.10, D-44) and at least one invalid case for every rule of FDS section 6 except PKG-09, for which see [Not covered](#not-covered). The unsigned copy of APP-06 (a `zangbundel.json` library with a package's id) is `manifest-missing`.
 
 ## How the cases are made
 
@@ -66,6 +66,8 @@ App: the Songbook app's verdict (APP-01), with the rules that refuse it. Editor:
 | `file-changed` | MAN-06 | A line of `lorem-ipsum` changed, the manifest not | Refused: MAN-06 | MAN-06 Error | Accepted; the change goes unnoticed |
 | `license-missing` | MAN-07 | `license` removed from the manifest, the view left as it was | Refused: MAN-07, VIEW-02 | MAN-07 Error, VIEW-02 Info twice (`zangbundel.json`, `LICENSE`) | Accepted as a snapshot |
 | `maintainer-no-contact` | MAN-08 | The maintainer's only contact an `http:` URL; the view written from it | Refused: MAN-08 (M-75) | MAN-08 Error | Accepted as a snapshot |
+| `tag-labels` | — | Labels in the manifest's `tags` for `kampvuur` (nl, en, de), `avond` (nl, en) and `winter`, a tag no song uses; `demo` has none; the view unchanged (PF-41) | Accepted, with W013 | — | Accepted as a snapshot; tags shown as ids |
+| `tag-label-invalid` | MAN-02 | As `tag-labels`, but the Dutch label of `kampvuur` holds a line break | Refused: MAN-02 | MAN-02 Error | Accepted as a snapshot |
 | `signature-missing` | SIG-01 | `valid-signed` without `manifest.sig` | Refused: SIG-01 | SIG-01 Error | Accepted as a snapshot |
 | `signature-orphan` | SIG-01 | `valid-unsigned` with the `manifest.sig` of `valid-signed` | Refused: SIG-01 | SIG-01 Error | Accepted as a snapshot |
 | `signature-algorithm` | SIG-02 | `valid-signed` with `"algorithm": "Ed448"` | Refused: SIG-02 | SIG-02 Error | Accepted as a snapshot |
@@ -173,6 +175,8 @@ Standard library only. The generator implements Ed25519 after RFC 8032 and check
 - **The 1.1 side:** `release.py verify` of the library repository gave every case its `format_1_1` verdict, with every listed code in its report.
 
 The FDS rules have no Editor implementation yet, and the Songbook app has not run the cases added in this version.
+
+**2026-11-07:** `tag-labels` and `tag-label-invalid` added (FDS draft 0.10, D-44). The generator rerun left the other 56 libraries and their expected results byte-identical. `check_test_libraries.py`: 58 cases, 0 failed. The manager's engine gives all 58 their expected findings (`webapp/tests/conformance.test.mjs`); on the engine before the change, `tag-label-invalid` lacks its MAN-02. The app has not run the two new cases.
 
 ## The songs
 

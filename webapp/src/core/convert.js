@@ -12,6 +12,7 @@
 import { readCentralDirectory, readEntry } from './zip.js';
 import { canonicalize, parseSong, trimBlank } from './chordpro.js';
 import { compareOrdinal, isIgnored, isSongId } from './names.js';
+import { LABELS_MAX, TAGS_MAX, tagLabelOk } from './manifest.js';
 
 const dec = new TextDecoder('utf-8', { fatal: true });
 const SONG_MAX = 64 * 1024;
@@ -50,6 +51,36 @@ export function withSongId(text, id) {
   return `${lines.join('\n')}\n`;
 }
 
+/**
+ * EDT-26, FDS 4.1 (D-44): the tag labels of zangbundel.json (song format 4.2), keeping what the manifest
+ * allows. Returns { tags: object | null, leftOut: ['<tag>' | '<tag>.<lang>'] }.
+ */
+function readTags(value) {
+  const leftOut = [];
+  if (value === undefined) return { tags: null, leftOut };
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return { tags: null, leftOut: ['tags'] };
+  const tags = {};
+  let count = 0;
+  for (const [tag, labels] of Object.entries(value)) {
+    if (!isSongId(tag) || labels === null || typeof labels !== 'object' || Array.isArray(labels) || count >= TAGS_MAX) {
+      leftOut.push(tag);
+      continue;
+    }
+    const kept = [];
+    for (const [lang, label] of Object.entries(labels)) {
+      if (tagLabelOk(lang, label) && kept.length < LABELS_MAX) kept.push([lang, label]);
+      else leftOut.push(`${tag}.${lang}`);
+    }
+    if (kept.length === 0) {
+      leftOut.push(tag);
+      continue;
+    }
+    Object.defineProperty(tags, tag, { value: Object.fromEntries(kept), enumerable: true, writable: true, configurable: true });
+    count++;
+  }
+  return { tags: count ? tags : null, leftOut };
+}
+
 /** Song format 13: a setlist's title and its entries ({ library, song } or { unresolved }); lines are
  *  read as songs are (5.2): trimmed of spaces and tabs only (v0.24). */
 function readSetlist(text) {
@@ -78,7 +109,7 @@ function readSetlist(text) {
 /**
  * Convert the bytes of a ZIP without manifest into a new, unsigned library. Returns
  * { library, report } where report = { kind, songs, sets, leftOut: [paths], duplicates: [paths],
- * unresolved: [{ set, entry }] } for messages M-41 and M-42.
+ * unresolved: [{ set, entry }], tagsLeftOut: [tag or tag.lang] } for messages M-41 and M-42.
  */
 export function convertZip(bytes, { now = new Date(), libraryId = crypto.randomUUID(), title } = {}) {
   const entries = readCentralDirectory(bytes).filter((e) => !e.dir && !isIgnored(e.name));
@@ -188,6 +219,7 @@ export function convertZip(bytes, { now = new Date(), libraryId = crypto.randomU
     ...[...files.keys()].filter((p) => fromRepo && p.startsWith('setlists/') && p.endsWith('.zbs'))]);
   const leftOut = [...files.keys()].filter((p) => !used.has(p)).sort(compareOrdinal);
   const libTitle = title || (meta && typeof meta.name === 'string' && meta.name) || (root ? root.slice(0, -1) : 'Bibliotheek');
+  const { tags, leftOut: tagsLeftOut } = readTags(meta ? meta.tags : undefined);
 
   const library = {
     libraryId,
@@ -198,6 +230,7 @@ export function convertZip(bytes, { now = new Date(), libraryId = crypto.randomU
     modified: isoSeconds(now),
     license,
     maintainer,
+    tags,
     author: null,
     signed: false,
     sets,
@@ -208,5 +241,5 @@ export function convertZip(bytes, { now = new Date(), libraryId = crypto.randomU
     isNew: true,
     opened: null,
   };
-  return { library, report: { kind, songs: songs.size, sets: sets.length, leftOut, duplicates, unresolved } };
+  return { library, report: { kind, songs: songs.size, sets: sets.length, leftOut, duplicates, unresolved, tagsLeftOut } };
 }
