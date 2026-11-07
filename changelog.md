@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M4.2: the interface in Dutch, English and German** (`design/implementationPlan.md`).
+  - **`app/texts.js`** holds the mock's 242 texts in all three languages; the mock-only texts and the Google Play notice are left out.
+  - **`app/i18n.js`** opens in the language remembered on this computer, else the browser's, else English, and switches at once (GD-17, GD-34).
+  - **`app/storage.js`** is the only module that may touch browser storage, and only `zbm.lang` and `zbm.bars`; the build refuses storage APIs anywhere else (SR-42).
+  - **Tests:** `tests/unit/i18n.test.mjs` has 6 tests and `test_build.py` 3 new cases; `node --test` 265 of 265. Checked in the browser.
 - **M4.1: the element builder and a build check against HTML sinks** (`design/implementationPlan.md`).
   - **`app/dom.js`** builds elements from an allow-list of attributes, takes event handlers through `on`, refuses `javascript:` and `data:` links, and draws the Material icons of the new `app/icons.js` as SVG.
   - **`build.py` fails the build** on `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, `setAttribute('style' | 'on…')` and assigning `element.style` in any bundled module (SR-24, SR-32).

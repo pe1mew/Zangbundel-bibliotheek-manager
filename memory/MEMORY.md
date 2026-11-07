@@ -96,4 +96,9 @@
   - The mock builds with HTML strings (21 innerHTML), so M4 rewrites it with el(), keeping the look.
   - `zbm-download` moves to M6.2: `a.href = blob:` is not a Trusted Types sink.
   - Browser check: use a FRESH tab; the console keeps messages across reloads in a reused tab.
-  - Next: M4.2 i18n (port webapp/mock/i18n.js), M4.3 layout.
+  - M4.2 done (uncommitted).
+    - `app/texts.js` was generated from mock/i18n.js by a scratch script: 242 keys, mock-only ones dropped. Edit texts.js directly from now on.
+    - `createLanguage({preferred, store})` gives get/set/next/onChange; main.js redraws on change.
+    - `storage.js` is the allow-list; the build refuses storage APIs elsewhere.
+    - The language button sits on the start card until M4.4's bottom bar.
+  - Next: M4.3 layout (four areas, resizable bars, splash, narrow page), from mock.css/mock.js but built with el().

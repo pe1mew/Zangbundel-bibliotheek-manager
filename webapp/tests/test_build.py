@@ -39,7 +39,11 @@ special = {'css import': ('@import url(b.css); body{}', None), 'css external url
            'module: setAttribute style': ('body{}', "JS:export const f = (n) => n.setAttribute('style', 'color:red');"),
            'module: element.style =': ('body{}', 'JS:export const f = (n) => { n.style = "color:red"; };'),
            'module: eval': ('body{}', 'JS:export const f = (s) => eval(s);'),
-           'module: new Function': ('body{}', 'JS:export const f = (s) => new Function(s);')}
+           'module: new Function': ('body{}', 'JS:export const f = (s) => new Function(s);'),
+           # SR-42: browser storage only through app/storage.js
+           'module: localStorage': ('body{}', 'JS:export const f = (k) => localStorage.getItem(k);'),
+           'module: indexedDB': ('body{}', 'JS:export const f = () => indexedDB.open("x");'),
+           'module: document.cookie': ('body{}', 'JS:export const f = () => document.cookie;')}
 good_html = ('<!doctype html><!-- SPDX-License-Identifier: Apache-2.0 --><html><head><link rel="stylesheet preload" href="assets/a.css">'
              '<script type="module" src="assets/a.js"></script></head><body>'
              '<img src="assets/i.svg#logo" alt=""><a href="./">home</a><a href=".">h2</a><a href="nl/">nl</a><a href="nl/../">up</a>'

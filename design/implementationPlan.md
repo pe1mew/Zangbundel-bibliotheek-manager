@@ -317,6 +317,13 @@ Each milestone ends with its exit checks passing and the result written to `desi
 
   It reads the bundler's tokens, so comments and longer strings don't count. `test_build.py` has 9 cases refused and one allowed. All of `webapp/src` and `webapp/vendor` pass.
 - **Checked in the browser pane:** the built app under the test instance's CSP, in a fresh tab, showed no console message at all (SC-03 for the current screen).
+- **M4.2 done.**
+  - **Texts:** `app/texts.js` holds all 242 texts in nl, en and de, taken over from the mock's texts. The mock-only texts and the Google Play notice are left out.
+  - **Language:** `app/i18n.js` `createLanguage()` opens in the language remembered on this computer, else the browser's, else English (EDT-80 to EDT-82, GD-17, GD-34). It switches NL, EN, DE at once, and every screen is redrawn.
+  - **Storage:** `app/storage.js` is the only module that touches browser storage, with the allow-list `zbm.lang`, `zbm.bars` (SR-42). `build.py` refuses `localStorage`, `sessionStorage`, `indexedDB` and `document.cookie` in every other module.
+  - **Tested:** `tests/unit/i18n.test.mjs` checks that every text exists in every language, non-empty and without markup, with the same placeholders; it also covers the remembered language, a blocked store and the allow-list.
+  - **In the browser pane:** NL, EN, DE switched at once, the choice survived a reload, local storage held only `zbm.lang`, and the console was empty.
+  - **Until M4.4,** the language button sits on the start card; the bottom bar takes it over.
 - **`zbm-download` moves to M6.2, where the download is built.** Assigning a `blob:` URL to `a.href` is not a Trusted Types sink, so that policy has nothing to guard at that point. The download helper will create and revoke the `blob:` URL itself (SR-36); whether SR-32 still needs a policy of that name is for the M6 review.
 
 ### M5 — Editing (L)

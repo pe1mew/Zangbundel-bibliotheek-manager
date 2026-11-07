@@ -47,4 +47,13 @@ a:focus-visible, .splash:focus-visible { outline: 3px solid var(--sky-blue); out
 .home .card { max-width: 560px; background: var(--sheet); border: 1px solid var(--divider); border-radius: 16px; padding: 24px; }
 .home h2 { margin: 0 0 12px; font-size: 20px; }
 .home p { margin: 0 0 12px; }
-.home p:last-child { margin-bottom: 0; color: var(--secondary); font-size: 14px; }
+.home p.note { color: var(--secondary); font-size: 14px; }
+.home .langrow { margin: 16px 0 0; }
+
+/* GD-17: the language button (in the bottom bar from M4.4) */
+.langbtn {
+  min-width: 48px; padding: 6px 12px; border: 1px solid var(--divider); border-radius: 8px;
+  background: transparent; color: var(--white); font: 600 14px/1 var(--font); cursor: pointer;
+}
+.langbtn:hover { border-color: var(--sky-blue); }
+.langbtn:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }

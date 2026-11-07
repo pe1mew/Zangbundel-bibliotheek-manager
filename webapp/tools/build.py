@@ -296,6 +296,7 @@ def git_state(src, files, extra=()):
 
 SINK_NAMES = {'innerHTML', 'outerHTML', 'insertAdjacentHTML', 'srcdoc', 'cssText', 'createContextualFragment',
               'setHTMLUnsafe', 'parseHTMLUnsafe'}
+STORAGE_NAMES = {'localStorage', 'sessionStorage', 'indexedDB'}
 
 
 def dom_sink(text, path):
@@ -321,6 +322,11 @@ def dom_sink(text, path):
         after = toks[i + 2] if i + 2 < len(toks) else ('', '')
         if kind == 'id' and val == 'style' and prev == ('p', '.') and nxt == ('p', '=') and after not in (('p', '='), ('p', '==')):
             return 'assigns element.style (use style.setProperty)'
+        # SR-42: browser storage only through app/storage.js and its allow-list
+        if kind == 'id' and val in STORAGE_NAMES and not path.replace(os.sep, '/').endswith('/app/storage.js'):
+            return f'uses {val} outside app/storage.js (SR-42)'
+        if kind == 'id' and val == 'cookie' and prev == ('p', '.') and i >= 2 and toks[i - 2] == ('id', 'document'):
+            return 'uses document.cookie (SR-42)'
     return None
 
 
@@ -365,11 +371,11 @@ def build(args):
             code, workers, mods = bundler.bundle(entry, root)
         except bundler.BundleError as e:
             fail(str(e))
-        for m in mods:                                   # SR-24, SR-32: no HTML or script sink in any module
+        for m in mods:                                   # SR-24, SR-32, SR-42: no HTML, script or storage sink in any module
             with open(m, encoding='utf-8') as fh:
                 problem = dom_sink(fh.read(), m)
             if problem:
-                fail(f'{os.path.relpath(m, root)}: {problem} (securityAssessment SR-24, SR-32: build the DOM with app/dom.js)')
+                fail(f'{os.path.relpath(m, root)}: {problem} (securityAssessment 7.3: the DOM through app/dom.js, storage through app/storage.js)')
         bundles[entry] = None                            # a worker that starts its own page: refused below
         names = {}
         for w in workers:
