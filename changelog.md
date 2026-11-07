@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M3: keys and signing** (`design/implementationPlan.md` draft 0.17).
+  - **`core/keyfile.js`** reads and writes `.zbkey` files (FDS 5.3). A damaged or DER-wrapped key is M-31.
+  - **`core/ed25519.js`** signs with Web Crypto and a non-extractable key where the browser has Ed25519, and with `@noble/ed25519` elsewhere. Its known-answer self-test also cross-checks the two (SR-15, SR-16).
+  - **The crypto worker** (`workers/crypto-handler.js`, `crypto-worker.js`) and its client (`app/crypto-client.js`) keep the private key in the worker only (SR-40) and overwrite it on `forget` and `pagehide` (SR-41). A new key signs only after its key file has been exported, with M-64 acknowledged (EDT-61).
+  - **A signed save** gets its signature from the crypto worker over a `MessagePort` (SG-02, EDT-60, EDT-62).
+  - **Tests:** the RFC 8032 test key reproduces `valid-signed.zbl`'s signature. `tests/unit/crypto.test.mjs` adds 11 tests; `node --test` 260 of 260, container 81 of 81.
+  - **Browser check:** passed once in the browser pane (Chromium) under the SR-20 CSP; Firefox and Safari are still to run.
 - **Tag labels in the manifest** (FDS draft 0.10, D-44; song format v0.26, decided by the owner). The optional manifest field `tags` holds a label per language for each tag of the songs; MAN-02 checks it.
   - **The engine** keeps the labels through open, save and Save as copy. It writes them into the manifest only, never into the 1.1 view, because current apps refuse an extra view field.
   - **Conversion** carries them over from `zangbundel.json` and lists what it leaves out (EDT-26).

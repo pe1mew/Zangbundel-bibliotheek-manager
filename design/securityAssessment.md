@@ -390,7 +390,10 @@ assets/app.<hash>.css           all styles; no style attributes anywhere
 - **Messages between threads** carry plain data only. The library worker returns, for example, `{ songs: [{ id, title, … }], findings: [{ code, severity, where, params }] }`; the main thread builds messages from the code and the translated text with `textContent`.
 - **Rendering**: a small helper builds elements (`el('li', { class: 'song' }, [text(title)])`); there is no HTML string anywhere. The Trusted Types policy `zbm-download` only wraps `URL.createObjectURL` for download links; with `require-trusted-types-for 'script'` any accidental `innerHTML` throws.
 - **Dynamic styles** (the side-bar widths of GD-10) are set through `element.style.setProperty`, which CSP allows, never through `style` attributes in markup.
-- **The crypto worker** exposes `makeKey(name)`, `loadKey(bytes)`, `sign(manifestBytes)`, `publicKey()`, `fingerprint()`, `exportKeyFile()` (only after the M-64 acknowledgement in the UI) and `forget()`. Its self-test (SR-15) runs on start.
+- **The crypto worker** exposes `make(name)`, `load(bytes, expect)`, `exportKeyFile(acknowledged)` (once, for a new key, only after the M-64 acknowledgement), `info()` (public key, fingerprint, name), `sign(bytes)`, `serve(port)` and `forget()`. Its self-test (SR-15) runs on start.
+  - `serve(port)` answers signature requests on a `MessagePort` that the library worker uses while it saves, so manifest bytes and signatures do not pass the main thread.
+  - A new key cannot sign before its key file has been exported (FDS EDT-61).
+  - *Implemented 2026-11-07 (implementationPlan M3).*
 - **Storage**: one module wraps `localStorage` with an allow-list of `zbm.lang` and `zbm.bars`; no other code touches storage (SR-42).
 
 ### 7.4 Releases and deployment (SR-10 to SR-13, SR-17, SR-73, SR-74, SR-84)
@@ -605,4 +608,4 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 | Draft 0.10 | 2026-11-06 | The owner's decision on webappTDS TQ-08 (TD-23): SR-20's CSP lists a second Trusted Types policy, `zbm-worker`, for starting the two workers; SR-32 and 7.3 say what each policy accepts. |
 | Draft 0.11 | 2026-11-06 | 7.4 records the vendoring of M1.2 (`vendor.py`): SR-12 checks as run, fflate 0.8.3 without published provenance (accepted, recorded), SR-14's GitLab check by hand. |
 | Draft 0.12 | 2026-11-06 | The owner keeps `fflate` 0.8.3 although it publishes no provenance: an accepted risk in section 9, noted in 7.4. |
-| Draft 0.13 | 2026-11-07 | DNS set by the owner. Two deviations accepted: no null MX, because Openprovider refuses one, so no MX and port 25 closed (SR-07); no transfer lock, because `.nl` has none, so the registrar account's two-factor authentication protects the domain (SR-05). Section 7.2 and SC-12 follow. |
+| Draft 0.13 | 2026-11-07 | Section 7.3: the crypto worker's operations as implemented in M3. DNS set by the owner. Two deviations accepted: no null MX, because Openprovider refuses one, so no MX and port 25 closed (SR-07); no transfer lock, because `.nl` has none, so the registrar account's two-factor authentication protects the domain (SR-05). Section 7.2 and SC-12 follow. |

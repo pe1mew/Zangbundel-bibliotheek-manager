@@ -10,7 +10,7 @@ framework: agent-ready-projects v1.49.2
 <!-- Canonical project file for Claude Code. No AGENTS.md exists; if one is
      added later, this file stays canonical and AGENTS.md should say so. -->
 
-The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.10. The Editor is built as a web app in `webapp/` (static files on nginx); its designs are written. In the repository: M0 (placeholder, server set-up, signed release chain), M1 (bundler, minimal app, vendoring, test runner), and most of M2 (the library engine: every rule of FDS section 6, open, save and conversion; the block form is left). Not yet: the screens (M4 onwards); nothing is deployed until the owner's M0 server steps are done.
+The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.10. The Editor is built as a web app in `webapp/` (static files on nginx); its designs are written. In the repository: M0 (placeholder, server set-up, signed release chain), M1 (bundler, minimal app, vendoring, test runner), most of M2 (the library engine: every rule of FDS section 6, open, save and conversion; the block form is left), and M3 (keys and signing in the crypto worker; checked in Chromium only). Not yet: the screens (M4 onwards); nothing is deployed until the owner's M0 server steps are done.
 
 ## Before You Start
 
@@ -71,7 +71,7 @@ Zangbundel-bibliotheek-manager/
 ├── webapp/
 │   ├── mock/                     ← clickable mock of webappGUI (static HTML, CSS, JS; app icon CC BY-SA 4.0); never deployed
 │   ├── placeholder/              ← zangbundel.nl until go-live: nl/en/de pages, privacy, security.txt (no script)
-│   ├── src/                      ← the web app: index.html, app/ (ES modules, bundled by the build, TD-22; library-client, trusted), core/ (the library engine: zip, names, manifest, fingerprint, chordpro, validate, view, library, convert), workers/ (library worker), assets/
+│   ├── src/                      ← the web app: index.html, app/ (ES modules, bundled by the build, TD-22; library-client, crypto-client, trusted), core/ (the library engine: zip, names, manifest, fingerprint, chordpro, validate, view, library, convert; keys: keyfile, ed25519), workers/ (library worker, crypto worker), assets/
 │   ├── tests/                    ← test_build.py, test_bundle.py, test_vendor.py, test_engine_bundle.py (need node); unit/, conformance.test.mjs (node --test)
 │   ├── vendor/                   ← fflate 0.8.3, @noble/ed25519 3.2.0 with licences; VENDOR.md (hashes, provenance), written by tools/vendor.py
 │   ├── test-holding/             ← test.zangbundel.nl until M1.4

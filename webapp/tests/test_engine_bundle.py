@@ -52,8 +52,9 @@ console.log(JSON.stringify({{ same, differ }}));
     import json
     out = json.loads(r.stdout.strip().splitlines()[-1])
     ok = out['same'] == 58 and not out['differ']
-    # The library worker and its client, as the app will bundle them (TD-22): they bundle and parse.
-    for entry in ('src/workers/library-worker.js', 'src/app/library-client.js'):
+    # The two workers and their clients, as the app will bundle them (TD-22): they bundle and parse.
+    for entry in ('src/workers/library-worker.js', 'src/app/library-client.js',
+                  'src/workers/crypto-worker.js', 'src/app/crypto-client.js'):
         wcode, _, wsources = bundle.bundle(os.path.join(WEBAPP, *entry.split('/')), WEBAPP)
         wfile = os.path.join(d, 'check.mjs')
         with open(wfile, 'w', encoding='utf-8') as fh:
@@ -61,6 +62,12 @@ console.log(JSON.stringify({{ same, differ }}));
         rc = subprocess.run(['node', '--check', wfile], capture_output=True, text=True).returncode
         print(('PASS ' if rc == 0 else 'FAIL ') + f'{entry} bundles ({len(wsources)} modules) and passes node --check')
         ok = ok and rc == 0
+        if entry == 'src/workers/crypto-worker.js':
+            # SR-40: the key's worker carries the signing code only, not the library engine or fflate
+            names = sorted(os.path.basename(s) for s in wsources)
+            lean = not any(n.startswith(('fflate', 'zip', 'validate', 'library', 'chordpro')) for n in names)
+            print(('PASS ' if lean else 'FAIL ') + f'crypto worker holds no library code: {", ".join(names)}')
+            ok = ok and lean
     print(('PASS ' if ok else 'FAIL ') + f"bundled engine ({len(sources) - 1} modules) gives the native findings on "
           f"{out['same']} of 58 test libraries" + (f"; differs on {out['differ']}" if out['differ'] else ''))
     sys.exit(0 if ok else 1)

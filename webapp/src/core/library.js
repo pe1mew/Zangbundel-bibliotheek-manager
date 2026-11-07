@@ -16,7 +16,7 @@ import { writeZip } from './zip.js';
 import { validateLibrary } from './validate.js';
 import { canonicalize } from './chordpro.js';
 import { base64Bytes } from './manifest.js';
-import { compareOrdinal, nameProblem } from './names.js';
+import { compareOrdinal, safeFileName } from './names.js';
 import { viewFiles } from './view.js';
 import { convertZip } from './convert.js';
 
@@ -44,18 +44,7 @@ async function sha256hex(bytes) {
 
 /** A name that complies with FDS 3.3 (PF-20 to PF-22), for the folder and the file name. */
 export function safeName(text, maxLength = 100) {
-  // forbidden and control characters become '-'; bidirectional controls, which can disguise a file
-  // name's extension (SR-36), are removed
-  let s = String(text).normalize('NFC').replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '');
-  s = [...s.replace(/[<>:"/\\|?*\u0000-\u001f\u007f-\u009f]/g, '-')].slice(0, maxLength).join('');
-  s = s.replace(/[ .]+$/, '');
-  if (s === '') {
-    s = 'bibliotheek';
-  }
-  if (nameProblem(s)) {                                 // a reserved name such as AUX
-    s = `${s}-bibliotheek`;
-  }
-  return s;
+  return safeFileName(text, maxLength);
 }
 
 /** EDT-55: the top-level folder, named after the title. */

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.16 |
+| **Status** | Draft 0.17 |
 | **Date** | 2026-11-07 |
 | **Depends on** | `design/FDS.md` draft 0.10, `design/webappGUI.md` draft 0.13, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.12, `test-libraries/` (58 cases) |
 
@@ -263,6 +263,35 @@ Each milestone ends with its exit checks passing and the result written to `desi
 
 **Exit:** SC-05 in every browser of TD-15; signing the reference library reproduces `valid-signed.zbl`'s signature; SC-06 for the key flows.
 
+**State (2026-11-07).** M3.1 to M3.4 are written and tested in Node; the exit is met in Chromium only.
+- **Modules:**
+  - `core/keyfile.js` reads and writes key files. A damaged file, or a key wrapped in DER as `openssl` writes it, is M-31.
+  - `core/ed25519.js` holds the hybrid signer and the SR-15 self-test.
+  - `workers/crypto-handler.js` and `crypto-worker.js` run the operations `selftest`, `make`, `exportKeyFile`, `load`, `info`, `sign`, `serve` and `forget`.
+  - `app/crypto-client.js` starts the worker through `zbm-worker`, and ends it on `forget` and on `pagehide`.
+- **The key's life (SR-40, SR-41, SR-16):**
+  - A new key signs only after its key file was exported, once, with M-64 acknowledged (EDT-61).
+  - After that export, or right after loading, the key is kept only as a non-extractable Web Crypto key, and its seed is overwritten with zeros. Where the browser has no Ed25519 in Web Crypto, `@noble/ed25519` keeps the seed instead.
+  - No answer of the worker carries the private key, except the key file's bytes on that one export.
+- **Signing a save:** the library worker asks the crypto worker for the signature over a `MessagePort` (`library-handler.js` `portSigner`), so the manifest bytes and the signature never pass the main thread.
+- **The crypto worker's bundle** holds no library code: no fflate and no validator (`test_engine_bundle.py` checks this).
+- **Tested in `tests/unit/crypto.test.mjs`:** 11 tests, on both Ed25519 paths. They cover:
+  - the exit check: the RFC 8032 test key signs `valid-signed`'s manifest with exactly its `manifest.sig`;
+  - SG-11 (M-31) and EDT-62 (M-30);
+  - an unsigned library saved signed across both workers, which passes SIG-03;
+  - the save refused for a key not yet exported;
+  - the client's `forget` and `pagehide`.
+- **Checked once in the browser pane (Chromium), not in the repository's tests.** A scratch page built with `build.py` was served under the SR-20 CSP with Trusted Types (`upgrade-insecure-requests` left out on plain http).
+  - The self-test passed with Web Crypto, including the non-extractable key.
+  - Make, export and sign worked, and signing before the export was refused.
+  - The test key gave fingerprint `21FE-31DF-A154-A261` and RFC 8032's signature, also over the `MessagePort`.
+  - After `forget`, local and session storage, cookies, IndexedDB and Cache Storage were empty (SC-06, as far as the worker goes).
+  - A raw `new Worker()` was refused.
+- **Still open for the exit:**
+  - SC-05 in Firefox and Safari; Edge shares Chromium's engine but is to be run as well.
+  - SC-06 through the app's own key flows, once they exist (M6).
+  - The screens for making, loading and forgetting a key, M-64 and the idle timer (SR-46, GD-39, GD-40) come with M4 to M6.
+
 ### M4 — Application shell (L)
 
 | # | Work | Requirements |
@@ -410,3 +439,4 @@ The placeholder and the manager have separate release directories and separate m
 | Draft 0.14 | 2026-11-07 | M2.8 (library worker, client, `zbm-worker` policy, 20 s limit) and M2.9 (fuzzing, SC-11: 20,000 inputs, 0 failures) done. |
 | Draft 0.15 | 2026-11-07 | M2.7 (conversion of release archives, snapshots and plain ZIPs) done; left in M2: the block form. |
 | Draft 0.16 | 2026-11-07 | The engine follows song format v0.24 to v0.26: whitespace, comments, display text, and tag labels in the manifest (FDS draft 0.10); 58 test libraries. |
+| Draft 0.17 | 2026-11-07 | M3 written: key files, hybrid Ed25519 with self-test, the crypto worker and client, signed saves over a MessagePort. The exit is met in Chromium; Firefox, Safari and Edge are still to run. |
