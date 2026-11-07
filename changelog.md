@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M5.3c: the song's fields** (`design/implementationPlan.md`).
+  - **The left bar** shows title, language, words, music, copyright, licence, source and tags while you edit a song in *Blokken*.
+  - **Writing:** each field writes its line in the song.
+  - **Marks:** a missing title or language, or an invalid tag, is marked at once.
+  - **Code:** `app/songfields.js`; `core/blockmeta.js`.
+  - **Tests:** `songfields.test.mjs`; `node --test` 359 of 359. Checked in Chromium.
 - **M5.3b: the *Code (ChordPro)* mode** (`design/implementationPlan.md`).
   - **Bewerken als:** switch between *Blokken* and *Code (ChordPro)* at any moment; changes come along, and switching without a change leaves the song as it was.
   - **Checks while typing:** the code mode checks the song as you type, with the same messages and lines as Controle.

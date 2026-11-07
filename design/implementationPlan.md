@@ -535,7 +535,26 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - *Toepassen* in code mode;
   - the arrow keys switching with focus following;
   - *Fire in the Night* through both modes and applied: the library not marked changed.
-- **Next:** M5.3c, the song's fields in the left bar.
+
+**M5.3c done.**
+- **`app/songfields.js`:** the song's fields in the left bar while it is edited in *Blokken* (GD-05, EDT-34), as the mock:
+  - title and language (required); words, music, copyright, licence (empty: the library's), source, tags; the song ID shown, not edited (EDT-36);
+  - the language from a list (Dutch, English, German, Frisian, French and the song's own), or *Andere taalcode…* with a field of its own;
+  - several words or music writers separated by `;`, tags by commas.
+- **Writing:** each field reads and writes its directives in the block form (`setMeta`) when it is left, so the fields and the code are one song; an empty field removes its directive. Braces and control characters cannot be typed into a field.
+- **Marks:** while editing, a field marks what the song rules will report: no title (SNG-02), no or an invalid language (SNG-11), a tag that is not a tag (SNG-15). Controle and the code mode report them by the engine's rules.
+- **`core/blockmeta.js`:** `setMeta`, `metaValues` and `valueProblem` moved out of `blocks.js` into a module without imports, so the page edits metadata without the ChordPro parser in its bundle (SR-30); the bundler allows no re-exports (TD-22), so `blocks.js` imports `valueProblem` from it and the tests import the rest directly. The page bundle was checked: no parser in it.
+- **The editor's buttons** look up their block's place when used, so a field written in the left bar does not redraw the blocks, and a click into a verse right after typing in a field lands.
+- **Tested:**
+  - `tests/unit/songfields.test.mjs`, 4 tests: splitting names and tags, the marks, every field written as its directive (checked as code with `fromBlocks`), another language code, braces kept out.
+  - `node --test`: 359 of 359. Container test: 81 of 81.
+- **In the browser pane (Chromium):**
+  - *Vader Jacob*: title, tags and music set in the fields; a click into a verse straight after typing the title landed;
+  - the tag *Welpen* marked, then accepted in lower case;
+  - the fields seen as directives in the code mode, whose checks moved on to the next missing field;
+  - *Toepassen* showed the new title in the view, the left bar and the song list;
+  - *Lorem Ipsum!* showed its own language *Latijn* and two lyricists.
+- **Next:** M5.3d, *Lied toevoegen*.
 
 ### M6 — Open, save and sign (M)
 

@@ -7,7 +7,8 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { fromBlocks, lyricLineProblem, metaValues, setMeta, toBlocks, valueProblem } from '../../src/core/blocks.js';
+import { fromBlocks, lyricLineProblem, toBlocks } from '../../src/core/blocks.js';
+import { metaValues, setMeta, valueProblem } from '../../src/core/blockmeta.js';
 import { canonicalize, parseSong, songView } from '../../src/core/chordpro.js';
 import { openLibrary } from '../../src/core/library.js';
 

@@ -9,6 +9,7 @@
 import { el, icon, listen, setAttrs } from './dom.js';
 import { t } from './i18n.js';
 import { messageFor, severityGroup, severityIcon } from './check.js';
+import { createSongFields } from './songfields.js';
 
 const KINDS = ['verse', 'chorus', 'bridge'];
 const KIND_TEXT = { verse: 'kVerse', chorus: 'kChorus', bridge: 'kBridge' };
@@ -90,13 +91,14 @@ const CODE_MAX = 64 * 1024;                               // FDS 3.5: a larger s
 
 /**
  * createSongEditor({ lang, id, text, form, title, onApply(state), onCancel(), onDelete(), onMode(mode),
- * toText(form), toForm(text), checkCode(text) }) → { node, state(), mode(), changed(), showProblem(text) }.
+ * toText(form), toForm(text), checkCode(text) }) → { node, fieldsNode(), state(), mode(), changed(), showProblem(text) }.
+ * fieldsNode() is the song's fields for the left bar in *Blokken* (songfields.js, M5.3c).
  * text and form are the song as opened, as text and as the worker's block form; the form is edited in a
  * copy. state() is { mode: 'blocks', form } or { mode: 'code', text }. toText, toForm and checkCode go to
  * the worker: blocks to text ({ text } or { problem }), canonical text to blocks, the song rules over code.
  * GD-38: switching keeps every change, and switching without changes leaves the song exactly as it was.
  */
-export function createSongEditor({ lang, text: original, form: initial, title, onApply, onCancel, onDelete,
+export function createSongEditor({ lang, id, text: original, form: initial, title, onApply, onCancel, onDelete,
   onMode = () => {}, toText, toForm, checkCode }) {
   let form = structuredClone(initial);
   const start = JSON.stringify(initial);
@@ -169,10 +171,13 @@ export function createSongEditor({ lang, text: original, form: initial, title, o
       : null;
     const btn = (name, text, disabled, click) => el('button', { type: 'button', class: 'iconbtn', title: text, 'aria-label': text, disabled,
       on: disabled ? undefined : { click } }, [icon(name)]);
+    // the block's place is looked up when a button is used: a metadata field written from the left bar
+    // (M5.3c) adds or removes lines above it without drawing the blocks again
+    const move = (dir) => () => { form = moveBlock(form, form.blocks.indexOf(block), dir); draw(block, dir); };
     return el('div', { class: 'secbar' }, [kind, label, el('span', { class: 'grow' }, []),
-      btn('up', t(lang, 'up'), pos === 0, () => { form = moveBlock(form, i, -1); draw(i, 'up'); }),
-      btn('down', t(lang, 'down'), pos === shown.length - 1, () => { form = moveBlock(form, i, 1); draw(i, 'down'); }),
-      btn('delete', t(lang, 'deleteBlock'), false, () => { form = { ...form, blocks: form.blocks.filter((x, n) => n !== i) }; draw(); }),
+      btn('up', t(lang, 'up'), pos === 0, move(-1)),
+      btn('down', t(lang, 'down'), pos === shown.length - 1, move(1)),
+      btn('delete', t(lang, 'deleteBlock'), false, () => { form = { ...form, blocks: form.blocks.filter((x) => x !== block) }; draw(); }),
     ]);
   }
 
@@ -183,17 +188,16 @@ export function createSongEditor({ lang, text: original, form: initial, title, o
       : block.type === 'repeat' ? [el('div', { class: 'repeatinfo muted' }, [((first) => (first === null ? t(lang, 'repeatsNone')
         : t(lang, 'repeats', { t: `${first} …` })))(repeatedChorus(form, i, block.label))])]
         : [el('pre', { class: 'lockedtext' }, [block.lines.join('\n')]), el('div', { class: 'muted small' }, [t(lang, 'lockedNote')])];
-    return el('div', { class: cls, 'data-block': i }, [bar(i, block, shown), ...body]);
+    return el('div', { class: cls }, [bar(i, block, shown), ...body]);
   }
 
   // draw the blocks again after a change of structure; focus follows a moved block's button
-  function draw(movedFrom, dir) {
+  function draw(moved, dir) {
     const shown = shownIndexes(form);
     sections.replaceChildren(...shown.map((i) => blockNode(i, shown)));
-    if (movedFrom !== undefined) {
-      const target = shownIndexes(form)[shown.indexOf(movedFrom) + (dir === 'up' ? -1 : 1)];
-      const card = [...sections.children].find((c) => c.getAttribute('data-block') === String(target));
-      const button = card && card.querySelector(`button[aria-label="${t(lang, dir === 'up' ? 'up' : 'down')}"]`);
+    if (moved) {
+      const card = sections.children[shown.indexOf(form.blocks.indexOf(moved))];
+      const button = card && card.querySelector(`button[aria-label="${t(lang, dir < 0 ? 'up' : 'down')}"]`);
       if (button && !button.disabled) button.focus();
       else if (card) card.querySelector('button:not([disabled])')?.focus();
     }
@@ -213,6 +217,12 @@ export function createSongEditor({ lang, text: original, form: initial, title, o
       on: { click: () => add({ type: 'section', kind: k, label: null, lines: [''], implicit: false }) } }, [icon('add'), t(lang, KIND_TEXT[k])])),
     el('button', { type: 'button', class: 'btn btn-outline', on: { click: () => add({ type: 'repeat', label: null }) } }, [icon('add'), t(lang, 'kRepeat')]),
   ]);
+
+  // GD-05, EDT-34: the song's fields write into the same form; no redraw of the blocks is needed for that
+  let fields = null;
+  const makeFields = () => {
+    fields = createSongFields({ lang, id, getForm: () => form, setForm: (next) => { form = next; } });
+  };
 
   const showProblem = (text) => {
     problem.replaceChildren(...(text ? [text] : []));
@@ -304,6 +314,7 @@ export function createSongEditor({ lang, text: original, form: initial, title, o
       } else {
         // GD-38: code that was not changed gives back exactly the blocks it came from
         form = code === codeFrom ? formAtCode : structuredClone(await toForm(code));
+        makeFields();                                     // the fields read the form as it is now
         mode = 'blocks';
         body.replaceChildren(blocksBody);
         draw();
@@ -331,12 +342,14 @@ export function createSongEditor({ lang, text: original, form: initial, title, o
   ]);
   markMode();
   draw();
+  makeFields();
 
   return {
     node,
     /** What Toepassen applies, in the mode that is open (GD-38). */
     state: () => (mode === 'code' ? { mode, text: code } : { mode, form }),
     mode: () => mode,
+    fieldsNode: () => fields.node,
     /** GD-36: whether there is anything to apply or throw away. */
     changed: () => (mode === 'code' ? !sameCode(code, original) : JSON.stringify(form) !== start),
     /** What the worker could not write: shown above the song. */

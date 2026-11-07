@@ -275,7 +275,7 @@ function start() {
     const lang = language.get();
     const title = (details && details.meta && details.meta.title) || t(lang, 'noTitle');
     selected = id;
-    editing = { id, title, token: ++editTokens, editor: createSongEditor({ lang, text: session.get().library.songs.get(id), form, title,
+    editing = { id, title, token: ++editTokens, editor: createSongEditor({ lang, id, text: session.get().library.songs.get(id), form, title,
       onApply: () => applyEdit(), onCancel: stopEditing, onDelete: () => onDeleteSong(id, title), onMode: () => render(),
       // GD-38, EDT-33: the worker turns blocks into code and code into blocks, and checks the code as it is typed
       toText: (f) => session.unblocks(f),
@@ -357,9 +357,15 @@ function start() {
     if (selected) {
       leftKey = `song|${selected}`;
       form = null;
-      replace(layout.left, editing && editing.editor.mode() === 'code'
-        ? el('div', { class: 'libform' }, [el('h3', {}, [t(lang, 'songData')]), el('p', { class: 'muted' }, [t(lang, 'textModeLeft')])])
-        : shown.details ? songDataNode(lang, selected, shown.details) : el('p', { class: 'empty' }, ['…']));
+      if (editing && editing.editor.mode() === 'blocks') {
+        // GD-05, EDT-34: the song's fields while editing in Blokken; the same node stays, so typing keeps its focus
+        const fieldsNode = editing.editor.fieldsNode();
+        if (layout.left.firstChild !== fieldsNode) replace(layout.left, fieldsNode);
+      } else {
+        replace(layout.left, editing
+          ? el('div', { class: 'libform' }, [el('h3', {}, [t(lang, 'songData')]), el('p', { class: 'muted' }, [t(lang, 'textModeLeft')])])
+          : shown.details ? songDataNode(lang, selected, shown.details) : el('p', { class: 'empty' }, ['…']));
+      }
     }
     const formKey = state.library ? `${state.generation}|${lang}|${readOnly}` : null;
     if (!selected && formKey !== leftKey) {

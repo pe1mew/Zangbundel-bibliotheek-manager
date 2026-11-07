@@ -158,4 +158,7 @@
   - M5.3a committed. M5.3b done (uncommitted).
     - editor modes: state() {mode, form|text}, mode(), changed() (code: sameCode vs the opened text); callbacks toText/toForm/checkCode go to the worker.
     - Worker ops `songCheck` (validate.js checkSongText) and `canonical`. session.updateSong is a no-op for identical text.
-  - Next: M5.3c song fields in the left bar (EDT-34, GD-05) via setMeta on the block form.
+  - M5.3b committed. M5.3c done (uncommitted): `songfields.js` createSongFields({lang, id, getForm, setForm}); editor.fieldsNode(); `core/blockmeta.js` (setMeta, metaValues, valueProblem; no imports, so the page bundle has no parser).
+    - TD-22: the bundler refuses re-exports (`export … from`).
+    - Editor buttons resolve their block's index at click time (no redraw after a field write).
+  - Next: M5.3d Lied toevoegen (empty song, import .cho, ID from title EDT-36, GD-25 reveal), then M5.3e drag.
