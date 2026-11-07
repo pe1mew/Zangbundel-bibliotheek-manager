@@ -256,6 +256,10 @@ export const TEXTS = {
     foldRight: "Rechterbalk inklappen",
     unfoldRight: "Rechterbalk uitklappen",
     tileSoon: "Komt in een volgende testversie.",
+    privacyLink: "Privacyverklaring",
+    fdroidBadge: "Verkrijg op F-Droid",
+    newTab: "(opent in een nieuw tabblad)",
+    keyGroup: "Sleutel",
   },
   en: {
     appName: "Zangbundel library manager",
@@ -507,6 +511,10 @@ export const TEXTS = {
     foldRight: "Fold the right bar",
     unfoldRight: "Unfold the right bar",
     tileSoon: "Comes in a later test version.",
+    privacyLink: "Privacy statement",
+    fdroidBadge: "Get it on F-Droid",
+    newTab: "(opens in a new tab)",
+    keyGroup: "Key",
   },
   de: {
     appName: "Zangbundel Bibliotheksverwaltung",
@@ -758,5 +766,9 @@ export const TEXTS = {
     foldRight: "Rechte Leiste einklappen",
     unfoldRight: "Rechte Leiste ausklappen",
     tileSoon: "Kommt in einer späteren Testversion.",
+    privacyLink: "Datenschutzerklärung",
+    fdroidBadge: "Hol es dir bei F-Droid",
+    newTab: "(öffnet in einem neuen Tab)",
+    keyGroup: "Schlüssel",
   },
 };

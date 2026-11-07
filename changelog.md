@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M4.4: the bottom bar, the *Android-app* panel and *Over*** (`design/implementationPlan.md`).
+  - **Bottom bar:** every group is drawn; the library and key buttons wait, disabled, for M5 and M6.
+  - ***Android-app* panel:** F-Droid's badge greyed with *binnenkort*, and links to the APK, the manuals and the sources, opening in a new tab without a referrer.
+  - ***Over*:** the privacy statement (SR-52), which the narrow page now links as well.
+  - **Dialogs:** on the browser's own `<dialog>` (`app/dialog.js`).
+  - **Tests:** `tests/unit/panels.test.mjs` has 4 tests; `node --test` 275 of 275. Checked in the browser.
 - **M4.3: the main screen's layout** (`design/implementationPlan.md`).
   - **Four areas:** left bar, centre, right bar and bottom bar.
   - **Splash:** in the centre with the photograph, the bars greyed meanwhile.

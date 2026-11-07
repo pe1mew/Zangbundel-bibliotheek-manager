@@ -129,6 +129,50 @@ h3 { font-size: 13px; color: var(--secondary); text-transform: uppercase; letter
 .navbtn.active { color: var(--fire-orange); }
 .navbtn:disabled { opacity: .35; cursor: not-allowed; }
 
+.navbtn .dot {                       /* GD-14: a key made here and not yet downloaded */
+  position: absolute; top: 8px; right: 30px; width: 10px; height: 10px; border-radius: 50%; background: var(--fire-orange);
+}
+.nav-sep { width: 1px; height: 40px; background: var(--line); margin: 0 6px; flex: none; }
+.navgroup { position: relative; display: flex; gap: 4px; }
+.navgroup.keys { padding-bottom: 12px; }
+.navgroup-label {
+  position: absolute; left: 0; right: 0; bottom: -2px; text-align: center; font-size: 11px; color: var(--secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: ui-monospace, Consolas, monospace;
+}
+.small { font-size: 13px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }   /* read aloud, not shown */
+
+/* ---- Dialogs (dialog.js: the browser's own <dialog>) ---- */
+.dialog {
+  width: min(620px, 92vw); max-height: 86vh; padding: 0; overflow-y: auto;
+  background: var(--sheet); color: var(--white); border: 1px solid var(--line); border-radius: 16px;
+}
+.dialog.wide { width: min(760px, 94vw); }
+.dialog::backdrop { background: rgba(0, 0, 0, .55); }
+.dlgbody { position: relative; padding: 24px; }
+.dlghead { display: flex; gap: 16px; align-items: center; margin-bottom: 12px; padding-right: 40px; }
+.dlghead h2 { margin: 0; }
+.dlghead p { margin: 2px 0 0; font-size: 14px; }
+.dlgx { position: absolute; top: 12px; right: 12px; }
+.logo.small { width: 56px; height: 56px; border-radius: 12px; margin: 0; flex: none; }
+.dialog .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.dialog p { margin: 0 0 10px; }
+
+/* ---- The Android panel (GD-15, GD-35) ---- */
+.badges { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 18px 0 10px; }
+.soonbadge { position: relative; display: inline-block; }
+.fdroid {                             /* F-Droid's Dutch badge, greyed until the app is in F-Droid (GD-35) */
+  display: block; width: 150px; height: 58px; background: url(f-droid-badge-nl.png) left center / contain no-repeat;
+  filter: grayscale(1); opacity: .6;
+}
+.soonlabel {
+  position: absolute; right: -6px; top: -8px; transform: rotate(6deg); background: var(--fire-orange); color: var(--night-blue-dark);
+  font-weight: 700; font-size: 13px; padding: 2px 10px; border-radius: 6px; white-space: nowrap;
+}
+.linkgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.linkgrid p { margin: 4px 0; }
+.linkgrid h3 { margin-bottom: 4px; }
+
 /* ---- Splash in the centre, with the app's photograph (GD-03, GD-27, GD-30) ---- */
 .splash {
   height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
@@ -165,6 +209,8 @@ h3 { font-size: 13px; color: var(--secondary); text-transform: uppercase; letter
   .narrow { display: flex; flex: 1; align-items: center; justify-content: center; padding: 24px 16px; overflow-y: auto; }
   .narrowbox { max-width: 560px; background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
   .narrowbox .logo { width: 72px; height: 72px; border-radius: 16px; margin-bottom: 12px; }
+  .narrowbox .linkgrid { grid-template-columns: 1fr; }
+  .narrowbox h3 { margin-top: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .app, .edge, .splash { transition: none; animation: none; }

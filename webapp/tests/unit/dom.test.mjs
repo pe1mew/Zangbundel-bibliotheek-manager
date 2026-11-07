@@ -35,6 +35,8 @@ test('el refuses script-carrying attributes, elements and URLs (SR-32)', () => {
     assert.throws(() => el('a', attrs, []), /not allowed|unsafe/, JSON.stringify(attrs));
   }
   for (const tag of ['script', 'iframe', 'object', 'embed', 'img onerror=x']) assert.throws(() => el(tag, {}, []));
+  assert.throws(() => el('a', { target: '_self' }, []), /only be _blank/);
+  assert.equal(el('a', { target: '_blank' }, []).attrs.target, '_blank');
   assert.throws(() => el('button', { on: { click: 'x()' } }, []), /not a function/);
   for (const href of ['https://zangbundel.nl/', 'privacy.html', '../nl/', '#top', 'mailto:a@example.org', 'blob:https://x/1', 'nl/index.html?x=1']) {
     assert.equal(el('a', { href }, []).attrs.href, href);

@@ -30,6 +30,21 @@ export function t(lang, key, params) {
 }
 
 /**
+ * A text with elements in place of its placeholders, as a list for dom.js el(): tParts('nl',
+ * 'apkLine', { link: anchor }) gives ['Download de ondertekende APK van ', anchor, '.']. Never HTML.
+ */
+export function tParts(lang, key, nodes) {
+  const text = (TEXTS[lang] || TEXTS.en)[key];
+  if (text === undefined) {
+    throw new Error(`i18n: no text for ${key}`);
+  }
+  return text.split(/(\{\w+\})/).filter((part) => part !== '').map((part) => {
+    const m = /^\{(\w+)\}$/.exec(part);
+    return m && nodes && nodes[m[1]] !== undefined ? nodes[m[1]] : part;
+  });
+}
+
+/**
  * The interface language of this page: { get(), set(lang), next(), onChange(fn) }. preferred is
  * navigator.languages; store is local storage (tests pass their own). A stored value that is not
  * one of LANGUAGES is ignored.

@@ -346,8 +346,26 @@ Each milestone ends with its exit checks passing and the result written to `desi
     - the stored layout coming back after a reload;
     - the narrow page at 900 px;
     - no console message.
-  - **Open:**
-    - **The narrow page's Android links** (GD-32) come with M4.4's Android panel.
+- **M4.4 done.** `app/panels.js` draws the bottom bar and the panels it opens; `app/dialog.js` opens them on the browser's own `<dialog>`.
+  - **The bottom bar's groups (GD-04, GD-14, GD-23, GD-39):**
+    - the library buttons, *Controle* and the four key buttons, with *geen sleutel* under them;
+    - *Android-app*, the language and *Over*.
+
+    The library and key buttons stay disabled until M5 and M6, each saying why in its tooltip.
+  - **The *Android-app* panel (GD-15, GD-35):**
+    - F-Droid's badge, greyed with *binnenkort* (a CSS background, so the build renames it); no Google Play badge;
+    - the APK, the manuals and the sources, every link https with `target=_blank` and `noopener noreferrer`.
+  - **The narrow page (GD-32)** shows the same links and the privacy statement.
+  - ***Over* (SR-52):** name, version, credits and the privacy statement on `zangbundel.nl/<lang>/privacy.html`, which covers both sites.
+  - **Dialogs:** they keep focus inside and close on Escape, on the backdrop or with *Sluiten*. Focus then returns to the button that opened them.
+  - **New in `dom.js`:** `target` (only `_blank`) and `extLink()` (https only). **New in `i18n.js`:** `tParts()`, for a link inside a sentence.
+  - **Tested:** `tests/unit/panels.test.mjs` has 4 tests.
+  - **Checked in the browser pane:**
+    - 13 buttons, 10 disabled;
+    - the panel: modal, its links, and closing on Escape with focus returning;
+    - *Over*: its privacy link; the backdrop closes it, a click inside does not;
+    - the narrow page's links at 827 px;
+    - no console message.
 - **`zbm-download` moves to M6.2, where the download is built.** Assigning a `blob:` URL to `a.href` is not a Trusted Types sink, so that policy has nothing to guard at that point. The download helper will create and revoke the `blob:` URL itself (SR-36); whether SR-32 still needs a policy of that name is for the M6 review.
 
 ### M5 — Editing (L)

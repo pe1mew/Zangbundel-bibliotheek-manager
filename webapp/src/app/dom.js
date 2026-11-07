@@ -12,7 +12,7 @@ const SVG = 'http://www.w3.org/2000/svg';
 const ALLOWED = new Set(['class', 'id', 'src', 'alt', 'href', 'lang', 'dir', 'role', 'tabindex', 'type', 'title',
   'rel', 'name', 'value', 'for', 'placeholder', 'autocomplete', 'spellcheck', 'inputmode', 'maxlength', 'min', 'max',
   'step', 'rows', 'cols', 'accept', 'download', 'draggable', 'disabled', 'checked', 'selected', 'readonly',
-  'multiple', 'hidden', 'open', 'width', 'height', 'scope', 'colspan', 'inert']);
+  'multiple', 'hidden', 'open', 'width', 'height', 'scope', 'colspan', 'inert', 'target']);
 // A link may point to this site, to https:, mailto: or to a blob: download (SR-32, SR-36); never javascript:.
 const SAFE_URL = /^(?:https:\/\/|mailto:|blob:|#|\.{0,2}\/|[a-z0-9._-]+(?:[/?#]|$))/i;
 
@@ -26,6 +26,7 @@ function setAttr(node, name, value) {
   if (value === false || value === null || value === undefined) return;
   const v = value === true ? '' : String(value);
   if ((name === 'href' || name === 'src') && !SAFE_URL.test(v.trim())) throw new Error(`dom: unsafe ${name}: ${v.slice(0, 40)}`);
+  if (name === 'target' && v !== '_blank') throw new Error(`dom: target may only be _blank: ${v}`);
   node.setAttribute(name, v);
 }
 
@@ -71,6 +72,12 @@ export function icon(name, cls) {
   path.setAttribute('d', d);
   svg.append(path);
   return svg;
+}
+
+/** GD-15: a link to another site, opening in a new tab without telling it where the visitor came from. */
+export function extLink(href, text, newTabHint) {
+  if (!/^https:\/\//.test(href)) throw new Error(`dom: an external link must be https: ${href}`);
+  return el('a', { href, target: '_blank', rel: 'noopener noreferrer' }, [text, newTabHint ? el('span', { class: 'sr' }, [` ${newTabHint}`]) : null]);
 }
 
 /** Replace all children of a node. */

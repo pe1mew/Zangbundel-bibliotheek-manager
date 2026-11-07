@@ -106,4 +106,9 @@
     - GD-41: the centre is at least 360 px (`bars.js` CENTRE_MIN, `shownWidths(bars, total)`, `withWidth(..., total)`). `layout.js` passes `app.clientWidth || undefined`, since 0 means hidden or not laid out.
     - When the pane isn't painting, CSS transitions stall: read the grid with the `.resizing` class, which switches transitions off.
     - Pane checks: a click on an edge's middle hits the fold tab, so focus the edge by JS. Dispatch PointerEvents for a drag. The grid animates 0.2 s, so read it after a pause.
-  - Next: M4.4 bottom bar groups, the Android panel (with the narrow page's links), *Over*; M4.5 Controle.
+  - M4.4 done (uncommitted).
+    - `panels.js` holds bottomBar, androidContent/androidDialog, aboutDialog, LINKS and privacyUrl (zangbundel.nl/<lang>/privacy.html).
+    - `dialog.js` uses a native <dialog> with showModal. Its content sits in .dlgbody, so only the backdrop has the dialog as click target. The `close` event arrives a moment after close().
+    - Images are CSS backgrounds, so the build renames them; JS never names an asset.
+    - The pane's width changes clear the emulated viewport: check innerWidth first.
+  - Next: M4.5 *Controle* (validation panel, counts, *Ga naar*); then M5.

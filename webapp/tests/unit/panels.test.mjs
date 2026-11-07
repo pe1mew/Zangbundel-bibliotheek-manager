@@ -1,0 +1,72 @@
+// SPDX-License-Identifier: Apache-2.0
+// Unit tests of webapp/src/app/panels.js and i18n.js tParts (webappGUI GD-14, GD-15, GD-35;
+// securityAssessment SR-52; implementationPlan M4.4), with a stand-in document as in dom.test.mjs.
+// The dialogs themselves (<dialog>, showModal) are checked in the browser. Run: node --test webapp/tests/
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+class FakeNode {
+  constructor(tag, ns) { Object.assign(this, { tag, ns, attrs: {}, children: [], listeners: {} }); }
+  setAttribute(n, v) { this.attrs[n] = v; }
+  append(...c) { this.children.push(...c); }
+  addEventListener(t, f) { this.listeners[t] = f; }
+}
+globalThis.document = {
+  createElement: (t) => new FakeNode(t),
+  createElementNS: (ns, t) => new FakeNode(t, ns),
+  createTextNode: (s) => ({ text: s }),
+};
+const { androidContent, bottomBar, LINKS, privacyUrl } = await import('../../src/app/panels.js');
+const { extLink } = await import('../../src/app/dom.js');
+const { tParts, LANGUAGES } = await import('../../src/app/i18n.js');
+
+/** Every node of a tree, depth first. */
+function* walk(node) {
+  if (!node || typeof node !== 'object') return;
+  yield node;
+  for (const c of node.children || []) yield* walk(c);
+}
+const textOf = (node) => [...walk(node)].map((n) => n.text || '').join('');
+
+test('tParts puts elements in place of placeholders, and keeps the rest as text', () => {
+  const a = { tag: 'a' };
+  assert.deepEqual(tParts('nl', 'apkLine', { link: a }), ['Download de ondertekende APK van ', a, '.']);
+  assert.deepEqual(tParts('en', 'appName'), ['Zangbundel library manager']);
+  assert.throws(() => tParts('nl', 'noSuchKey'), /no text/);
+});
+
+test('GD-15, GD-35: every link of the Android panel is https, opens a new tab and sends no referrer; no Google Play', () => {
+  for (const lang of LANGUAGES) {
+    const nodes = androidContent(lang).flatMap((n) => [...walk(n)]);
+    const links = nodes.filter((n) => n.tag === 'a');
+    assert.deepEqual(links.map((a) => a.attrs.href).sort(), Object.values(LINKS).sort(), lang);
+    for (const a of links) {
+      assert.match(a.attrs.href, /^https:\/\//);
+      assert.equal(a.attrs.target, '_blank');
+      assert.equal(a.attrs.rel, 'noopener noreferrer');
+    }
+    assert.ok(nodes.some((n) => n.attrs && n.attrs.class === 'fdroid' && n.attrs.role === 'img' && n.attrs['aria-label']));
+    assert.doesNotMatch(androidContent(lang).map(textOf).join(' '), /google/i);
+  }
+});
+
+test('SR-52: the privacy statement in the interface language; extLink refuses anything but https', () => {
+  assert.equal(privacyUrl('de'), 'https://zangbundel.nl/de/privacy.html');
+  assert.throws(() => extLink('http://example.org/', 'x'), /https/);
+  assert.throws(() => extLink('javascript:alert(1)', 'x'), /https/);
+});
+
+test('GD-04, GD-14: the bottom bar draws every group; buttons that wait for M5/M6 are disabled and say why', () => {
+  const calls = [];
+  const items = bottomBar({ lang: 'nl', onLanguage: () => calls.push('lang'), onAndroid: () => calls.push('android'), onAbout: () => calls.push('about') });
+  const buttons = items.flatMap((n) => [...walk(n)]).filter((n) => n.tag === 'button');
+  assert.equal(buttons.length, 13);                  // 5 library, Controle, 4 key, Android, language, Over
+  const waiting = buttons.filter((b) => 'disabled' in b.attrs);
+  assert.equal(waiting.length, 10);
+  for (const b of waiting) assert.ok(b.attrs.title && b.attrs.title.includes(':'), b.attrs.title);
+  const working = buttons.filter((b) => !('disabled' in b.attrs));
+  working.forEach((b) => b.listeners.click());
+  assert.deepEqual(calls, ['android', 'lang', 'about']);
+  assert.match(working[1].attrs['aria-label'], /^Taal: Nederlands/);
+  assert.ok(items.flatMap((n) => [...walk(n)]).some((n) => n.text === 'geen sleutel'));   // GD-14: no key yet
+});
