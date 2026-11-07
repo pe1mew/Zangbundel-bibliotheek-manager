@@ -14,6 +14,7 @@ import { el, extLink, icon, replace } from './dom.js';
 import { toast } from './dialog.js';
 import { createIdleWatch } from './idle.js';
 import { createLibraryForm } from './library-form.js';
+import { createLeaveGuard } from './leave-guard.js';
 import { createLanguage, t } from './i18n.js';
 import { createLayout } from './layout.js';
 import { aboutDialog, androidContent, androidDialog, bottomBar, privacyUrl } from './panels.js';
@@ -281,6 +282,9 @@ function start() {
   replace(root, banner, layout.app, narrow);
   language.onChange(render);                              // GD-17: at once, without losing work
   session.onChange(render);
+  // GD-42: leaving the page with changes not yet downloaded, or a new key not yet downloaded, asks first
+  const guard = createLeaveGuard({ atRisk: () => { const st = session.get(); return st.dirty || (st.key && st.key.needsExport); } });
+  session.onChange(() => guard.sync());
   render();
 }
 

@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.17 |
 | **Date** | 2026-11-07 |
-| **Depends on** | `design/FDS.md` draft 0.11, `design/webappGUI.md` draft 0.18, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (58 cases) |
+| **Depends on** | `design/FDS.md` draft 0.11, `design/webappGUI.md` draft 0.19, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (58 cases) |
 
 ---
 
@@ -444,7 +444,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - `valid-signed`: bins disabled; storage empty, console clean.
 - **Open:**
   - the Sets tab of the right bar comes with M5.5;
-  - closing the browser tab with changes not yet downloaded gives no warning; EDT-03 may ask for one (a question for the owner).
+  - (done) closing the browser tab with work that would be lost asks first, the owner's GD-42: `app/leave-guard.js` listens to `beforeunload` only while there are changes not yet downloaded or a new key not yet downloaded. Tested with `tests/unit/leave-guard.test.mjs` and in the browser pane with a dispatched `beforeunload` (no question before a change, one after a delete, none after downloading, one for a new key); the browser's own dialog itself was not shown.
 - **Next:** M5.2 song view; M5.3 needs the M2.3 block form first.
 
 ### M6 — Open, save and sign (M)

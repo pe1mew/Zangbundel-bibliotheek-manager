@@ -142,6 +142,7 @@
     - Owner 2026-11-07: one contact field *E-mail of website*, as in the mock (scheme → url, else email; a second contact stays, shown as *Ook: …*). *Andere licentie* and the full-text field are not in the mock yet.
   - M5.1 done (uncommitted): `songlist.js` (filterSongs, chipsOf, neighbourAfterDelete, createSongList → {node, update(state, selected), visibleIds, reveal}); `session.deleteSong(id)`; songSummary gives sortTitle, language, lyricist, tags, words.
     - main.js: the right bar = a head redrawn each render + the song list built per generation|lang|readOnly; never move a node that may hold focus.
-    - *Openen*/*Nieuw* now ask M-60 with undownloaded changes (afterClose). Open question for the owner: warn on closing the tab (beforeunload)?
+    - *Openen*/*Nieuw* now ask M-60 with undownloaded changes (afterClose). GD-42 (owner): `leave-guard.js` adds beforeunload only while changes or a new key are not downloaded.
+    - Node 18 (container): a plain Event's returnValue is read-only; tests use a subclass with returnValue as a field.
     - Python heredoc patches turn '\\n' in JS into a real newline: use the Edit tool for JS string literals.
   - Next: M5.2 song view; then M2.3 block form before M5.3, M5.5 sets.

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.18 |
+| **Status** | Draft 0.19 |
 | **Date** | 2026-11-07 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -287,6 +287,8 @@ The owner's answers to the open questions, and two further requests made during 
   - the chosen widths stay remembered (GD-34) and come back when the window is wide enough again;
   - at the 980 px of GD-32, both bars at their minimums leave the centre 520 px.
 
+**GD-42 — Leaving the page with work that would be lost asks first.** *(Owner, 2026-11-07; FDS EDT-03.)* Closing or reloading the page while the library has changes not yet downloaded gives the browser's own question (*Deze site verlaten?* or similar, worded by the browser; a page cannot word it). So does a key made in this session whose file was not downloaded (GD-14), since closing the page loses it for good. Without such work the page closes without a question. *Openen* and *Nieuw* ask M-60 in the page itself, as *Sluiten* does.
+
 **GD-34 — Bar widths, folding and the language are remembered on this computer.** *(Resolves GQ-16.)* They are kept in the browser's local storage, on that computer only, and restored on the next visit (EDT-82). Nothing about a library or a key is kept there (EDT-02, EDT-64). If local storage is not available, the manager starts with the defaults.
 
 **GD-35 — Store badges say *binnenkort* until the app is there; the manager's manual is on its GitHub wiki.** *(Resolves GQ-19.)* In the Android panel (GD-15), a badge is shown greyed with *binnenkort* (*coming soon*) and no link while the app is not public in that store, except the Google Play badge, which is left out until the app is listed there: Google's badge guidelines allow it only unaltered (*amended 2026-11-07* by the owner, on the placeholder first); the GitHub APK link works now. The manager's manual lives on this repository's GitHub wiki (`github.com/pe1mew/Zangbundel-bibliotheek-manager/wiki`), like the app's.
@@ -369,3 +371,4 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.14 | 2026-11-07 | GD-35 amended by the owner: the Google Play badge is left out until the app is listed. Google's badge guidelines ask for the badge unaltered, so it cannot be shown greyed. The F-Droid badge stays greyed with *binnenkort*. |
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
+| Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |

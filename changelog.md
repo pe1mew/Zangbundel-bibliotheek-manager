@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Fixed
 - ***Openen* and *Nieuw* with changes not yet downloaded** now ask M-60 first, as *Sluiten* does (EDT-03).
+- **Closing the page with work that would be lost** (changes or a new key not yet downloaded) now gives the browser's question (webappGUI draft 0.19, GD-42; `app/leave-guard.js`).
 - **M5.4: the library's fields** (`design/implementationPlan.md`).
   - **The left bar** shows title, description, licence and maintainer while a library is open; a new library can now be completed and downloaded.
   - **Licence:** five common licences with their summary, any other SPDX identifier, and an optional full text.
