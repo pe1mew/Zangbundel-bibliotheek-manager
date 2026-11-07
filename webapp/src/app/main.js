@@ -14,7 +14,9 @@ import { aboutDialog, androidContent, androidDialog, bottomBar, privacyUrl } fro
 import { checkDialog } from './check.js';
 import { createLibraryClient } from './library-client.js';
 import { createSession } from './session.js';
-import { closeConfirm, convertedDialog, newLibraryDialog, openFailedDialog, pickFile } from './library-ui.js';
+import { closeConfirm, convertedDialog, downloadDialog, manifestConfirm, newLibraryDialog, openFailedDialog, pickFile, saveFailedDialog,
+  savedDialog } from './library-ui.js';
+import { LIBRARY_MIME, offerDownload } from './download.js';
 import { VERSION } from './version.js';
 
 const SPLASH_MS = 3000;   // GD-27
@@ -57,7 +59,7 @@ function tile(name, title, sub, { onClick, why } = {}) {
 }
 
 /** GD-03: the home screen's primary actions in the centre. */
-function home(lang, { onOpen, onNew, busy }) {
+function home(lang, { onOpen, onNew, onDownload, hasLibrary, busy }) {
   const soon = t(lang, 'tileSoon');
   return el('div', { class: 'home' }, [
     el('h1', {}, [t(lang, 'homeTitle')]),
@@ -66,7 +68,7 @@ function home(lang, { onOpen, onNew, busy }) {
       tile('open', t(lang, 'tileOpen'), busy ? t(lang, 'opening') : t(lang, 'tileOpenSub'), { onClick: busy ? null : onOpen }),
       tile('add', t(lang, 'tileNew'), t(lang, 'tileNewSub'), { onClick: busy ? null : onNew }),
       tile('edit', t(lang, 'tileEdit'), t(lang, 'tileNeedLib'), { why: soon }),
-      tile('download', t(lang, 'tileDownload'), t(lang, 'tileNeedLib'), { why: soon }),
+      tile('download', t(lang, 'tileDownload'), t(lang, hasLibrary ? 'dlTitle' : 'tileNeedLib'), { onClick: hasLibrary && !busy ? onDownload : null }),
     ]),
     el('p', { class: 'note' }, [t(lang, 'privacy')]),
   ]);
@@ -133,6 +135,25 @@ function start() {
   const onNew = () => newLibraryDialog(language.get(), (title, description) => session.create(title, description));
   const onClose = () => (session.get().dirty ? closeConfirm(language.get(), () => session.close()) : session.close());
   const onCheck = () => checkDialog(language.get(), session.get().findings || [], () => {});   // Ga naar: the targets come with M5
+  // GD-23, FDS 7.6: Downloaden keeps the library open
+  const onDownload = async () => {
+    const lang = language.get();
+    const preview = await session.preview();
+    const show = () => downloadDialog(lang, preview, {
+      onCheck: () => checkDialog(lang, preview.findings, () => {}),
+      onDownload: async (note) => {
+        const saved = await session.save({ changed: preview.changed, changes: note });
+        if (!saved.ok) {
+          saveFailedDialog(lang, saved);
+          return;
+        }
+        offerDownload(saved.bytes, saved.fileName, LIBRARY_MIME);
+        savedDialog(lang, saved);
+      },
+    });
+    if (preview.needsConfirm) manifestConfirm(lang, show);
+    else show();
+  };
 
   const render = () => {
     const lang = language.get();
@@ -141,12 +162,12 @@ function start() {
     document.title = state.library ? `${state.library.title} · ${t(lang, 'appName')}` : t(lang, 'appName');
     layout.setSplash(screen === 'splash');
     replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); })
-      : home(lang, { onOpen, onNew, busy: state.busy }));
+      : home(lang, { onOpen, onNew, onDownload, hasLibrary: Boolean(state.library), busy: state.busy }));
     replace(layout.right, ...rightBar(lang, state));
     replace(layout.left, el('p', { class: 'empty' }, [t(lang, state.library ? 'libHomeLead' : 'tileNeedLib')]));
     replace(layout.bottom, ...bottomBar({ lang, onLanguage: () => language.next(),
       onAndroid: () => androidDialog(language.get()), onAbout: () => aboutDialog(language.get()),
-      onOpen, onNew, onClose, onCheck, hasLibrary: Boolean(state.library), busy: state.busy,
+      onOpen, onNew, onClose, onCheck, onDownload, hasLibrary: Boolean(state.library), busy: state.busy,
       findings: state.library ? state.findings || [] : null }));
     replace(narrow, narrowPage(lang));
   };

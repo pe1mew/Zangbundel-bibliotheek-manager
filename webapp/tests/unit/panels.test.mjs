@@ -63,13 +63,13 @@ test('GD-04, GD-14: the bottom bar draws every group; buttons that wait for M5/M
   const buttons = items.flatMap((n) => [...walk(n)]).filter((n) => n.tag === 'button');
   assert.equal(buttons.length, 13);                  // 5 library, Controle, 4 key, Android, language, Over
   const waiting = buttons.filter((b) => 'disabled' in b.attrs);
-  assert.equal(waiting.length, 8);                  // edit, download, close (no library), Controle, 4 key buttons
+  assert.equal(waiting.length, 8);                  // edit, download and close (no library), Controle, 4 key buttons
   for (const b of waiting) assert.ok(b.attrs.title && b.attrs.title.includes(':'), b.attrs.title);
   const working = buttons.filter((b) => !('disabled' in b.attrs));
   working.forEach((b) => b.listeners.click());
   assert.deepEqual(calls, ['open', 'new', 'android', 'lang', 'about']);
   assert.match(working[3].attrs['aria-label'], /^Taal: Nederlands/);
   const open = bottomBar({ lang: 'nl', hasLibrary: true, findings: [], onClose: () => {}, onCheck: () => {} }).flatMap((n) => [...walk(n)]).filter((n) => n.tag === 'button');
-  assert.equal(open.filter((b) => 'disabled' in b.attrs).length, 6);   // with a library: Sluiten and Controle work
+  assert.equal(open.filter((b) => 'disabled' in b.attrs).length, 5);   // with a library: Downloaden, Sluiten and Controle work
   assert.ok(items.flatMap((n) => [...walk(n)]).some((n) => n.text === 'geen sleutel'));   // GD-14: no key yet
 });

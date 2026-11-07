@@ -427,7 +427,27 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - *Sluiten* closed it, and a file that is not a ZIP was refused with M-01;
   - browser storage stayed empty and the console clean.
 - **Not yet in the browser:** the conversion report; the unit tests cover it.
-- **Waiting:** *Ga naar* targets (M5) and *Downloaden* (M6.2).
+- **Waiting:** *Ga naar* targets (M5).
+
+**M6.2 done.**
+- **`session.preview()`** tells what *Downloaden* will do: whether the library changed, its version and file name, whether M-61 must be asked, and the findings of the library as it would be saved.
+  - Those findings decide the block (EDT-50, M-63). A library whose files differ from its manifest is not blocked by that: saving records the current content after M-61 (EDT-22).
+- **`session.save()`** saves in the library worker. The saved file then becomes the open library, so the version shown is the new one and the next unchanged download is byte-identical (EDT-51).
+- **`app/download.js`** offers the bytes as a `blob:` URL of PF-04's MIME type under the generated name, then revokes the URL (EDT-59, SR-36). The name may only be a generated `.zbl` or `.zbkey` name. No Trusted Types policy is needed for it (see the `zbm-download` note under M4).
+- **The dialog (GD-23):**
+  - the file name, and either the new version or *Ongewijzigd*;
+  - when the version goes up, an empty note field of at most 500 characters (EDT-58);
+  - when blocked, *Controle openen* instead of the download;
+  - after saving, the size, and M-08 above the sharing threshold (EDT-56).
+- **The file-name rule** (EDT-54) is now `names.js` `libraryFileName`, for the worker and the page alike.
+- **Tested:** `tests/unit/session.test.mjs` has 3 more tests: an unchanged byte-identical save, a new library blocked and then saved as version 1, and `file-changed` with M-61 saved as version 2.
+- **In the browser pane:**
+  - a new library was blocked, with *Controle openen*;
+  - `valid-unsigned` downloaded as `Zangbundel testbibliotheek-v1.zbl`, `application/vnd.zangbundel.library+zip`, byte-identical to the opened file, with its link removed;
+  - the console stayed clean.
+- **Open:**
+  - a changed download in the browser waits for editing (M5);
+  - signing in the dialog and *Opslaan als kopie* are M6.3.
 
 ### M7 — Hardening and test release (M)
 

@@ -77,6 +77,11 @@ export function compareOrdinal(a, b) {
   return x.length - y.length;
 }
 
+/** EDT-54: <title>-v<version>.zbl, complying with FDS 3.3; also shown before saving (SR-36). */
+export function libraryFileName(title, version) {
+  return `${safeFileName(`${title}-v${version}`, 96)}.zbl`;
+}
+
 /** A name that complies with FDS 3.3 (PF-20 to PF-22), for the folder and the file name. */
 export function safeFileName(text, maxLength = 100) {
   // forbidden and control characters become '-'; bidirectional controls, which can disguise a file

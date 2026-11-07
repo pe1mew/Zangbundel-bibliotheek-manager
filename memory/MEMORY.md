@@ -123,4 +123,8 @@
     - `openDialog` returns {dlg, close}; actions get `close`. Always close through it, never dlg.close(), or a stale <dialog> lingers in the pane.
     - Browser test of opening: stub HTMLInputElement.prototype.click for type=file, then set input.files via DataTransfer and dispatch change.
     - The owner still owes the M4 exit look (the shell beside the mock).
-  - Next: M6.2 *Downloaden* (version rule, change note, M-63 block, blob download with zbm-download?); then M6.3 and M6.4.
+  - M6.2 done (uncommitted).
+    - `session.preview()` gives {changed, version, fileName, needsConfirm, findings, blocked}; `session.save({changed, changes})` reopens the saved bytes as the open library.
+    - `download.js` has offerDownload(bytes, name, mime), LIBRARY_MIME and KEY_MIME. No TT policy is needed for blob links.
+    - Browser check: stub URL.createObjectURL and HTMLAnchorElement.prototype.click to catch the download.
+  - Next: M6.3 signing in the download dialog, read-only signed libraries, *Opslaan als kopie*; M6.4 the key group, with the crypto worker wired in (not bundled into the app yet).

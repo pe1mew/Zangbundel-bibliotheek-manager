@@ -277,6 +277,10 @@ export const TEXTS = {
     chooseFile: "Bestand kiezen",
     descLabel: "Beschrijving",
     titleLabel: "Titel",
+    M61: "Sommige bestanden passen niet bij het manifest. Bij het opslaan wordt de huidige inhoud vastgelegd. Doorgaan?",
+    continue: "Doorgaan",
+    dlSaved: "Gedownload: {file} ({size}).",
+    dlFailed: "Downloaden lukte niet.",
   },
   en: {
     appName: "Zangbundel library manager",
@@ -549,6 +553,10 @@ export const TEXTS = {
     chooseFile: "Choose a file",
     descLabel: "Description",
     titleLabel: "Title",
+    M61: "Some files do not match the manifest. Saving will record the current content. Continue?",
+    continue: "Continue",
+    dlSaved: "Downloaded: {file} ({size}).",
+    dlFailed: "The download did not work.",
   },
   de: {
     appName: "Zangbundel Bibliotheksverwaltung",
@@ -821,5 +829,9 @@ export const TEXTS = {
     chooseFile: "Datei auswählen",
     descLabel: "Beschreibung",
     titleLabel: "Titel",
+    M61: "Einige Dateien passen nicht zum Manifest. Beim Speichern wird der aktuelle Inhalt festgehalten. Fortfahren?",
+    continue: "Fortfahren",
+    dlSaved: "Heruntergeladen: {file} ({size}).",
+    dlFailed: "Das Herunterladen hat nicht geklappt.",
   },
 };

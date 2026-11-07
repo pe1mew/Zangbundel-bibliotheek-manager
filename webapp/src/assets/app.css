@@ -193,6 +193,7 @@ svg.sev-ok { fill: var(--fire-orange); }
 .vwhere { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vgo { color: var(--fire-orange); white-space: nowrap; }
 .allclear { display: flex; align-items: center; }
+.blocked { border-left: 3px solid var(--fire-orange); padding: 6px 12px; background: var(--bg); border-radius: 0 8px 8px 0; }
 
 /* ---- The Android panel (GD-15, GD-35) ---- */
 .badges { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 18px 0 10px; }

@@ -79,3 +79,45 @@ test('songSummary reads titles in the worker; a song that is not text has no tit
   const lib = { songs: new Map([['a', '{title: Alpha}\n{meta: id a}\nla\n'], ['b', null], ['c', 'la\n']]) };
   assert.deepEqual(songSummary(lib), [{ id: 'a', title: 'Alpha' }, { id: 'b', title: null }, { id: 'c', title: null }]);
 });
+
+test('EDT-51: an unchanged library downloads byte for byte as opened, under its own version and name', async () => {
+  const s = createSession({ client, now: () => NOW });
+  const bytes = corpus('valid-unsigned');
+  await s.open(file(bytes));
+  const p = await s.preview();
+  assert.deepEqual([p.changed, p.version, p.needsConfirm, p.blocked], [false, 1, false, false]);
+  assert.equal(p.fileName, 'Zangbundel testbibliotheek-v1.zbl');
+  const saved = await s.save({ changed: p.changed });
+  assert.equal(saved.ok, true);
+  assert.deepEqual(saved.bytes, bytes);
+});
+
+test('EDT-50, M-63: a new library without licence and maintainer is blocked; with them it saves as version 1', async () => {
+  const s = createSession({ client, now: () => NOW });
+  await s.create('Kampvuur');
+  const p = await s.preview();
+  assert.deepEqual([p.changed, p.version, p.blocked], [true, 1, true]);
+  assert.deepEqual(p.findings.filter((f) => f.severity === 'Error').map((f) => f.code).sort(), ['MAN-07', 'MAN-08']);
+  const lib = s.get().library;                                   // what the library fields will set (M5.4)
+  lib.license = { id: 'CC0-1.0', summary: 'Vrij te gebruiken.' };
+  lib.maintainer = { name: 'Leiding', email: 'leiding@example.org' };
+  const q = await s.preview();
+  assert.equal(q.blocked, false);
+  const saved = await s.save({ changed: true, changes: 'Eerste versie.' });
+  assert.equal(saved.ok, true);
+  assert.equal(saved.fileName, 'Kampvuur-v1.zbl');
+  assert.equal(s.get().library.isNew, false);                    // the saved file is now the open library
+  assert.equal(s.get().library.version, 1);
+  assert.equal((await s.preview()).changed, false);              // downloading again: unchanged
+});
+
+test('EDT-22, M-61: files that differ from the manifest ask first, then save anew as the next version', async () => {
+  const s = createSession({ client, now: () => NOW });
+  await s.open(file(corpus('file-changed')));
+  const p = await s.preview();
+  assert.deepEqual([p.needsConfirm, p.changed, p.version, p.blocked], [true, true, 2, false]);
+  const saved = await s.save({ changed: true });
+  assert.equal(saved.ok, true);
+  assert.equal(s.get().library.version, 2);
+  assert.deepEqual(s.get().findings.filter((f) => f.code.startsWith('MAN')), []);   // the new manifest matches
+});

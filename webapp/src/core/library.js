@@ -16,7 +16,7 @@ import { writeZip } from './zip.js';
 import { validateLibrary } from './validate.js';
 import { canonicalize } from './chordpro.js';
 import { base64Bytes } from './manifest.js';
-import { compareOrdinal, safeFileName } from './names.js';
+import { compareOrdinal, libraryFileName, safeFileName } from './names.js';
 import { viewFiles } from './view.js';
 import { convertZip } from './convert.js';
 
@@ -54,7 +54,7 @@ export function folderName(title) {
 
 /** EDT-54: <title>-v<version>.zbl, complying with FDS 3.3. */
 export function fileName(title, version) {
-  return `${safeName(`${title}-v${version}`, 96)}.zbl`;
+  return libraryFileName(title, version);
 }
 
 /** Open a library ZIP (FDS 7.3). A Fatal finding, or no manifest (conversion, M2.7), gives no model. */

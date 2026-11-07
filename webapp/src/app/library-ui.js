@@ -4,8 +4,9 @@
 
 import { el, listen } from './dom.js';
 import { openDialog } from './dialog.js';
-import { t } from './i18n.js';
+import { t, tParts } from './i18n.js';
 import { messageFor } from './check.js';
+import { sizeText } from './download.js';
 
 /**
  * GD-28: the computer's file picker. The file is read in the browser and stays on this computer
@@ -69,4 +70,45 @@ export function closeConfirm(lang, onClose) {
   return openDialog({ title: t(lang, 'closeTitle'), closeLabel: t(lang, 'cancel'),
     actions: [{ label: t(lang, 'closeAnyway'), primary: true, onClick: (close) => { close(); onClose(); } }] },
   [el('p', {}, [t(lang, 'closeText')])]);
+}
+
+/** EDT-22, M-61: a library whose files differ from its manifest is saved anew; ask first. */
+export function manifestConfirm(lang, onContinue) {
+  return openDialog({ title: t(lang, 'dlTitle'), closeLabel: t(lang, 'cancel'),
+    actions: [{ label: t(lang, 'continue'), primary: true, onClick: (close) => { close(); onContinue(); } }] },
+  [el('p', {}, [t(lang, 'M61')])]);
+}
+
+/**
+ * GD-23, FDS 7.6: the download dialog. preview comes from session.preview(); onDownload(note) saves;
+ * onCheck opens *Controle*. With an Error the download is blocked (EDT-50, M-63).
+ */
+export function downloadDialog(lang, preview, { onDownload, onCheck }) {
+  const note = preview.changed && !preview.blocked
+    ? el('textarea', { id: 'dl-note', rows: 3, maxlength: 500, placeholder: t(lang, 'dlNotePh') }, []) : null;
+  const actions = preview.blocked
+    ? [{ label: t(lang, 'openCheck'), primary: true, onClick: (close) => { close(); onCheck(); } }]
+    : [{ label: t(lang, 'download'), primary: true, onClick: (close) => { const text = note ? note.value.trim() : ''; close(); onDownload(text); } }];
+  return openDialog({ title: t(lang, 'dlTitle'), closeLabel: t(lang, 'cancel'), actions }, [
+    el('p', {}, [...tParts(lang, 'dlFile', { file: el('b', {}, [preview.fileName]) }), ' ',
+      t(lang, preview.changed ? 'dlVersion' : 'dlUnchanged', { v: preview.version })]),
+    note ? el('div', { class: 'field' }, [el('label', { for: 'dl-note' }, [t(lang, 'dlNote')]), note]) : null,
+    preview.blocked ? el('p', { class: 'blocked' }, [t(lang, 'dlErrors')]) : null,
+  ]);
+}
+
+/** EDT-56: what was saved, its size, and above the sharing threshold M-08 (PKG-09). */
+export function savedDialog(lang, saved) {
+  const sharing = (saved.findings || []).find((f) => f.code === 'PKG-09');
+  return openDialog({ title: t(lang, 'dlTitle'), closeLabel: t(lang, 'close') }, [
+    el('p', {}, [t(lang, 'dlSaved', { file: saved.fileName, size: sizeText(saved.bytes.length) })]),
+    sharing ? el('p', { class: 'blocked' }, [messageFor(lang, sharing)]) : null,
+  ]);
+}
+
+/** A save the worker refused: its findings in the FDS's messages, or its reason. */
+export function saveFailedDialog(lang, result) {
+  const errors = (result.findings || []).filter((f) => f.severity === 'Error' || f.severity === 'Fatal');
+  return openDialog({ title: t(lang, 'dlFailed'), closeLabel: t(lang, 'close') },
+    errors.length ? errors.map((f) => el('p', {}, [messageFor(lang, f)])) : [el('p', {}, [String(result.reason || t(lang, 'openError'))])]);
 }

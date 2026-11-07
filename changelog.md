@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M6.2: *Downloaden*** (`design/implementationPlan.md`).
+  - **The dialog:** the file name and version; a change note when the version goes up; with errors it shows *Controle openen* instead of a download (M-63).
+  - **Manifest differences:** a library whose files differ from its manifest is saved anew after M-61.
+  - **The download:** a `blob:` link with the library MIME type, revoked afterwards, followed by the size and, above 16 MB, M-08.
+  - **Unchanged:** an unchanged library downloads byte for byte as opened.
+  - **Code:** `app/download.js`; `session.preview()` and `save()`.
+  - **Tests:** `node --test` 287 of 287. Checked in the browser.
 - **M6.1: opening, starting and closing a library** (`design/implementationPlan.md`).
   - ***Openen*:** reads a `.zbl` or ZIP in the library worker. A file it refuses gets the reason in the FDS's messages; a converted ZIP gets its report (M-41, M-42).
   - ***Nieuw*:** starts an empty library. ***Sluiten*** asks first when there are changes (M-60).

@@ -91,7 +91,7 @@ function checkButton(lang, findings, onCheck) {
  * The bottom bar's groups (GD-04): the library, *Controle*, the key (GD-14, GD-39) and the general
  * buttons. key is { name, fingerprint, saved } or null; until M6 there is none.
  */
-export function bottomBar({ lang, onLanguage, onAndroid, onAbout, onCheck, onOpen, onNew, onClose, hasLibrary = false, busy = false,
+export function bottomBar({ lang, onLanguage, onAndroid, onAbout, onCheck, onOpen, onNew, onClose, onDownload, hasLibrary = false, busy = false,
   findings = null, key = null }) {
   const soon = t(lang, 'tileSoon');
   const wait = (name, label) => navButton(name, label, { disabled: true, title: `${label}: ${soon}` });
@@ -101,7 +101,9 @@ export function bottomBar({ lang, onLanguage, onAndroid, onAbout, onCheck, onOpe
     el('div', { class: 'navgroup', role: 'group' }, [
       navButton('open', t(lang, 'open'), { onClick: onOpen, disabled: busy }),
       navButton('add', t(lang, 'new'), { onClick: onNew, disabled: busy }),
-      wait('edit', t(lang, 'edit')), wait('download', t(lang, 'download')),
+      wait('edit', t(lang, 'edit')),
+      navButton('download', t(lang, 'download'), { onClick: onDownload, disabled: !hasLibrary || busy,
+        title: hasLibrary ? t(lang, 'download') : `${t(lang, 'download')}: ${t(lang, 'tileNeedLib')}` }),
       navButton('close', t(lang, 'close'), { onClick: onClose, disabled: !hasLibrary || busy,
         title: hasLibrary ? t(lang, 'close') : `${t(lang, 'close')}: ${t(lang, 'tileNeedLib')}` }),
     ]),
