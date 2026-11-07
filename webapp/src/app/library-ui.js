@@ -148,6 +148,40 @@ export function importFailedDialog(lang, fileName, finding) {
   return openDialog({ title: t(lang, 'importFailed'), sub: fileName, closeLabel: t(lang, 'close') }, [el('p', {}, [messageFor(lang, finding)])]);
 }
 
+const SET_NAME_TEXT = { empty: 'setNameEmpty', long: 'setNameLong', chars: 'setNameChars', taken: 'setNameTaken' };
+
+/**
+ * EDT-31, GD-21: the name of a new set (index -1) or of set index; problem(name) says why a name cannot be
+ * used ('empty', 'long', 'chars', 'taken' for SET-02), and the dialog stays open until it can.
+ */
+export function setNameDialog(lang, { name, problem, onOk }) {
+  const input = el('input', { id: 'set-name', type: 'text', maxlength: 60, autocomplete: 'off', value: name, placeholder: t(lang, 'setNamePh') }, []);
+  const err = el('div', { class: 'err', role: 'alert' }, []);
+  const go = (close) => {
+    const why = problem(input.value);
+    if (why) {
+      err.replaceChildren(t(lang, SET_NAME_TEXT[why]));
+      input.focus();
+      return;
+    }
+    close();
+    onOk(input.value);
+  };
+  const d = openDialog({ title: t(lang, 'renameTitle'), closeLabel: t(lang, 'cancel'),
+    actions: [{ label: t(lang, 'apply'), primary: true, onClick: go }] }, [el('div', { class: 'field' }, [input, err])]);
+  listen(input, 'keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go(d.close); } });
+  input.select();
+  return d;
+}
+
+/** EDT-31, M-62: deleting a set, after this question; its songs stay in the library. */
+export function deleteSetConfirm(lang, name, onYes) {
+  return openDialog({ title: t(lang, 'deleteSet'), closeLabel: t(lang, 'cancel'),
+    actions: [{ label: t(lang, 'delete'), primary: true, onClick: (close) => { close(); onYes(); } }] }, [
+    el('p', {}, [t(lang, 'M62', { name })]),
+  ]);
+}
+
 /** GD-16, EDT-32, M-62: deleting a song, after this question; it leaves every set as well. */
 export function deleteSongConfirm(lang, title, onYes) {
   return openDialog({ title: t(lang, 'deleteSong'), closeLabel: t(lang, 'cancel'),

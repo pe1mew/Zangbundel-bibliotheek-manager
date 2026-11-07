@@ -76,11 +76,12 @@ function worstBySong(findings) {
  * filter(), visibleIds(), reveal(id) }. *Bewerken* opens the song editor (M5.3); a song that is not text
  * (SNG-01, SNG-18) is edited only in the code mode.
  */
-export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onAdd, onImport }) {
+export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onAdd, onImport, onAddToSet }) {
   let filter = { ...DEFAULT_FILTER, languages: [], tags: [] };
   let songs = [];
   let findings = [];
   let selected = null;
+  let openSet = null;                                     // GD-21: { name, songs } of the set open in the centre
   let visible = [];
 
   const search = el('input', { type: 'search', class: 'search', id: 'song-search', placeholder: t(lang, 'search'),
@@ -123,6 +124,17 @@ export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onA
     } } }, [on ? icon('check') : null, label]);
   }
 
+  // GD-21: while a set is open, each row adds its song to it; a song already in it shows a check (SET-04)
+  function setButton(id) {
+    if (!openSet || !onAddToSet) return null;
+    const inSet = openSet.songs.includes(id);
+    const text = t(lang, inSet ? 'inSet' : 'addToSet', { set: openSet.name });
+    const b = el('button', { type: 'button', class: inSet ? 'iconbtn setbtn on' : 'iconbtn setbtn', title: text, 'aria-label': text,
+      disabled: inSet || readOnly }, [icon(inSet ? 'check' : 'add')]);
+    if (!inSet && !readOnly) listen(b, 'click', (event) => { event.stopPropagation(); onAddToSet(id); });
+    return b;
+  }
+
   function row(song, worst) {
     const title = song.title || t(lang, 'noTitle');
     const sub = [languageName(lang, song.language), song.lyricist].filter(Boolean).join(' · ');
@@ -136,7 +148,7 @@ export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onA
     const li = el('li', { class: song.id === selected ? 'song selected' : 'song', tabindex: 0, 'data-song': song.id,
       'aria-current': song.id === selected ? 'true' : null, title: t(lang, 'clickToView') }, [
       el('span', { class: 't' }, [worst ? el('span', { title: messageFor(lang, worst.finding) }, [severityIcon(worst.group)]) : null, title]),
-      el('span', { class: 'actions' }, [edit, bin]),
+      el('span', { class: 'actions' }, [setButton(song.id), edit, bin]),
       el('span', { class: 's' }, [sub]),
     ]);
     listen(li, 'click', () => onSelect(song.id));
@@ -173,10 +185,11 @@ export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onA
 
   return {
     node,
-    update(state, selectedId) {
+    update(state, selectedId, set = null) {
       songs = state.songs || [];
       findings = state.findings || [];
       selected = selectedId ?? null;
+      openSet = set;
       draw();
     },
     filter: () => filter,

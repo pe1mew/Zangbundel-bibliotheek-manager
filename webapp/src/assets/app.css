@@ -426,3 +426,16 @@ svg.sev-ok { fill: var(--fire-orange); }
 .section.dropbefore { box-shadow: 0 -3px 0 var(--sky-blue); }
 .section.dropafter { box-shadow: 0 3px 0 var(--sky-blue); }
 .edithelp svg.inl { width: 16px; height: 16px; fill: currentColor; vertical-align: -3px; }
+
+/* M5.5: sets (GD-21), as the mock */
+.tabs { display: flex; border-bottom: 1px solid var(--line); }
+.tab { flex: 1; min-height: 48px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer;
+  font: inherit; font-weight: 600; color: var(--secondary); }
+.tab.on { color: var(--white); border-bottom-color: var(--fire-orange); }
+.tab:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: -3px; }
+.setbtn.on svg { fill: var(--fire-orange); }
+.setno { min-width: 28px; text-align: right; color: var(--secondary); margin-right: 8px; font-variant-numeric: tabular-nums; }
+.setentry .grow { flex: 1; display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.setentry .grow svg.sev, .setview .hint svg.sev { width: 18px; height: 18px; flex: none; }
+.setview h2 { display: flex; align-items: center; gap: 8px; }
+.setview .hint { display: flex; gap: 6px; align-items: center; color: var(--fire-orange-light); }

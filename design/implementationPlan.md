@@ -586,7 +586,30 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - *Verse 1* dragged below *Bridge*, the line before *Chorus (2x)*;
   - *Toepassen* showed the new order.
 - **Not seen:** the auto-scroll itself. The pane was hidden, so the page drew no animation frames (0 in 700 ms) and the scrolling, which runs per frame, could not run. Its rule is unit-tested; the owner's look at the M5 exit should include dragging a block to an edge.
-- **Left in M5:** M5.5 sets; then the M5 exit on the test instance (each GD of M5 against its text) and M6's exit.
+
+**M5.5 done; with it the five steps of M5.**
+- **Tabs (GD-21):** the right bar has *Liedjes (n)* and *Sets (n)*. Both lists stay built, so switching keeps the search.
+- **The *Sets* tab:** each set with its number of songs (*1 liedje*, *n liedjes*), or a warning mark when empty (SET-03). Each row has *Omhoog*, *Omlaag*, *Naam wijzigen* and *Set verwijderen*, and *Nieuwe set* is below the list.
+  - A new set's name is proposed (*Nieuwe set*, numbered when taken).
+  - The name dialog refuses an empty name, more than 60 characters, braces or line breaks, and a name in use without regard to case (SET-02; FDS 4.1).
+  - Deleting asks M-62 and never deletes songs (EDT-31).
+  - Moving the open set keeps it open.
+- **An open set in the centre (GD-21):** its name with *Naam wijzigen*, the hint to add songs with *+*, M-13 when empty, and its songs in order. Each song has a number, a drag handle (`drag.js`, shared with the editor), *Omhoog*, *Omlaag*, and a bin that takes it out of the set only. A song the library does not have shows M-32 (SET-01). A redraw keeps the reader's place.
+- ***+ Set*:** while a set is open, each song row has a button that adds the song to it; a song already in it shows a check (SET-04). Choosing a song closes the set view. Opening a set leaves the song editor through GD-36.
+- **`app/sets.js`:** the operations are pure (add, rename, delete and move sets; add, remove and move entries), and `session.updateSets` applies them and rechecks. A read-only library changes nothing.
+- **`app/drag.js`:** the drag of M5.3e moved out of the editor, for blocks and set entries alike.
+- **Tested:**
+  - `tests/unit/sets.test.mjs`, 4 tests: set names, every operation leaving the original untouched, sets made in the session saved in the manifest and as setlists of the view (PF-40) with no set errors and found again on reopening, read-only and malformed lists refused.
+  - `node --test`: 371 of 371. Container test: 81 of 81.
+- **In the browser pane (Chromium), on `valid-unsigned`:**
+  - a new set with a taken name refused, then *Zomerkamp 2026* opened with M-13;
+  - three songs added with *+*, each then checked;
+  - reordered with *Omhoog* and by dragging, one taken out (the library kept 4 songs);
+  - renamed with Enter; moved up while open; *Demo* deleted after M-62;
+  - a song chosen, closing the set view.
+  - `valid-signed` without its key: every set button and *+* disabled, no drag handles.
+- **Still open in M5:** Controle's *Ga naar* (EDT-41, GD-20) goes nowhere yet. It should take a song finding to the song (and its line in the code mode), a set finding to the set, and a library finding to the library's fields.
+- **Then:** the M5 exit on the test instance (each GD of M5 against its text, dragging to an edge included), and M6's exit.
 
 ### M6 — Open, save and sign (M)
 

@@ -10,7 +10,7 @@
 // download, forget) and forgetting the key after 30 minutes without input. M5.4: the library's fields
 // in the left bar (library-form.js). The rest of editing comes with M5.
 
-import { el, extLink, icon, replace } from './dom.js';
+import { el, extLink, icon, replace, setAttrs } from './dom.js';
 import { toast } from './dialog.js';
 import { createIdleWatch } from './idle.js';
 import { createLibraryForm } from './library-form.js';
@@ -25,7 +25,8 @@ import { createSession } from './session.js';
 import { createSongList, neighbourAfterDelete } from './songlist.js';
 import { libraryHomeNode, songDataNode, songViewNode } from './songview.js';
 import { createSongEditor } from './editor.js';
-import { closeConfirm, convertedDialog, copyDialog, deleteSongConfirm, downloadDialog, importFailedDialog, leaveEditorDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
+import { addEntry, addSet, createSetList, deleteSet, moveEntry, moveSet, removeEntry, renameSet, setNameProblem, setViewNode } from './sets.js';
+import { closeConfirm, convertedDialog, copyDialog, deleteSetConfirm, deleteSongConfirm, downloadDialog, importFailedDialog, leaveEditorDialog, setNameDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
   keyReplaceConfirm, keySaveDialog, manifestConfirm, newLibraryDialog, openFailedDialog, pickFile, saveFailedDialog,
   savedDialog } from './library-ui.js';
 import { KEY_MIME, LIBRARY_MIME, offerDownload } from './download.js';
@@ -236,7 +237,12 @@ function start() {
   let selected = null;                                    // the selected song's ID (GD-13); the centre shows it from M5.2
   let selectedLibrary = null;
   const head = el('div', { class: 'libhead' }, []);
-  const select = (id) => { selected = id; render(); };
+  let openSet = null;                                     // GD-21: the set open in the centre, by its place in sets
+  let rightTab = 'songs';                                 // GD-21: *Liedjes* or *Sets*
+  let setList = null;
+  let tabs = null;
+  let pane = null;
+  const select = (id) => { selected = id; openSet = null; render(); };
   // GD-16, EDT-32: the bin asks M-62; afterwards the neighbouring song is selected, or none
   const onDeleteSong = (id, title) => deleteSongConfirm(language.get(), title, async () => {
     const next = neighbourAfterDelete(songList ? songList.visibleIds() : [], id);
@@ -345,9 +351,40 @@ function start() {
   const chooseEdit = leaving(startEdit);
   const onAddSong = leaving(startNew);
   const onImportSong = leaving(importFile);
+
+  // ---- M5.5: sets (GD-21; EDT-31): the operations are pure (sets.js), the session applies them
+  const sets = () => session.get().library.sets;
+  const applySets = (next) => session.updateSets(next);
+  const openSetAt = (i) => { selected = null; openSet = i; render(); };
+  const chooseSet = leaving(openSetAt);
+  const uniqueSetName = () => {
+    const base = t(language.get(), 'setDefault');
+    let name = base;
+    for (let n = 2; setNameProblem(name, sets()) === 'taken'; n++) name = `${base} ${n}`;
+    return name;
+  };
+  const onNewSet = () => setNameDialog(language.get(), { name: uniqueSetName(), problem: (n) => setNameProblem(n, sets()),
+    onOk: async (n) => { if (await applySets(addSet(sets(), n))) chooseSet(sets().length - 1); } });
+  const onRenameSet = (i) => setNameDialog(language.get(), { name: sets()[i].name, problem: (n) => setNameProblem(n, sets(), i),
+    onOk: (n) => applySets(renameSet(sets(), i, n)) });
+  const onDeleteSet = (i) => deleteSetConfirm(language.get(), sets()[i].name, async () => {
+    if (!(await applySets(deleteSet(sets(), i)))) return;
+    if (openSet === i) openSet = null;
+    else if (openSet !== null && openSet > i) openSet -= 1;
+    render();
+  });
+  const onMoveSet = async (i, dir) => {
+    if (!(await applySets(moveSet(sets(), i, i + dir)))) return;
+    if (openSet === i) openSet = i + dir;                 // the open set stays open where it went
+    else if (openSet === i + dir) openSet = i;
+    render();
+  };
+  const onAddToSet = (id) => (openSet === null ? null : applySets(addEntry(sets(), openSet, id)));
+  const showTab = (tab) => { rightTab = tab; render(); };
   let form = null;
   let shown = { id: null, text: undefined, details: null };   // the selected song's view, from the worker
   let lastCentre;
+  let lastView = null;
   let guard = null;
   const render = () => {
     const lang = language.get();
@@ -359,7 +396,9 @@ function start() {
     // the selection goes with another library, or with its song
     const libraryId = state.library ? state.library.libraryId : null;
     if (libraryId !== selectedLibrary || (selected && !state.songs.some((s) => s.id === selected))) selected = null;
+    if (libraryId !== selectedLibrary || !state.library || openSet === null || openSet >= state.library.sets.length) openSet = null;
     selectedLibrary = libraryId;
+    const theSet = openSet !== null ? state.library.sets[openSet] : null;
     // GD-13, GD-19: the selected song, parsed by the worker once per text; a late answer for another song is dropped
     const text = selected ? state.library.songs.get(selected) : undefined;
     if (!selected) shown = { id: null, text: undefined, details: null };
@@ -372,16 +411,24 @@ function start() {
     // the centre is redrawn only when what it shows changes, so the reader keeps their place in a song
     if (editing && (!state.library || (!editing.isNew && !state.library.songs.has(editing.id)) || readOnly)) editing = null;   // gone, or the key forgotten
     const centreKey = JSON.stringify([screen, lang, readOnly, state.authorFingerprint, Boolean(state.library), state.busy,
-      state.library ? [state.library.title, state.songs.length] : null, selected, shown.details ? shown.text : null, editing ? editing.token : 0]);
+      state.library ? [state.library.title, state.songs.length] : null, selected, shown.details ? shown.text : null, editing ? editing.token : 0,
+      theSet && !selected && !editing ? [openSet, theSet, state.songs.map((x) => [x.id, x.title, x.language])] : null]);
     if (centreKey !== lastCentre) {
       lastCentre = centreKey;
+      // a set that changes is drawn again where the reader was in it
+      const view = editing ? 'edit' : selected ? `song:${selected}` : theSet ? `set:${openSet}` : 'home';
+      const keep = view === lastView && view.startsWith('set:') ? layout.centre.scrollTop : null;
+      lastView = view;
       const content = !state.library ? home(lang, { onOpen, onNew, onDownload: () => onDownload(), hasLibrary: false, busy: state.busy })
         : editing ? editing.editor.node                    // the same editor node: typing is never lost to a redraw
+          : !selected && theSet ? setViewNode(lang, { set: theSet, songs: state.songs, readOnly, onRename: () => onRenameSet(openSet),
+            onRemove: (k) => applySets(removeEntry(sets(), openSet, k)), onMoveEntry: (from, to) => applySets(moveEntry(sets(), openSet, from, to)) })
           : !selected ? libraryHomeNode(lang, state, { readOnly, onAdd: onAddSong, onImport: onImportSong })
             : shown.details ? songViewNode(lang, selected, shown.details, { readOnly, onDelete: leaving(onDeleteSong), onEdit: chooseEdit })
               : el('p', { class: 'empty' }, ['…']);
       replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); })
         : el('div', {}, [readOnlyBar(lang, state), content]));
+      if (keep !== null) layout.centre.scrollTop = keep;
     }
     // GD-13: the song list, built once per library, language and read-only state; its node stays in place
     // so the search field keeps its focus while the list follows the typing
@@ -389,11 +436,29 @@ function start() {
     if (listKey !== rightKey) {
       rightKey = listKey;
       songList = state.library ? createSongList({ lang, readOnly, onSelect: choose, onEdit: chooseEdit, onDelete: leaving(onDeleteSong),
-        onAdd: onAddSong, onImport: onImportSong }) : null;
-      replace(layout.right, head, songList ? songList.node : el('p', { class: 'empty' }, [t(lang, 'noLibrary')]));
+        onAdd: onAddSong, onImport: onImportSong, onAddToSet }) : null;
+      // GD-21: two tabs, *Liedjes* and *Sets*; both lists stay built, so switching keeps the search
+      setList = state.library ? createSetList({ lang, readOnly, onOpen: chooseSet, onNew: onNewSet, onRename: onRenameSet,
+        onDelete: onDeleteSet, onMove: onMoveSet }) : null;
+      const tab = (name) => el('button', { type: 'button', role: 'tab', class: 'tab', 'data-tab': name, on: { click: () => showTab(name) } }, []);
+      tabs = state.library ? el('div', { class: 'tabs', role: 'tablist', 'aria-label': t(lang, 'rightTabs') }, [tab('songs'), tab('sets')]) : null;
+      pane = el('div', { class: 'tabpane', role: 'tabpanel' }, []);
+      replace(layout.right, head, ...(state.library ? [tabs, pane] : [el('p', { class: 'empty' }, [t(lang, 'noLibrary')])]));
     }
     replace(head, ...libHead(lang, state, () => choose(null)));
-    if (songList) songList.update(state, selected);
+    if (tabs) {
+      for (const b of tabs.children) {
+        const name = b.getAttribute('data-tab');
+        const count = name === 'songs' ? state.songs.length : state.library.sets.length;
+        b.replaceChildren(`${t(lang, name)} (${count})`);
+        setAttrs(b, { 'aria-selected': name === rightTab ? 'true' : 'false', class: name === rightTab ? 'tab on' : 'tab' });
+      }
+      const want = rightTab === 'sets' ? setList.node : songList.node;
+      if (pane.firstChild !== want) pane.replaceChildren(want);
+    }
+    const showsSet = theSet && !selected && !editing;
+    if (songList) songList.update(state, selected, showsSet ? theSet : null);
+    if (setList) setList.update(state, showsSet ? openSet : null);
     // GD-05: a selected song's data, read-only until the song editor (M5.3); GD-22: otherwise the library's
     // fields, built once per library and language, then only updated (library-form.js)
     if (selected || editing) {

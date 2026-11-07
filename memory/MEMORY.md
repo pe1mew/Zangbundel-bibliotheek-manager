@@ -165,4 +165,5 @@
     - No unit test loads main.js (it starts the page): `syntax.test.mjs` runs node --check on every module.
   - M5.3d committed. M5.3e done (uncommitted): drag by handle (moveToPosition, edgeSpeed; --dy via setVar; dropbefore/dropafter classes). M5.3 complete.
     - A hidden browser pane draws no animation frames: requestAnimationFrame never fires, so anything per-frame cannot be checked there (ask the owner to show the pane).
-  - Next: M5.5 sets (GD-21, EDT-31, SET-01 to SET-05).
+  - M5.3e committed. M5.5 done (uncommitted): `sets.js` (pure ops, createSetList, setViewNode), `drag.js` (startDrag, edgeSpeed; the editor uses it), session.updateSets; main: rightTab, openSet, tabs.
+  - Next: Controle's *Ga naar* (EDT-41, GD-20): onCheck still passes () => {}. Then the M5 exit with the owner.

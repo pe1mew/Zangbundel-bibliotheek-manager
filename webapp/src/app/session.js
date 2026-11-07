@@ -150,6 +150,19 @@ export function createSession({ client, crypto = null, now = () => new Date() })
       return client.request('importSong', { bytes, name: file.name, taken: [...(state.library ? state.library.songs.keys() : [])] }, [bytes.buffer]);
     },
 
+    /**
+     * EDT-31, GD-21 (M5.5): the library's sets become sets (from the pure operations of sets.js). The
+     * songs are not touched; the findings follow (SET-01 to SET-05). A read-only library is not changed.
+     */
+    async updateSets(sets) {
+      const lib = state.library;
+      if (!lib || isReadOnly() || !Array.isArray(sets)
+        || !sets.every((s) => s && typeof s.name === 'string' && Array.isArray(s.songs) && s.songs.every((x) => typeof x === 'string'))) return false;
+      set({ library: { ...lib, sets: sets.map((s) => ({ name: s.name, songs: s.songs.slice() })) }, dirty: true });
+      await recheck();
+      return true;
+    },
+
     /** EDT-32: a song added to the library under id (from adoptSong or importSong). Returns true when added. */
     async addSong(id, text) {
       const lib = state.library;

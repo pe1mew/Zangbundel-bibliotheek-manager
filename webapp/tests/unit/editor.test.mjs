@@ -140,7 +140,7 @@ test('GD-08: a dragged block lands at its place among the shown blocks; metadata
   assert.deepEqual(order(moveToPosition(one, a, 0)), ['title', 'verse']);
 });
 
-const { edgeSpeed } = await import('../../src/app/editor.js');
+const { edgeSpeed } = await import('../../src/app/drag.js');
 
 test('GD-11: within 72 px of an edge the song scrolls towards it, faster the closer; elsewhere it stands still', () => {
   const [top, bottom] = [100, 700];                                  // bottom: above the Toepassen bar

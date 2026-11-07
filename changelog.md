@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M5.5: sets** (`design/implementationPlan.md`).
+  - **The right bar** has the tabs *Liedjes* and *Sets*.
+  - **Sets:** add, rename, reorder and delete them.
+  - **An open set** shows its songs in the centre: reorder them by dragging or with the buttons, or take one out of the set. Add songs with *+* in the song list.
+  - **Code:** `app/sets.js`; `app/drag.js` (shared with the editor); `session.updateSets`.
+  - **Tests:** `sets.test.mjs`; `node --test` 371 of 371. Checked in Chromium.
 - **M5.3e: dragging blocks** (`design/implementationPlan.md`).
   - **Dragging:** a block moves by its handle and lands where the line shows.
   - **Auto-scroll:** near the top or bottom of the song, the song scrolls along.

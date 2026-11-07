@@ -6,7 +6,8 @@
 // text is only kept free of characters a lyric line cannot hold (GD-07), and the worker writes the song
 // back (fromBlocks), refusing what would change meaning.
 
-import { el, icon, listen, setAttrs, setVar, toggleClass } from './dom.js';
+import { el, icon, listen, setAttrs } from './dom.js';
+import { startDrag } from './drag.js';
 import { t, tParts } from './i18n.js';
 import { messageFor, severityGroup, severityIcon } from './check.js';
 import { createSongFields } from './songfields.js';
@@ -57,17 +58,6 @@ export function moveBlock(form, i, dir) {
   const blocks = form.blocks.slice();
   [blocks[i], blocks[other]] = [blocks[other], blocks[i]];
   return { ...form, blocks };
-}
-
-/**
- * GD-11: how far the song scrolls in one frame while a block is dragged with the pointer at y, in a
- * scroll area from top to bottom (bottom already above the Toepassen bar): within edge px of an edge,
- * towards it, faster the closer the pointer is, at most max; elsewhere not at all.
- */
-export function edgeSpeed(y, top, bottom, edge = 72, max = 18) {
-  if (y < top + edge) return -max * Math.min(1, (top + edge - y) / edge);
-  if (y > bottom - edge) return max * Math.min(1, (y - (bottom - edge)) / edge);
-  return 0;
 }
 
 /**
@@ -178,71 +168,18 @@ export function createSongEditor({ lang, id, isNew = false, text: original, form
     return [...body, hintBox];
   }
 
-  // ---- GD-08, GD-11: drag a block by its handle; near the top or bottom of the centre the song scrolls
-  const EDGE = 72;                                       // px from the edge, above the Toepassen bar
-  const MAX_SPEED = 18;                                  // px per frame at the very edge
-  function startDrag(e, block, handle) {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    const card = handle.closest('.section');
-    const cards = [...sections.children];
-    const from = cards.indexOf(card);
-    const scroller = node.closest('.centre') || node.parentElement || node;
-    const foot = node.querySelector('.editfoot');
-    try { handle.setPointerCapture(e.pointerId); } catch { /* a synthetic pointer */ }
-    toggleClass(card, 'dragging', true);
-    const startY = e.clientY;
-    const startScroll = scroller.scrollTop;
-    const box = sections.getBoundingClientRect();
-    const own = card.getBoundingClientRect();
-    const minDy = box.top - own.top;                     // the block cannot leave the song
-    const maxDy = box.bottom - own.bottom;
-    const others = cards.filter((c) => c !== card);
-    let y = e.clientY;
-    let to = from;
-    let frame = 0;
-    const clear = () => others.forEach((c) => { toggleClass(c, 'dropbefore', false); toggleClass(c, 'dropafter', false); });
-    const place = () => {
-      const dy = Math.max(minDy, Math.min(maxDy, y - startY + scroller.scrollTop - startScroll));
-      setVar(card, '--dy', `${dy}px`);
-      let k = others.findIndex((c) => y < c.getBoundingClientRect().top + c.offsetHeight / 2);
-      if (k === -1) k = others.length;
-      to = k;
-      clear();                                            // a line shows where it will land
-      if (k < others.length) toggleClass(others[k], 'dropbefore', true);
-      else if (others.length) toggleClass(others[others.length - 1], 'dropafter', true);
-    };
-    const tick = () => {
-      const r = scroller.getBoundingClientRect();
-      const bottom = r.bottom - (foot ? foot.offsetHeight : 0);
-      const max = scroller.scrollHeight - scroller.clientHeight;
-      const v = edgeSpeed(y, r.top, bottom, EDGE, MAX_SPEED);
-      const next = Math.max(0, Math.min(max, scroller.scrollTop + v));   // stops at the start and end
-      if (next !== scroller.scrollTop) {
-        scroller.scrollTop = next;
-        place();
-      }
-      frame = requestAnimationFrame(tick);
-    };
-    const stops = [];
-    const end = () => {
-      cancelAnimationFrame(frame);
-      stops.forEach((stop) => stop());
-      clear();
-      toggleClass(card, 'dragging', false);
-      setVar(card, '--dy', '0px');
-      if (to === from) return;
-      form = moveToPosition(form, block, to);
-      const keep = scroller.scrollTop;
-      draw();
-      scroller.scrollTop = keep;                          // it lands where it was dropped and stays in view
-      const landed = sections.children[to];
-      landed?.scrollIntoView?.({ block: 'nearest' });
-    };
-    stops.push(listen(handle, 'pointermove', (ev) => { y = ev.clientY; place(); }));
-    stops.push(listen(handle, 'pointerup', end));
-    stops.push(listen(handle, 'pointercancel', end));
-    frame = requestAnimationFrame(tick);
+  // ---- GD-08, GD-11: drag a block by its handle (drag.js); near the top or bottom the song scrolls along
+  function dragBlock(e, block, handle) {
+    startDrag(e, { handle, card: handle.closest('.section'), list: sections, scroller: node.closest('.centre') || node.parentElement || node,
+      foot: node.querySelector('.editfoot'),
+      onDrop: (from, to) => {
+        const scroller = node.closest('.centre') || node;
+        const keep = scroller.scrollTop;
+        form = moveToPosition(form, block, to);
+        draw();
+        scroller.scrollTop = keep;                        // it lands where it was dropped and stays in view
+        sections.children[to]?.scrollIntoView?.({ block: 'nearest' });
+      } });
   }
 
   function bar(i, block, shown) {
@@ -268,7 +205,7 @@ export function createSongEditor({ lang, id, isNew = false, text: original, form
     const move = (dir) => () => { form = moveBlock(form, form.blocks.indexOf(block), dir); draw(block, dir); };
     // GD-08: the handle is for the pointer; the keyboard has Omhoog and Omlaag (GD-33)
     const handle = el('span', { class: 'handle', title: t(lang, 'dragTitle'), 'aria-hidden': 'true' }, [icon('drag')]);
-    if (shown.length > 1) listen(handle, 'pointerdown', (e) => startDrag(e, block, handle));
+    if (shown.length > 1) listen(handle, 'pointerdown', (e) => dragBlock(e, block, handle));
     return el('div', { class: 'secbar' }, [handle, kind, label, el('span', { class: 'grow' }, []),
       btn('up', t(lang, 'up'), pos === 0, move(-1)),
       btn('down', t(lang, 'down'), pos === shown.length - 1, move(1)),
