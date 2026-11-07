@@ -282,7 +282,7 @@ zbm-release list
   - A bare `bash` there may start WSL; use `C:\Program Files\Git\bin\bash.exe` or the Git Bash window.
   - Activate with `ssh -t rfsee.net "sudo zbm-release activate …"`.
 - **Checked from outside:** `check_headers.py zangbundel.nl` gave 25 of 25 (SC-01).
-- **Still to run by the owner:** `check_headers.py test.zangbundel.nl --auth <tester>:<password> --app`, the pages behind the password. Without them, 4 of 4 passed. `--app` is needed: the test instance serves SR-20's full CSP, also for the holding page.
+- **`check_headers.py test.zangbundel.nl --auth <tester>:<password> --app`**, run by the owner: 16 of 16. `--app` is needed because the test instance serves SR-20's full CSP, also for the holding page.
 
 - **Clearing staging.** Delete processed uploads from the staging directory. `zbm-receive` takes one upload at a time. It refuses an upload when 20 uploads are already waiting, when staging would hold more than 200 MB with this one, or when what arrives is not an uncompressed tar with its end marker.
 

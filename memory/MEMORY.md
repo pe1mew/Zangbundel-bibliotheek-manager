@@ -84,9 +84,16 @@
   - Git tag signing: dedicated key `C:\Users\drasv\.ssh\git-signing` (SHA256:yuXtv8xl…), set as user.signingkey, with gpg.format ssh and allowed_signers (CRLF, written by PowerShell). The owner's test tag verified: `Good "git" signature … SHA256:yuXtv8xl…`; CRLF in allowed_signers is fine. NOT panther_ed25519: its comment marks it as Claude Code's.
   - The owner's terminal is PowerShell (`$env:USERPROFILE`), sometimes cmd (`%USERPROFILE%`).
   - Owner's decision 2026-11-07: the Google Play badge is left out of the placeholder until the app is listed (Google's guidelines allow it only unaltered); F-Droid stays greyed (webappGUI 0.14, GD-35 amended). The mock still greys both.
-  - Step 7 done: placeholder-0.1.0 and test-holding-0.1.0 live, from the signed tag placeholder-0.1.0 (f67e251; the owner's commit message is "ging 0.1.0"). SC-01 for zangbundel.nl: 25/25. The test instance needs `--auth`, which only the owner can run.
+  - Step 7 done: placeholder-0.1.0 and test-holding-0.1.0 live, from the signed tag placeholder-0.1.0 (f67e251; the owner's commit message is "ging 0.1.0"). SC-01: zangbundel.nl 25/25, and the test instance 16/16 with `--auth … --app`, run by the owner. Without `--app` the checker expects the placeholder CSP and fails.
   - Owner flow that worked:
     - Sign and upload in the owner's own Git Bash window. Terminal-panel tabs were unreliable for passphrases.
     - Activate with `ssh -t rfsee.net "sudo zbm-release activate …"`.
   - Processed uploads remain in staging until the owner deletes them.
   - Next: step 8 (zbm-verify timer, Kuma push, monitoring), step 9 (HSTS ramp), step 10 (release gate).
+- **2026-11-07: M4 started, M4.1 done** (uncommitted).
+  - `app/dom.js`: `el(tag, {attrs, on:{event:fn}}, children)` with an attribute allow-list, plus `icon(name)` (SVG via createElementNS, `app/icons.js`), `replace()` and `setVar()` (custom properties only).
+  - `build.py dom_sink()` refuses HTML, style and script sinks by token. The tokenizer splits `==` into two `=`, so a `style` assignment check must look two tokens ahead.
+  - The mock builds with HTML strings (21 innerHTML), so M4 rewrites it with el(), keeping the look.
+  - `zbm-download` moves to M6.2: `a.href = blob:` is not a Trusted Types sink.
+  - Browser check: use a FRESH tab; the console keeps messages across reloads in a reused tab.
+  - Next: M4.2 i18n (port webapp/mock/i18n.js), M4.3 layout.

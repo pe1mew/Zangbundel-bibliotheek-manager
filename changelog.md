@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M4.1: the element builder and a build check against HTML sinks** (`design/implementationPlan.md`).
+  - **`app/dom.js`** builds elements from an allow-list of attributes, takes event handlers through `on`, refuses `javascript:` and `data:` links, and draws the Material icons of the new `app/icons.js` as SVG.
+  - **`build.py` fails the build** on `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, `setAttribute('style' | 'on…')` and assigning `element.style` in any bundled module (SR-24, SR-32).
+  - **Tests:** `test_build.py` has 10 new cases and `tests/unit/dom.test.mjs` 4 tests; `node --test` 264 of 264. The built app shows no CSP or Trusted Types violation in the browser.
 - **M3: keys and signing** (`design/implementationPlan.md` draft 0.17).
   - **`core/keyfile.js`** reads and writes `.zbkey` files (FDS 5.3). A damaged or DER-wrapped key is M-31.
   - **`core/ed25519.js`** signs with Web Crypto and a non-extractable key where the browser has Ed25519, and with `@noble/ed25519` elsewhere. Its known-answer self-test also cross-checks the two (SR-15, SR-16).
@@ -83,7 +87,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - `design/securityAssessment.md` draft 0.1: a security and privacy assessment of the web app's design. It names the assets, attackers and 20 findings (among them: the site's code as the root of trust, the shared host with end-of-life PHP sites, CVE-2026-45820 in `fflate` before 0.8.3, the unaudited `@noble/ed25519` v3, DOM injection from library content, missing security headers, no CAA, registrar lock, SPF or DMARC on the new domain), and specifies 67 binding requirements (SR-01 to SR-93), the nginx, DNS, application and release implementation, a release gate of 13 checks, accepted risks and eight open questions. webappTDS draft 0.6 makes it binding (TD-18).
 
 ### Changed
-- **First releases live (runbook step 7, M0.8).** `placeholder-0.1.0` runs on https://zangbundel.nl and `test-holding-0.1.0` on the test instance. Both were built from the signed tag `placeholder-0.1.0`, signed with the release key, uploaded with the deploy key and verified on activation. SC-01: 25 of 25 for zangbundel.nl.
+- **First releases live (runbook step 7, M0.8).** `placeholder-0.1.0` runs on https://zangbundel.nl and `test-holding-0.1.0` on the test instance. Both were built from the signed tag `placeholder-0.1.0`, signed with the release key, uploaded with the deploy key and verified on activation. SC-01: 25 of 25 for zangbundel.nl, 16 of 16 for the test instance.
 - **Placeholder without the Google Play badge** (webappGUI draft 0.14, GD-35 amended by the owner). Google's badge guidelines allow the badge only unaltered, so it is left out until the app is on Google Play. The trademark notice and the privacy pages' mention of Google Play and F-Droid links go with it: the page links only to GitHub.
 - **Both HTTPS sites enabled (runbook step 6):** a tester password on `test.zangbundel.nl`. TLS 1.2 and 1.3 only, and the full header set, checked from outside. The sites answer 404 until the first releases (step 7).
 - **Certificates for both names (runbook step 5, M0.3):** issued with `certonly --webroot` and renewed by the host's certbot timer. CAA is bound to certbot's production and staging accounts (SR-03); the runbook now names both records and Openprovider's form, which takes no space after the `;`.

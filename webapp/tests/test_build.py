@@ -29,7 +29,17 @@ special = {'css import': ('@import url(b.css); body{}', None), 'css external url
            'module with a side-effect import': ('body{}', 'JS:import "./b.js";'),
            'module with a default export': ('body{}', 'JS:export default 1;'),
            'module importing outside webapp': ('body{}', 'JS:import { x } from "../../../../x.js";'),
-           'classic script': ('body{}', 'CLASSIC:export const x = 1;')}
+           'classic script': ('body{}', 'CLASSIC:export const x = 1;'),
+           # M4.1 (SR-24, SR-32): HTML, style and script sinks in module code
+           'module: innerHTML': ('body{}', 'JS:export const f = (n, s) => { n.innerHTML = s; };'),
+           'module: el["innerHTML"]': ('body{}', "JS:export const f = (n, s) => { n['innerHTML'] = s; };"),
+           'module: insertAdjacentHTML': ('body{}', 'JS:export const f = (n, s) => n.insertAdjacentHTML("beforeend", s);'),
+           'module: document.write': ('body{}', 'JS:export const f = (s) => document.write(s);'),
+           'module: setAttribute onclick': ('body{}', 'JS:export const f = (n) => n.setAttribute("onclick", "x()");'),
+           'module: setAttribute style': ('body{}', "JS:export const f = (n) => n.setAttribute('style', 'color:red');"),
+           'module: element.style =': ('body{}', 'JS:export const f = (n) => { n.style = "color:red"; };'),
+           'module: eval': ('body{}', 'JS:export const f = (s) => eval(s);'),
+           'module: new Function': ('body{}', 'JS:export const f = (s) => new Function(s);')}
 good_html = ('<!doctype html><!-- SPDX-License-Identifier: Apache-2.0 --><html><head><link rel="stylesheet preload" href="assets/a.css">'
              '<script type="module" src="assets/a.js"></script></head><body>'
              '<img src="assets/i.svg#logo" alt=""><a href="./">home</a><a href=".">h2</a><a href="nl/">nl</a><a href="nl/../">up</a>'
@@ -72,5 +82,10 @@ for name, (css, extra) in special.items():
     else:
         allok &= run(name, base, css)
 allok &= run('GOOD page (must build)', good_html, good_css, js='import { b } from "./b.js"; export const a = b + 1;', expect_ok=True)
+# M4.1: the words in a comment or inside a longer string, style.setProperty and a comparison are allowed
+allok &= run('GOOD module (must build)', good_html, good_css, expect_ok=True,
+             js='import { b } from "./b.js";\n// never innerHTML or document.write here\n'
+                'export const msg = "no innerHTML anywhere";\n'
+                'export const f = (n) => { n.style.setProperty("--w", "3px"); return n.style == null || b; };')
 print('ALL OK' if allok else 'SOME FAILED')
 sys.exit(0 if allok else 1)

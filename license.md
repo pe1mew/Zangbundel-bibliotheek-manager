@@ -36,7 +36,7 @@ The web app reuses the look of the Zangbundel app (`design/webappGUI.md` GD-01):
 |---|---|---|
 | `webapp/mock/img/zangbundel-icon.svg` | The Zangbundel app icon, copied unchanged from the app's `design/icon/zangbundel-icon.svg` | CC BY-SA 4.0, credit "Remko Welling, PE1MEW" |
 | `webapp/mock/img/backdrop-3200x1440.webp` | The app's background photograph, landscape export, copied unchanged from the app's `design/gui/backdrop-3200x1440.webp`; taken by the owner (app guiDesign D-09) | CC BY-SA 4.0, credit "Remko Welling, PE1MEW" |
-| The icon paths in `webapp/mock/mock.js` (`ICONS`) | Google Material Icons path data, as the app uses them | Apache License 2.0 |
+| The icon paths in `webapp/mock/mock.js` and `webapp/src/app/icons.js` (`ICONS`) | Google Material Icons path data, as the app uses them | Apache License 2.0 |
 
 Copies of these in the web app carry the same licences. The app icon may be shared and adapted for any purpose, also commercially, with attribution and under the same licence (https://creativecommons.org/licenses/by-sa/4.0/). The Material Icons follow the Apache License 2.0 of the code, see [NOTICE](NOTICE).
 

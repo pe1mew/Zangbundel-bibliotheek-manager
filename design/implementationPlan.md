@@ -162,7 +162,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
 
 **Exit:** SC-01, SC-02, SC-09, SC-12 and SC-13 pass for both hosts; the placeholder is live on `zangbundel.nl`.
 
-**State (2026-11-06).** The repository part of M0 is done: M0.4 to M0.6 and M0.8 are in `webapp/server/`, `webapp/placeholder/`, `webapp/test-holding/` and `webapp/tools/`. It was tested in an Ubuntu 24.04 container with nginx 1.24.0, throwaway keys and self-signed certificates (`webapp/server/test/run.sh`, 68 of 68 checks, SC-01 for both hosts; `webapp/tests/test_build.py`), and reviewed in two rounds with `/review-changes` (drafts 0.4 and 0.5). M0.1 to M0.3, M0.7, M0.9, the installation and the exit checks are the owner's steps, in the order of the runbook `webapp/server/README.md`. **2026-11-07: M0.1 and M0.2 done by the owner**, apart from the CAA `accounturi`, which waits for the certificates. Two deviations, accepted: no MX, and no transfer lock (securityAssessment draft 0.13, SR-05, SR-07). **2026-11-07: runbook step 4 installed on contabo6**: the files, users, folders and the port-80 bootstrap vhost, checked from outside. **Later the same day:** step 3's keys were made on the owner's computer, and the key parts of step 4 installed. The deploy key reaches only `zbm-receive`, tested. Git tag signing set up the same day with a dedicated key (`git-signing`), which completes M0.7. **M0.3 done the same day (runbook step 5):** both certificates issued; CAA bound to certbot's production and staging accounts; the renewal dry run succeeds for both. **Runbook step 6 done too:** both HTTPS sites enabled and checked from outside (TLS 1.2 and 1.3 only, the headers, the password on the test instance). **Runbook step 7 done too (M0.8):** `placeholder-0.1.0` is live on `zangbundel.nl` and `test-holding-0.1.0` on the test instance. Both are signed releases from the tag `placeholder-0.1.0`. SC-01 passes 25 of 25 for `zangbundel.nl`; the test instance's pages behind the password are still to check. Left of M0: step 8 (the hourly integrity check and monitoring), step 9 (HSTS ramp) and step 10 (the release gate).
+**State (2026-11-06).** The repository part of M0 is done: M0.4 to M0.6 and M0.8 are in `webapp/server/`, `webapp/placeholder/`, `webapp/test-holding/` and `webapp/tools/`. It was tested in an Ubuntu 24.04 container with nginx 1.24.0, throwaway keys and self-signed certificates (`webapp/server/test/run.sh`, 68 of 68 checks, SC-01 for both hosts; `webapp/tests/test_build.py`), and reviewed in two rounds with `/review-changes` (drafts 0.4 and 0.5). M0.1 to M0.3, M0.7, M0.9, the installation and the exit checks are the owner's steps, in the order of the runbook `webapp/server/README.md`. **2026-11-07: M0.1 and M0.2 done by the owner**, apart from the CAA `accounturi`, which waits for the certificates. Two deviations, accepted: no MX, and no transfer lock (securityAssessment draft 0.13, SR-05, SR-07). **2026-11-07: runbook step 4 installed on contabo6**: the files, users, folders and the port-80 bootstrap vhost, checked from outside. **Later the same day:** step 3's keys were made on the owner's computer, and the key parts of step 4 installed. The deploy key reaches only `zbm-receive`, tested. Git tag signing set up the same day with a dedicated key (`git-signing`), which completes M0.7. **M0.3 done the same day (runbook step 5):** both certificates issued; CAA bound to certbot's production and staging accounts; the renewal dry run succeeds for both. **Runbook step 6 done too:** both HTTPS sites enabled and checked from outside (TLS 1.2 and 1.3 only, the headers, the password on the test instance). **Runbook step 7 done too (M0.8):** `placeholder-0.1.0` is live on `zangbundel.nl` and `test-holding-0.1.0` on the test instance. Both are signed releases from the tag `placeholder-0.1.0`. SC-01 passes 25 of 25 for `zangbundel.nl` and 16 of 16 for the test instance, behind its password, with `--app`. Left of M0: step 8 (the hourly integrity check and monitoring), step 9 (HSTS ramp) and step 10 (the release gate).
 
 ### M1 — Toolchain and release pipeline (M)
 
@@ -303,6 +303,21 @@ Each milestone ends with its exit checks passing and the result written to `desi
 | M4.5 | Validation panel *Controle* with counts and *Ga naar* | GD-20, GD-29, EDT-40 to EDT-42 |
 
 **Exit:** SC-03 (no CSP or Trusted Types violation) through every screen; the shell matches the mock's look in the three languages.
+
+**State (2026-11-07).** M4.1 is done, apart from `zbm-download`.
+- **`app/dom.js`:**
+  - `el()` builds elements from an allow-list of attributes. Event handlers come through `on`; `style`, `srcdoc` and every `on*` attribute are refused, and so is a `javascript:` or `data:` URL in `href` or `src`.
+  - `icon()` draws the Material icons of `app/icons.js` as SVG through the DOM.
+  - `setVar()` sets only CSS custom properties, for the GD-10 bar widths.
+  - Tested in `tests/unit/dom.test.mjs` with a stand-in document.
+- **`build.py` refuses HTML, style and script sinks** in every module of a bundle (`dom_sink`):
+  - `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `srcdoc` and `cssText`, also as a string key;
+  - `document.write`, `eval` and `new Function`;
+  - `setAttribute` of `style`, `srcdoc` or `on*`, and assigning `element.style`.
+
+  It reads the bundler's tokens, so comments and longer strings don't count. `test_build.py` has 9 cases refused and one allowed. All of `webapp/src` and `webapp/vendor` pass.
+- **Checked in the browser pane:** the built app under the test instance's CSP, in a fresh tab, showed no console message at all (SC-03 for the current screen).
+- **`zbm-download` moves to M6.2, where the download is built.** Assigning a `blob:` URL to `a.href` is not a Trusted Types sink, so that policy has nothing to guard at that point. The download helper will create and revoke the `blob:` URL itself (SR-36); whether SR-32 still needs a policy of that name is for the M6 review.
 
 ### M5 — Editing (L)
 

@@ -294,6 +294,36 @@ def git_state(src, files, extra=()):
         return None, True, None, False
 
 
+SINK_NAMES = {'innerHTML', 'outerHTML', 'insertAdjacentHTML', 'srcdoc', 'cssText', 'createContextualFragment',
+              'setHTMLUnsafe', 'parseHTMLUnsafe'}
+
+
+def dom_sink(text, path):
+    """The first HTML, style or script sink in a module's code, or None (implementationPlan M4.1).
+    Read from the bundler's tokens, so a comment or a word inside a longer string never counts.
+    Trusted Types refuses these at run time as well (SR-20); this check refuses them at build time."""
+    toks = [(t[0], t[1]) for t in bundler.tokenize(text, path)]
+    for i, (kind, val) in enumerate(toks):
+        nxt = toks[i + 1] if i + 1 < len(toks) else ('', '')
+        prev = toks[i - 1] if i else ('', '')
+        if kind in ('id', 'str') and val in SINK_NAMES:
+            return f'uses {val}'
+        if kind == 'id' and val in ('write', 'writeln') and prev == ('p', '.') and i >= 2 and toks[i - 2] == ('id', 'document'):
+            return f'uses document.{val}'
+        if kind == 'id' and val == 'eval' and nxt == ('p', '('):
+            return 'uses eval'
+        if kind == 'id' and val == 'Function' and prev == ('id', 'new'):
+            return 'uses new Function'
+        if kind == 'id' and val == 'setAttribute' and nxt == ('p', '(') and i + 2 < len(toks) and toks[i + 2][0] == 'str':
+            name = toks[i + 2][1].lower()
+            if name == 'style' or name.startswith('on') or name == 'srcdoc':
+                return f'sets the attribute {name}'
+        after = toks[i + 2] if i + 2 < len(toks) else ('', '')
+        if kind == 'id' and val == 'style' and prev == ('p', '.') and nxt == ('p', '=') and after not in (('p', '='), ('p', '==')):
+            return 'assigns element.style (use style.setProperty)'
+    return None
+
+
 def build(args):
     src = os.path.abspath(args.src)
     if not os.path.isdir(src):
@@ -335,6 +365,11 @@ def build(args):
             code, workers, mods = bundler.bundle(entry, root)
         except bundler.BundleError as e:
             fail(str(e))
+        for m in mods:                                   # SR-24, SR-32: no HTML or script sink in any module
+            with open(m, encoding='utf-8') as fh:
+                problem = dom_sink(fh.read(), m)
+            if problem:
+                fail(f'{os.path.relpath(m, root)}: {problem} (securityAssessment SR-24, SR-32: build the DOM with app/dom.js)')
         bundles[entry] = None                            # a worker that starts its own page: refused below
         names = {}
         for w in workers:
