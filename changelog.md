@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   - **Code:** `app/idle.js`; key dialogs in `library-ui.js`; `toast()` in `dialog.js`.
   - **Tests:** `idle.test.mjs`; `node --test` 304 of 304; container 81 of 81. Checked in Chromium.
   - **Docs:** webappGUI draft 0.17 (GD-14), securityAssessment draft 0.14 (SR-41).
+- **FDS draft 0.11:** a signing key may stay in memory across library sessions until the Editor closes (EDT-02, EDT-64; D-45). No format or validation rule changed.
 
 ### Fixed
 - **The signing tests on Node 18:** they used the global `File`, which Node 18 lacks, so the container test failed for the committed M6.3. They now import it from `node:buffer`.

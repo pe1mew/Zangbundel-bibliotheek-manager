@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.17 |
 | **Date** | 2026-11-07 |
-| **Depends on** | `design/FDS.md` draft 0.10, `design/webappGUI.md` draft 0.13, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.12, `test-libraries/` (58 cases) |
+| **Depends on** | `design/FDS.md` draft 0.11, `design/webappGUI.md` draft 0.17, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (58 cases) |
 
 ---
 

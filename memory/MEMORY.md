@@ -136,5 +136,5 @@
     - Owner 2026-11-07: the key lives until the page closes (SR-41 clarified); *Sleutel downloaden* only for a new key, once (GD-14 amended).
     - Container runs Node 18: no global `File` (import from node:buffer). Run the container test after the last test edit, not before.
     - Browser harness: never stub HTMLInputElement.prototype.click without calling the original for non-file inputs; move time with Date.now.
-    - Open: FDS EDT-01/EDT-02 read literally end the key with *Sluiten*; asked the owner whether FDS 0.11 should say a key may live until the program closes.
+    - FDS draft 0.11 (D-45): a key may stay in memory across library sessions until the Editor closes.
   - Next: M5 editing (M6's exit needs it), or runbook steps 8 to 10.

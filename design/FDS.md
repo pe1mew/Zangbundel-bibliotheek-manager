@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Functional Design Specification (FDS) |
-| **Status** | Draft 0.10 |
+| **Status** | Draft 0.11 |
 | **Date** | 2026-11-07 |
 | **Scope** | Library package format, Editor, Songbook app import |
 
@@ -438,7 +438,7 @@ The view (§3.7) is generated, so an Editor-saved library never fails these rule
 | ID | Requirement |
 |---|---|
 | EDT-01 | A session starts with **New library** or **Open library** and ends with **Save**, **Save as copy** or **Close**. |
-| EDT-02 | Nothing is kept after a session ends: no library content, no keys, no settings tied to a library. This applies equally to web, native and Android implementations. |
+| EDT-02 | Nothing is kept after a session ends: no library content, no keys, no settings tied to a library. This applies equally to web, native and Android implementations. The one exception is a signing key in memory: it may stay across sessions until the Editor closes (for a web implementation, the page), so one key can sign several libraries, and never longer (EDT-64, D-45). |
 | EDT-03 | Closing with unsaved changes requires confirmation (M-60). |
 | EDT-04 | A hosted web implementation must delete all session data on the server when the session ends or after 2 hours of inactivity, whichever comes first, and must use HTTPS. |
 
@@ -508,7 +508,7 @@ The view (§3.7) is generated, so an Editor-saved library never fails these rule
 | EDT-61 | **Generate key**: the Editor creates an Ed25519 key pair, asks for the author name, and lets the user save the key file. Before saving, it shows the notice M-64, which the user must acknowledge. |
 | EDT-62 | **Load key** for a signed library: the key file must pass SG-11 and its public key must equal `author.publicKey`. Otherwise it is rejected (M-30). |
 | EDT-63 | A signed library stays signed. The signature cannot be removed and the author key cannot be replaced; both are done through Save as copy. |
-| EDT-64 | The private key is held in memory only. It must never be written to disk, browser storage, the OS keychain or logs, and must be discarded at the end of the session. |
+| EDT-64 | The private key is held in memory only. It must never be written to disk, browser storage, the OS keychain or logs, and must be discarded when the Editor closes at the latest (EDT-02, D-45). |
 | EDT-65 | A hosted web implementation should process the key on the user's device. If the key is sent to the server, it must be kept in memory only and discarded at the end of the session. |
 
 ### 7.8 Save as copy
@@ -760,6 +760,7 @@ These limitations are accepted and must be stated in the user documentation.
 | D-42 | The app shows a MAN-08 failure as M-75, worded for someone importing; M-39 is the Editor's wording for someone saving. |
 | D-43 | The fixed terms are *signed by* and *not signed*, as in the app's glossary, which keeps a bare *signed* apart from *signed in* (EDT-83, APP-21, APP-22). |
 | D-44 | Tag labels travel in a package in the optional manifest field `tags` (§4.1), so tags and their labels work alike in every library format; the 1.1 view does not carry them, because every app that reads packages refuses an extra view field (VIEW-02). `formatVersion` stays 1: the field is optional and an app ignores unknown manifest fields. Decided by the owner on 2026-11-07, after first sunsetting tags and then retracting that: *"manager shall support labels to stay consistent over all"*; the format is written by the library session (the app repository's `design/proposals/2026-11-07-tag-labels-in-packages.md`, song format v0.26). |
+| D-45 | A signing key lives for one run of the Editor, not for one library session (EDT-02, EDT-64): it stays in memory through *Close* and *Save*, so signing several libraries needs the key loaded once, and is discarded when the Editor closes at the latest. Decided by the owner on 2026-11-07, while the web app's key group was built; the web app also forgets the key on request and after 30 minutes without input (securityAssessment SR-41, SR-46). |
 
 Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangbundel-bibliotheek#1 (2026-11-04). Decisions D-22 to D-28 are the owner's (2026-11-04). Decisions D-29 and D-30 come from the app repository's proposal `design/proposals/2026-11-04-library-package-id-and-file-type.md`, approved by the owner; D-31 to D-33 are the owner's answers to the differences that proposal found between this specification and the app's FRD (2026-11-04). Decisions D-34 to D-39 come from the app repository's proposal `design/proposals/2026-11-06-backward-compatible-packages.md`, approved by the owner on 2026-11-06. D-40 answers a question from the app's implementation on the same day. D-41 to D-43 come from the app session on 2026-11-06: D-41 is the owner's decision on that session's assessment SP-39, and D-42 and D-43 follow from writing the app's import questions (GUI design D-88).
 
@@ -776,6 +777,7 @@ Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangb
 | Draft 0.5 | 2026-11-06 | Libraries that Songbook apps before this format can read, from the app repository's proposal approved by the owner (D-34 to D-39). New §3.7: the format 1.1 view (PF-40 to PF-46), generated by the Editor, listed in the manifest. Songs move under `songs/` (§3.2, PF-10, PF-12, STR-01, new STR-11). New §6.8: view rules VIEW-01 to VIEW-03 with messages M-36 to M-38. `maintainer` required: §4.1, EDT-14, new MAN-08, M-39. `title` at most 80 characters (§4.1, EDT-10). Licence: a generated `LICENSE` in the view. EDT-52 writes the view; APP-02 recognises a library with a view as this format; APP-22 adds W013 for unsigned libraries. Limitation 9; O-04 extended. Keys: new SG-05 (raw Ed25519 keys), SG-20 refers to it, the `author.publicKey` example corrected from an X.509 wrapper to the RFC 8032 test key (D-40). D-29, D-31 and D-32 superseded in part. |
 | Draft 0.6 | 2026-11-06 | From the app session. New APP-06: a release archive, snapshot or `zangbundel.json` library with the ID of a library in this format is an unsigned copy of it; the app asks M-71 (without `{versionNote}`) or M-72, never silently (D-41, the owner's decision); a sentence below the §8.3 table points to it. New M-75, the app's wording of a MAN-08 failure (D-42). Fixed terms *signed by* and *not signed* (EDT-83, APP-21, APP-22, D-43). O-04: the first six test libraries exist in `test-libraries/`. After the app's first run of them: PF-42 made byte-exact, and an *Archive* column in §6.2 mapping PKG-01 to PKG-09 to the shared archive checks, with FDS codes reported for packages. |
 | Draft 0.7 | 2026-11-06 | O-04: 56 test libraries cover every rule of section 6 except PKG-09 and some forms of PKG-02 and PKG-03. New O-11: the readings the test libraries made where the rules leave room, to be confirmed. No rule changed. |
+| Draft 0.11 | 2026-11-07 | A signing key may stay in memory across library sessions until the Editor closes (EDT-02, EDT-64 reworded; D-45). No package format or validation rule changed. |
 | Draft 0.10 | 2026-11-07 | Tag labels in the manifest (D-44, song format v0.26): optional field `tags` (§4.1), checked by MAN-02; EDT-26 carries them over from `zangbundel.json`; EDT-30 edits them; APP-27 shows them. The 1.1 view is unchanged; `formatVersion` stays 1. |
 | Draft 0.9 | 2026-11-07 | O-11: the engine readings of draft 0.8 are settled with the app (song format v0.24); whitespace in directive names, values, the `meta` split and setlist lines means spaces and tabs only; an indented `#` line is a lyric line, and the display text drops trailing Unicode spaces (song format v0.25). No rule of this specification changed. |
 | Draft 0.8 | 2026-11-07 | O-11: the PKG-02 ratio reading is settled (the ZIP file size, §3.5), as song format v0.23 now bounds the release archive; and the readings of the manager's engine that the test libraries do not exercise are listed for the app to confirm (strict Ed25519 for SIG-03, set names as setlist titles, C1 controls, the brace rule of song format §5.2, among others). PF-20's list of forbidden characters is escaped so its table row renders whole. Song format v0.23 also settles S005 for a format 1.1 app, which changes the format 1.1 expectation of the test library `song-two-files`; no rule of this specification changed. |
