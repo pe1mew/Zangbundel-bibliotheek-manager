@@ -13,8 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   - **Home screen:** the primary actions, which wait for M5 and M6.
   - **Side bars:** resized by pointer or arrow keys and folded by their tabs, all remembered on this computer (`app/layout.js`, `app/bars.js`; GD-03, GD-04, GD-10, GD-34).
   - **Narrow page:** below 980 px (GD-32).
-  - **Tests:** `tests/unit/bars.test.mjs` has 4 tests; `node --test` 269 of 269. Checked in the browser.
-  - **webappGUI draft 0.15** asks for a minimum width of the centre (GQ-21).
+  - **Tests:** `tests/unit/bars.test.mjs` has 6 tests; `node --test` 271 of 271. Checked in the browser.
+  - **The centre keeps at least 360 px** (webappGUI draft 0.16, GD-41, the owner's answer to GQ-21). In a narrow window the bars give way, the right first, and come back when it is wider; a drag stops there.
 - **M4.2: the interface in Dutch, English and German** (`design/implementationPlan.md`).
   - **`app/texts.js`** holds the mock's 242 texts in all three languages; the mock-only texts and the Google Play notice are left out.
   - **`app/i18n.js`** opens in the language remembered on this computer, else the browser's, else English, and switches at once (GD-17, GD-34).

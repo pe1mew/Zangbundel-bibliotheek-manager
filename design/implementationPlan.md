@@ -324,7 +324,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - **Tested:** `tests/unit/i18n.test.mjs` checks that every text exists in every language, non-empty and without markup, with the same placeholders; it also covers the remembered language, a blocked store and the allow-list.
   - **In the browser pane:** NL, EN, DE switched at once, the choice survived a reload, local storage held only `zbm.lang`, and the console was empty.
   - **Until M4.4,** the language button sits on the start card; the bottom bar takes it over.
-- **M4.3 done, apart from GQ-21.** The main screen's four areas are in `app/layout.js`; the bars' state is in `app/bars.js`, as plain data.
+- **M4.3 done, with GD-41.** The main screen's four areas are in `app/layout.js`; the bars' state is in `app/bars.js`, as plain data.
   - **Splash:** in the centre with the photograph, the bars greyed and inert, their tabs and edges disabled (GD-03, GD-27, GD-30).
   - **Home screen:** the four primary actions, disabled until M5 and M6 with *Komt in een volgende testversie*.
   - **The bars (GD-10, GD-34):**
@@ -334,6 +334,10 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - **Narrow page:** shown below 980 px (GD-32).
   - **Styles:** taken over from the mock into `app.css`. One change: the home tiles wrap into one column, because in a 1024 px window the centre is 384 px wide with both bars at their defaults.
   - **`app/dom.js`** gained `setAttrs`, `toggleClass`, `setInert` and `listen`.
+  - **GD-41 (the owner's answer to GQ-21):** the centre keeps at least 360 px.
+    - `bars.js` `shownWidths()` narrows the bars on screen, the right first, without changing the stored widths, and `withWidth()` stops a drag or key there. `layout.js` redraws on a window resize.
+    - **In the browser pane at 1024 px:** both bars stored at their maximum showed 424 and 240 px, and the centre 360 px. A drag stopped at 360 px. At 1600 px the stored 480 and 520 px came back.
+    - **Caveat:** the pane was not painting during this run, so the grid's 0.2 s animation stood still. The final widths were read with the animation switched off.
   - **Tested:** `tests/unit/bars.test.mjs` has 4 tests.
   - **In the browser pane:**
     - the splash state, and folding by the tab;
@@ -343,7 +347,6 @@ Each milestone ends with its exit checks passing and the result written to `desi
     - the narrow page at 900 px;
     - no console message.
   - **Open:**
-    - **GQ-21:** a minimum width for the centre. Both bars at their maximum leave it 24 px in a 1024 px window.
     - **The narrow page's Android links** (GD-32) come with M4.4's Android panel.
 - **`zbm-download` moves to M6.2, where the download is built.** Assigning a `blob:` URL to `a.href` is not a Trusted Types sink, so that policy has nothing to guard at that point. The download helper will create and revoke the `blob:` URL itself (SR-36); whether SR-32 still needs a policy of that name is for the M6 review.
 

@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-// The side bars' widths and folding (webappGUI GD-10, GD-34; implementationPlan M4.3): plain state,
-// no DOM, so it can be tested. layout.js draws it; storage.js keeps it under zbm.bars.
+// The side bars' widths and folding (webappGUI GD-10, GD-34, GD-41; implementationPlan M4.3): plain
+// state, no DOM, so it can be tested. layout.js draws it; storage.js keeps it under zbm.bars.
 
 export const LIMITS = Object.freeze({
   left: Object.freeze({ min: 220, max: 480, initial: 300 }),     // GD-10
   right: Object.freeze({ min: 240, max: 520, initial: 340 }),
 });
 export const KEY_STEP = 16;                                       // GD-10: arrow keys resize in steps of 16 px
+export const CENTRE_MIN = 360;                                    // GD-41: the centre keeps at least this width
+
+const other = (side) => (side === 'left' ? 'right' : 'left');
 
 /** The defaults: both bars open at their initial width. */
 export function defaultBars() {
@@ -44,14 +47,41 @@ export function serializeBars(bars) {
   return JSON.stringify({ left: { w: bars.left.w, folded: bars.left.folded }, right: { w: bars.right.w, folded: bars.right.folded } });
 }
 
-/** The width the bar takes on screen: 0 when folded. */
-export function shownWidth(bars, side) {
-  return bars[side].folded ? 0 : bars[side].w;
+/**
+ * The widths the bars take on screen in a frame `total` px wide: 0 for a folded bar; otherwise the
+ * chosen width, reduced (the right bar first, down to its minimum) where the centre would get less
+ * than CENTRE_MIN (GD-41). The chosen widths stay stored and come back when the window is wider.
+ * Without a total, the chosen widths.
+ */
+export function shownWidths(bars, total) {
+  const shown = { left: bars.left.folded ? 0 : bars.left.w, right: bars.right.folded ? 0 : bars.right.w };
+  if (!Number.isFinite(total)) return shown;
+  let excess = shown.left + shown.right + CENTRE_MIN - total;
+  for (const side of ['right', 'left']) {
+    if (excess <= 0 || shown[side] === 0) continue;
+    const give = Math.min(excess, shown[side] - LIMITS[side].min);
+    shown[side] -= give;
+    excess -= give;
+  }
+  return shown;
 }
 
-/** GD-10: dragging unfolds the bar and sets its width within the limits. */
-export function withWidth(bars, side, w) {
-  return { ...bars, [side]: { w: clampWidth(side, w), folded: false } };
+/** The width one bar takes on screen (see shownWidths). */
+export function shownWidth(bars, side, total) {
+  return shownWidths(bars, total)[side];
+}
+
+/**
+ * GD-10, GD-41: dragging unfolds the bar and sets its width within the limits, and never so wide
+ * that the centre gets less than CENTRE_MIN next to the other bar as shown.
+ */
+export function withWidth(bars, side, w, total) {
+  let width = clampWidth(side, w);
+  if (Number.isFinite(total)) {
+    const room = total - shownWidth(bars, other(side), total) - CENTRE_MIN;
+    width = Math.max(LIMITS[side].min, Math.min(width, room));
+  }
+  return { ...bars, [side]: { w: width, folded: false } };
 }
 
 /** GD-10: the tab folds or unfolds; the width is kept for unfolding. */
@@ -60,11 +90,12 @@ export function toggled(bars, side) {
 }
 
 /** GD-10: the arrow keys on an edge. The key that moves the edge outward widens the bar. */
-export function afterKey(bars, side, key) {
+export function afterKey(bars, side, key, total) {
   if (bars[side].folded) return bars;
   const grow = side === 'left' ? 'ArrowRight' : 'ArrowLeft';
   const shrink = side === 'left' ? 'ArrowLeft' : 'ArrowRight';
-  if (key === grow) return withWidth(bars, side, bars[side].w + KEY_STEP);
-  if (key === shrink) return withWidth(bars, side, bars[side].w - KEY_STEP);
+  const now = shownWidth(bars, side, total);
+  if (key === grow) return withWidth(bars, side, now + KEY_STEP, total);
+  if (key === shrink) return withWidth(bars, side, now - KEY_STEP, total);
   return bars;
 }

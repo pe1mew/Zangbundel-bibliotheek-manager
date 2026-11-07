@@ -2,10 +2,11 @@
 // The main screen's frame (webappGUI GD-03, GD-04, GD-10, GD-32, GD-34; implementationPlan M4.3):
 // the left bar, the centre, the right bar and the bottom bar, with the side bars' inner edges that
 // resize them and the tabs that fold them. Widths and folding are remembered on this computer
-// (zbm.bars). The screens put their content into the four areas; this module draws only the frame.
+// (zbm.bars). The centre keeps at least 360 px (GD-41). The screens put their content into the four
+// areas; this module draws only the frame.
 
 import { el, icon, listen, replace, setAttrs, setInert, setVar, toggleClass } from './dom.js';
-import { afterKey, LIMITS, parseBars, serializeBars, shownWidth, toggled, withWidth } from './bars.js';
+import { afterKey, LIMITS, parseBars, serializeBars, shownWidths, toggled, withWidth } from './bars.js';
 import { load, save } from './storage.js';
 import { t } from './i18n.js';
 
@@ -35,7 +36,7 @@ export function createLayout({ getLang, store } = {}) {
         pointerdown: (event) => startDrag(side, event),
         keydown: (event) => {
           if (event.target !== edges[side] || splash) return;
-          const next = afterKey(bars, side, event.key);
+          const next = afterKey(bars, side, event.key, frameWidth());
           if (next !== bars) {
             event.preventDefault();
             update(next);
@@ -46,12 +47,16 @@ export function createLayout({ getLang, store } = {}) {
 
   const app = el('div', { class: 'app' }, [left, centre, right, bottom, edges.left, edges.right]);
 
+  /** The frame's width, or undefined while it is not laid out (not yet in the page, or hidden by GD-32). */
+  const frameWidth = () => app.clientWidth || undefined;
+
   /** Draw the bars' state: widths as custom properties, folded bars inert, labels on edges and tabs. */
   function draw() {
     const lang = getLang();
+    const shown = shownWidths(bars, frameWidth());          // GD-41: the centre keeps 360 px
     for (const side of ['left', 'right']) {
       const folded = bars[side].folded;
-      setVar(app, side === 'left' ? '--lw' : '--rw', `${shownWidth(bars, side)}px`);
+      setVar(app, side === 'left' ? '--lw' : '--rw', `${shown[side]}px`);
       toggleClass(app, side === 'left' ? 'lfold' : 'rfold', folded);
       setInert(area[side], folded || splash);
       const name = side === 'left' ? 'Left' : 'Right';
@@ -59,7 +64,7 @@ export function createLayout({ getLang, store } = {}) {
       replace(tabs[side], icon((side === 'left') !== folded ? 'left' : 'right'));
       setAttrs(tabs[side], { 'aria-expanded': String(!folded), 'aria-label': t(lang, folded ? `unfold${name}` : `fold${name}`),
         title: t(lang, folded ? `unfold${name}` : `fold${name}`), disabled: splash });
-      setAttrs(edges[side], { 'aria-valuenow': shownWidth(bars, side), 'aria-label': t(lang, `resize${name}`),
+      setAttrs(edges[side], { 'aria-valuenow': shown[side], 'aria-label': t(lang, `resize${name}`),
         tabindex: splash ? -1 : 0 });
     }
     toggleClass(app, 'onsplash', splash);
@@ -93,13 +98,14 @@ export function createLayout({ getLang, store } = {}) {
       save('zbm.bars', serializeBars(bars), store);
     };
     stops.push(listen(edge, 'pointermove', (ev) => {
-      bars = withWidth(bars, side, side === 'left' ? ev.clientX - box.left : box.right - ev.clientX);
+      bars = withWidth(bars, side, side === 'left' ? ev.clientX - box.left : box.right - ev.clientX, box.width || undefined);
       draw();
     }));
     stops.push(listen(edge, 'pointerup', end), listen(edge, 'pointercancel', end));
   }
 
   draw();
+  listen(globalThis, 'resize', draw);                     // GD-41: a narrower window narrows the bars, a wider one gives them back
   return {
     app, left, centre, right, bottom,
     /** GD-03: during the splash the bars are greyed and their edges do nothing. */

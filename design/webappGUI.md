@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.15 |
+| **Status** | Draft 0.16 |
 | **Date** | 2026-11-07 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -280,6 +280,13 @@ The owner's answers to the open questions, and two further requests made during 
 
 **GD-33 — Sections also move with up and down buttons.** *(Resolves GQ-15.)* Each section keeps its *Omhoog* and *Omlaag* buttons next to the drag handle, reachable with Tab and usable with Enter, as the keyboard alternative to dragging (GD-08).
 
+**GD-41 — The centre area keeps at least 360 px.** *(Resolves GQ-21; the owner, 2026-11-07.)*
+- **Dragging and the arrow keys (GD-10):** a bar's edge stops where the centre would get narrower than 360 px, next to the other bar as it is shown.
+- **A window too narrow for both bars at their chosen widths:**
+  - the bars are shown narrower, the right bar first, down to their minimums of GD-10;
+  - the chosen widths stay remembered (GD-34) and come back when the window is wide enough again;
+  - at the 980 px of GD-32, both bars at their minimums leave the centre 520 px.
+
 **GD-34 — Bar widths, folding and the language are remembered on this computer.** *(Resolves GQ-16.)* They are kept in the browser's local storage, on that computer only, and restored on the next visit (EDT-82). Nothing about a library or a key is kept there (EDT-02, EDT-64). If local storage is not available, the manager starts with the defaults.
 
 **GD-35 — Store badges say *binnenkort* until the app is there; the manager's manual is on its GitHub wiki.** *(Resolves GQ-19.)* In the Android panel (GD-15), a badge is shown greyed with *binnenkort* (*coming soon*) and no link while the app is not public in that store, except the Google Play badge, which is left out until the app is listed there: Google's badge guidelines allow it only unaltered (*amended 2026-11-07* by the owner, on the placeholder first); the GitHub APK link works now. The manager's manual lives on this repository's GitHub wiki (`github.com/pe1mew/Zangbundel-bibliotheek-manager/wiki`), like the app's.
@@ -336,7 +343,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | GQ-18 | 2026-11-06 | *Resolved 2026-11-06 by GD-24.* Where and how the open library is signed with the key in memory (*Bibliotheek ondertekenen*, EDT-60, EDT-53), how a signed library that opens read-only (EDT-23) asks for its key (EDT-62, M-30), and where the identity in use (name and fingerprint, SG-21) is shown. |
 | GQ-19 | 2026-11-06 | *Resolved 2026-11-06 by GD-35.* The links of GD-15 while the app is not public: hide the Google Play and F-Droid badges until the app is in the store, or show them with a line *binnenkort* (*coming soon*)? And where does the manager's manual live: this repository's GitHub wiki, or pages on `zangbundel.nl`? |
 | GQ-20 | 2026-11-07 | Where and how the author edits the labels of tags (FDS EDT-30, `tags` in §4.1, D-44): a *Labels* part of the library fields of GD-22, listing each tag the songs use with a label per language (nl, en, de), and also the tags that have labels but no songs? Or from the tag chips of the song list (GD-13)? |
-| GQ-21 | 2026-11-07 | Should the centre area keep a minimum width? GD-10 limits each side bar on its own (left 220–480 px, right 240–520 px). In a window of 1024 px with both bars at their maximum, the centre shrinks to 24 px; at the 980 px minimum of GD-32 it disappears. Proposal: the centre keeps at least 360 px, and a bar's edge stops where the centre would get narrower. Found while building M4.3. |
+| GQ-21 | 2026-11-07 | *Resolved 2026-11-07 by GD-41: at least 360 px.* Should the centre area keep a minimum width? GD-10 limits each side bar on its own (left 220–480 px, right 240–520 px). In a window of 1024 px with both bars at their maximum, the centre shrinks to 24 px; at the 980 px minimum of GD-32 it disappears. Proposal: the centre keeps at least 360 px, and a bar's edge stops where the centre would get narrower. Found while building M4.3. |
 
 ---
 
@@ -357,5 +364,6 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.11 | 2026-11-06 | The owner's feedback on the mock: the two editing modes are a named segmented control, *Blokken* and *Code (ChordPro)* (GD-38), instead of the switch of GD-18. |
 | Draft 0.12 | 2026-11-06 | From the security assessment's SQ-08: *Sleutel vergeten* (GD-39) and forgetting the key after 30 minutes without input (GD-40); the mock follows. |
 | Draft 0.13 | 2026-11-07 | FDS draft 0.10 adds tag labels to the library (EDT-30, D-44): where they are edited is open (GQ-20). |
+| Draft 0.16 | 2026-11-07 | GD-41 (resolves GQ-21): the centre keeps at least 360 px; bars give way, the right first, and come back in a wider window. |
 | Draft 0.15 | 2026-11-07 | GQ-21: a minimum width for the centre area, found while building the layout (M4.3). |
 | Draft 0.14 | 2026-11-07 | GD-35 amended by the owner: the Google Play badge is left out until the app is listed. Google's badge guidelines ask for the badge unaltered, so it cannot be shown greyed. The F-Droid badge stays greyed with *binnenkort*. |

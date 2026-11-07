@@ -103,6 +103,7 @@
     - The language button sits on the start card until M4.4's bottom bar.
   - M4.3 done (uncommitted): layout.js (createLayout: app, left, centre, right, bottom, setSplash, relabel) and bars.js (pure); main.js renders the splash, then home, into layout.centre.
     - The index.html root is `<div id="app">` without class: `.app` is the grid.
-    - Open: GQ-21, the centre's minimum width.
+    - GD-41: the centre is at least 360 px (`bars.js` CENTRE_MIN, `shownWidths(bars, total)`, `withWidth(..., total)`). `layout.js` passes `app.clientWidth || undefined`, since 0 means hidden or not laid out.
+    - When the pane isn't painting, CSS transitions stall: read the grid with the `.resizing` class, which switches transitions off.
     - Pane checks: a click on an edge's middle hits the fold tab, so focus the edge by JS. Dispatch PointerEvents for a drag. The grid animates 0.2 s, so read it after a pause.
   - Next: M4.4 bottom bar groups, the Android panel (with the narrow page's links), *Over*; M4.5 Controle.
