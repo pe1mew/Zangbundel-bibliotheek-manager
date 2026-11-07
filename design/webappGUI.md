@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.17 |
+| **Status** | Draft 0.18 |
 | **Date** | 2026-11-07 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -368,3 +368,4 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.15 | 2026-11-07 | GQ-21: a minimum width for the centre area, found while building the layout (M4.3). |
 | Draft 0.14 | 2026-11-07 | GD-35 amended by the owner: the Google Play badge is left out until the app is listed. Google's badge guidelines ask for the badge unaltered, so it cannot be shown greyed. The F-Droid badge stays greyed with *binnenkort*. |
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
+| Draft 0.18 | 2026-11-07 | Built in M5.4, beyond the mock, for the owner to confirm: the maintainer's contact is two fields, *E-mailadres* and *Website*, at least one (GD-37 asks for one of the two; the manifest has two fields, and one combined field would drop a value). The licence list has *Andere licentie (SPDX-code)* with its own field, and the full licence text is an optional field (FDS EDT-13). The mock still shows one contact field and no *Andere licentie*. |

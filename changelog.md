@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M5.4: the library's fields** (`design/implementationPlan.md`).
+  - **The left bar** shows title, description, licence and maintainer while a library is open; a new library can now be completed and downloaded.
+  - **Licence:** five common licences with their summary, any other SPDX identifier, and an optional full text.
+  - **Maintainer:** a name with an e-mail address or a website.
+  - **Errors:** the check's findings mark the fields with the FDS messages.
+  - **Signed libraries:** their fields are locked until the library's own key is loaded; edits are then checked before saving.
+  - **Tests:** `library-form.test.mjs`; `node --test` 313 of 313. Checked in Chromium.
+  - **Docs:** webappGUI draft 0.18 records the two contact fields and *Andere licentie*, beyond the mock.
 - **M6.4: the key group** (`design/implementationPlan.md`).
   - ***Sleutel maken*:** a new key in the browser; its file `sleutel-<name>.zbkey` downloads once, after the M-64 tick. Until then the key cannot sign.
   - ***Sleutel vergeten*:** removes the key at once; the library stays. A key not yet downloaded is asked about first.

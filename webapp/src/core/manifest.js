@@ -10,7 +10,7 @@ const UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 const HEX64 = /^[0-9a-f]{64}$/;
 const BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const LICENSE_ID = /^[A-Za-z0-9][A-Za-z0-9.+-]*$/;
+export const LICENSE_ID = /^[A-Za-z0-9][A-Za-z0-9.+-]*$/;   // also the library form's check (EDT-13)
 // A set name is a setlist title (FDS 4.1, song format 13.2): a directive value on one line, so no
 // control characters, no braces, no spaces at either end (a directive value is trimmed of spaces and
 // tabs, song format 5.3 v0.24; a tab is a control character here), NFC.

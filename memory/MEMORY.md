@@ -137,4 +137,7 @@
     - Container runs Node 18: no global `File` (import from node:buffer). Run the container test after the last test edit, not before.
     - Browser harness: never stub HTMLInputElement.prototype.click without calling the original for non-file inputs; move time with Date.now.
     - FDS draft 0.11 (D-45): a key may stay in memory across library sessions until the Editor closes.
-  - Next: M5 editing (M6's exit needs it), or runbook steps 8 to 10.
+  - M5.4 done (uncommitted): `library-form.js` (createLibraryForm → {node, update(state)}; fieldsOf maps MAN-02 detail/MAN-07/MAN-08 to fields), `session.updateLibrary(patch)`, `state.generation`, worker `check` with `keyed`.
+    - main.js rebuilds the left form only when generation|lang|readOnly changes; otherwise form.update(state). Keep that pattern for every editable area (M5.1 to M5.5).
+    - Owner to confirm (webappGUI 0.18): two contact fields and *Andere licentie*; the mock still has one field.
+  - Next: M5.1 song list; then M5.2 view, M2.3 block form before M5.3, M5.5 sets.

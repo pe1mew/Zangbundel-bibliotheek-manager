@@ -7,11 +7,13 @@
 // M6.1: a library is opened, started and closed (session.js, library-ui.js); the right bar shows it
 // and *Controle* its findings. M6.2: *Downloaden*. M6.3: a key loaded into the crypto worker signs;
 // a signed library is read-only without its key; *Opslaan als kopie*. M6.4: the key group (make,
-// download, forget) and forgetting the key after 30 minutes without input. Editing comes with M5.
+// download, forget) and forgetting the key after 30 minutes without input. M5.4: the library's fields
+// in the left bar (library-form.js). The rest of editing comes with M5.
 
 import { el, extLink, icon, replace } from './dom.js';
 import { toast } from './dialog.js';
 import { createIdleWatch } from './idle.js';
+import { createLibraryForm } from './library-form.js';
 import { createLanguage, t } from './i18n.js';
 import { createLayout } from './layout.js';
 import { aboutDialog, androidContent, androidDialog, bottomBar, privacyUrl } from './panels.js';
@@ -229,6 +231,8 @@ function start() {
     el('button', { type: 'button', class: 'btn btn-outline btn-small', on: { click: onLoadKey } }, [t(lang, 'keyLoad')]),
   ]) : null);
 
+  let leftKey;
+  let form = null;
   const render = () => {
     const lang = language.get();
     const state = session.get();
@@ -238,7 +242,15 @@ function start() {
     replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); })
       : el('div', {}, [readOnlyBar(lang, state), home(lang, { onOpen, onNew, onDownload: () => onDownload(), hasLibrary: Boolean(state.library), busy: state.busy })]));
     replace(layout.right, ...rightBar(lang, state));
-    replace(layout.left, el('p', { class: 'empty' }, [t(lang, state.library ? 'libHomeLead' : 'tileNeedLib')]));
+    // GD-22: the library's fields, built once per library and language, then only updated (library-form.js)
+    const readOnly = session.isReadOnly();
+    const formKey = state.library ? `${state.generation}|${lang}|${readOnly}` : null;
+    if (formKey !== leftKey) {
+      leftKey = formKey;
+      form = state.library ? createLibraryForm({ lang, library: state.library, readOnly, onChange: (patch) => session.updateLibrary(patch) }) : null;
+      replace(layout.left, form ? form.node : el('p', { class: 'empty' }, [t(lang, 'tileNeedLib')]));
+    }
+    if (form) form.update(state);
     replace(layout.bottom, ...bottomBar({ lang, onLanguage: () => language.next(),
       onAndroid: () => androidDialog(language.get()), onAbout: () => aboutDialog(language.get()),
       onOpen, onNew, onClose, onCheck, onDownload: () => onDownload(), onLoadKey, onMakeKey, onDownloadKey, onForgetKey,

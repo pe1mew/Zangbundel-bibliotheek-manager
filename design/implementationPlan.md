@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.17 |
 | **Date** | 2026-11-07 |
-| **Depends on** | `design/FDS.md` draft 0.11, `design/webappGUI.md` draft 0.17, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (58 cases) |
+| **Depends on** | `design/FDS.md` draft 0.11, `design/webappGUI.md` draft 0.18, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (58 cases) |
 
 ---
 
@@ -395,6 +395,27 @@ Each milestone ends with its exit checks passing and the result written to `desi
 | M5.5 | Sets tab: add, rename, reorder, delete, entries | GD-21, EDT-31, SET-01 to SET-05 |
 
 **Exit:** each GD of M5 demonstrated on the test instance against its text; unit tests for every state change of the library model.
+
+**State (2026-11-07).** M5.4 is done; built first, because it completes making a new library up to its download.
+- **`app/library-form.js`:** title, description, licence and maintainer in the left bar while a library is open (GD-22).
+  - Licence (EDT-13): the five common licences bring their summary in the interface language, unless the user wrote one. *Andere licentie (SPDX-code)* takes any identifier, checked with the engine's own pattern. The full text is optional.
+  - Maintainer (EDT-14, GD-37): a name, and an e-mail address or a website in two fields, with the note of EDT-14. Two fields, not the mock's one: the manifest has two, and one field would drop the other value of a library that has both (webappGUI draft 0.18, for the owner to confirm).
+  - A field is applied on leaving it. The worker's findings (MAN-02 by its reasons, MAN-07, MAN-08) mark their fields with the FDS message, so the rules stay in the engine; the form itself refuses only an empty title and a malformed SPDX code.
+  - The form is built once per library (`state.generation`), language and read-only state, and then only updated, so a recheck never takes text from under the cursor.
+  - A read-only signed library shows its fields disabled (EDT-23).
+- **`session.updateLibrary(patch)`:** changes those fields only, marks the library changed and rechecks it. A newer edit's check wins over an older one that returns later.
+- **The worker's `check`, with `keyed`:** a signed library with its key loaded is checked as it will be saved; the signature is made and checked on saving. Before this, edits to a signed library were not checked.
+- **Tested:**
+  - `tests/unit/library-form.test.mjs`, 6 tests: licence choice, maintainer, findings to fields, changes, marks, read-only;
+  - `signing-session.test.mjs`, 3 more: a new library completed through its fields and saved as version 1; a signed library edited only with its key and signed again; the late check.
+  - `node --test`: 313 of 313. Container test: 81 of 81.
+- **In the browser pane (Chromium):**
+  - a new library: licence and maintainer marked with M-29 and M-39, cleared as filled in, *Controle* from 2 errors to 0, downloaded as `Kampvuurliedjes-v1.zbl`;
+  - a field being typed in kept its text and focus through a recheck;
+  - `valid-signed`: 9 fields disabled until its key was loaded, then enabled; an edit gave version 2, signed with the same key;
+  - storage empty, console clean.
+- **Not in M5.4:** the labels of tags (EDT-30), because where they are edited is open (GQ-20); clicking the library's title in the right bar to return to these fields comes with the song list (M5.1).
+- **Next:** M5.1 song list; M5.3 needs the M2.3 block form first.
 
 ### M6 — Open, save and sign (M)
 

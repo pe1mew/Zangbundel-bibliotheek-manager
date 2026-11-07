@@ -183,3 +183,58 @@ test('EDT-62: a key loaded for a signed library reports that it unlocked it', as
   await t.open(file(corpus('valid-unsigned')));
   assert.equal((await t.loadKey(file(TEST_KEY, 'test.zbkey'))).unlocked, false);
 });
+
+test('EDT-13, EDT-14, EDT-30: a new library gets its licence and maintainer through the fields, then saves as version 1', async () => {
+  const s = session();
+  await s.create('Kampvuur');
+  assert.equal((await s.preview()).blocked, true);
+  assert.equal(await s.updateLibrary({ license: { id: 'CC0-1.0', summary: 'Vrij.' } }), true);
+  assert.deepEqual(s.get().findings.filter((f) => f.severity === 'Error').map((f) => f.code), ['MAN-08']);
+  await s.updateLibrary({ maintainer: { name: 'Leiding', url: 'https://example.org' }, title: 'Kampvuurliedjes' });
+  assert.equal(s.get().dirty, true);
+  const p = await s.preview();
+  assert.deepEqual([p.blocked, p.version, p.fileName], [false, 1, 'Kampvuurliedjes-v1.zbl']);
+  const saved = await s.save({ changed: true });
+  const v = await validateLibrary(saved.bytes);
+  assert.deepEqual(v.findings.filter((f) => f.code.startsWith('MAN')), []);
+  await assert.rejects(s.updateLibrary({ version: 9 }), /not a library field/);
+});
+
+test('EDT-23, EDT-63: a signed library is edited only with its key, checked as it will be saved, and signed again', async () => {
+  const s = session();
+  await s.open(file(corpus('valid-signed')));
+  assert.equal(await s.updateLibrary({ title: 'Anders' }), false);    // read-only without its key
+  assert.equal(s.get().dirty, false);
+  await s.loadKey(file(TEST_KEY, 'test.zbkey'));
+  assert.equal(await s.updateLibrary({ title: 'Zangbundel testbibliotheek, herzien', maintainer: undefined }), true);
+  assert.ok(s.get().findings.some((f) => f.code === 'MAN-08'));        // keyed: the content is checked
+  assert.equal((await s.preview()).blocked, true);
+  await s.updateLibrary({ maintainer: { name: 'Leiding', email: 'leiding@example.org' } });
+  const p = await s.preview();
+  assert.deepEqual([p.blocked, p.changed, p.sign, p.version], [false, true, true, 2]);
+  const saved = await s.save({ changed: p.changed, sign: p.sign });
+  assert.equal(saved.ok, true);
+  const v = await validateLibrary(saved.bytes);
+  assert.equal(v.signed, true);
+  assert.deepEqual(v.findings.filter((f) => /^(SIG|MAN)/.test(f.code)), []);
+  assert.equal(s.get().library.title, 'Zangbundel testbibliotheek, herzien');
+});
+
+test('a newer edit\'s check wins over an older one that comes back later', async () => {
+  let release;
+  const slow = new Promise((r) => { release = r; });
+  let calls = 0;
+  const lagging = { async request(op, payload) {
+    if (op === 'check' && ++calls === 1) await slow;        // the first check comes back last
+    return client.request(op, payload);
+  } };
+  const s = createSession({ client: lagging, now: () => NOW });
+  await s.open(file(corpus('valid-unsigned')));
+  calls = 0;
+  const first = s.updateLibrary({ license: null });          // its check would report MAN-07
+  const second = s.updateLibrary({ license: { id: 'CC0-1.0', summary: 'Vrij.' } });
+  await second;
+  release();
+  await first;
+  assert.ok(!s.get().findings.some((f) => f.code === 'MAN-07'));
+});

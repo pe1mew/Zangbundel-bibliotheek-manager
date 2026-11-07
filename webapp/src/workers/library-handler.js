@@ -70,10 +70,13 @@ export async function handleMessage(message) {
       }
       case 'check': {
         // EDT-42: the findings of the library as it would be saved now, without the file. A signed
-        // library is built only with its key (M6.3); until then the findings of its opening stand.
+        // library without its key keeps the findings of its opening (it is read-only, EDT-23). With its
+        // key (keyed), its content is checked as it would be saved; the signature is made and checked on
+        // saving (M6.3), so here the library is built without one.
         const songs = songSummary(payload.library);
-        if (payload.library.author) return { id, ok: true, result: { findings: null, songs } };
-        const r = await saveLibrary(payload.library, { changed: true, now: payload.now });
+        if (payload.library.author && !payload.keyed) return { id, ok: true, result: { findings: null, songs } };
+        const library = payload.library.author ? { ...payload.library, author: null } : payload.library;
+        const r = await saveLibrary(library, { changed: true, now: payload.now });
         // The VIEW rules are about the view inside a stored file; the Editor writes a new view on every save, so for
         // the library being edited they would only repeat MAN-07 or MAN-08 (a view cannot be written without them).
         const findings = r.findings.filter((f) => !f.code.startsWith('VIEW-'));

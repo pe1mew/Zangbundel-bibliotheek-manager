@@ -72,11 +72,23 @@ svg.inl { width: 18px; height: 18px; fill: var(--secondary); flex: none; }
 .song .t { font-size: 16px; }
 .field { margin-bottom: 14px; }
 .field label { display: block; font-size: 13px; color: var(--secondary); margin-bottom: 4px; }
-.field input, .field textarea {
+.field input, .field textarea, .field select {
   width: 100%; min-height: 44px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--grey);
   background: var(--bg); color: var(--white); font: inherit;
 }
-.field input:focus, .field textarea:focus { outline: none; border: 2px solid var(--fire-orange); padding: 7px 11px; }
+.field input:focus, .field textarea:focus, .field select:focus { outline: none; border: 2px solid var(--fire-orange); padding: 7px 11px; }
+/* M5.4: the library fields (GD-22, GD-37) */
+.field textarea { resize: vertical; }
+.field input:disabled, .field textarea:disabled, .field select:disabled { opacity: .6; }
+.field .req { color: var(--fire-orange); }
+.field.invalid input, .field.invalid textarea, .field.invalid select { border: 2px solid var(--fire-orange-light); padding: 7px 11px; }
+.field .err:empty { display: none; }
+.field .err { color: var(--fire-orange-light); font-size: 13px; margin-top: 4px; display: flex; gap: 4px; align-items: flex-start; }
+.field .err svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+.libform { padding: 20px; }
+.libform h3 { margin: 0 0 12px; }
+.libform h3 + .field { margin-top: 0; }
+.libform .field + h3 { margin-top: 20px; }
 
 /* GD-03: during the splash the bars are greyed and do nothing */
 .app.onsplash .left, .app.onsplash .right, .app.onsplash .bottom { opacity: .35; }

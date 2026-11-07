@@ -22,7 +22,8 @@ const sameKey = (a, b) => a instanceof Uint8Array && b instanceof Uint8Array && 
  * needsExport: a key made in this session whose key file has not been downloaded yet.
  */
 export function createSession({ client, crypto = null, now = () => new Date() }) {
-  let state = { library: null, songs: [], findings: null, converted: null, dirty: false, busy: false, key: null, authorFingerprint: null };
+  let state = { library: null, songs: [], findings: null, converted: null, dirty: false, busy: false, key: null, authorFingerprint: null,
+    generation: 0 };                                   // + 1 whenever another library, or a fresh copy of it, takes the screen
   const listeners = new Set();
   const set = (next) => {
     state = { ...state, ...next };
@@ -30,16 +31,24 @@ export function createSession({ client, crypto = null, now = () => new Date() })
   };
   const authorOf = async (library) => (library && library.author ? fingerprint(library.author.publicKey) : null);
 
-  /** EDT-42: the findings of the library as it would be saved now. */
-  async function recheck() {
-    if (!state.library) return;
-    const r = await client.request('check', { library: state.library, now: now() });
-    set(r.findings ? { findings: r.findings, songs: r.songs } : { songs: r.songs });
-  }
-
   /** EDT-23, EDT-24: a signed library is read-only until its own key is loaded. */
   const isReadOnly = () => Boolean(state.library && state.library.author
     && !(state.key && sameKey(state.key.publicKey, state.library.author.publicKey)));
+
+  /** EDT-42: the findings of the library as it would be saved now (a signed one with its key: keyed). */
+  const check = (library) => client.request('check', { library, now: now(), keyed: Boolean(library.author) && !isReadOnly() });
+  let checking = 0;
+  async function recheck() {
+    if (!state.library) return;
+    const mine = ++checking;
+    const library = state.library;
+    const r = await check(library);
+    if (mine !== checking || state.library !== library) return;   // a newer edit's check is on its way
+    set(r.findings ? { findings: r.findings, songs: r.songs } : { songs: r.songs });
+  }
+
+  /** EDT-30: the library fields that may change; the rest of the library is not touched here. */
+  const LIBRARY_FIELDS = new Set(['title', 'description', 'license', 'maintainer']);
 
   /** SG-12, EDT-60: the key's name becomes the author's on first signing; a signed library keeps its author. */
   async function signer() {
@@ -72,7 +81,7 @@ export function createSession({ client, crypto = null, now = () => new Date() })
         if (fatal.length || !r.library) {
           return { ok: false, findings: fatal.length ? fatal : (r.findings || []).filter((f) => f.severity === 'Error') };
         }
-        set({ library: r.library, songs: r.songs || [], findings: r.findings, converted: r.converted || null, dirty: false,
+        set({ generation: state.generation + 1, library: r.library, songs: r.songs || [], findings: r.findings, converted: r.converted || null, dirty: false,
           authorFingerprint: await authorOf(r.library) });
         return { ok: true, converted: r.converted || null };
       } finally {
@@ -83,12 +92,30 @@ export function createSession({ client, crypto = null, now = () => new Date() })
     /** EDT-10 to EDT-12: a new, empty library; its licence and maintainer come before the first save. */
     async create(title, description) {
       const library = await client.request('new', { title, description: description || undefined, now: now() });
-      set({ library, songs: [], findings: [], converted: null, dirty: false, authorFingerprint: null });
+      set({ generation: state.generation + 1, library, songs: [], findings: [], converted: null, dirty: false, authorFingerprint: null });
       await recheck();
       return library;
     },
 
     recheck,
+
+    /**
+     * EDT-13, EDT-14, EDT-30: change library fields (title, description, license, maintainer); a value
+     * of undefined removes the field. The library then has changes not yet downloaded (EDT-03), and its
+     * findings follow (EDT-42). A read-only library is not changed (EDT-23). Returns true when applied.
+     */
+    async updateLibrary(patch) {
+      if (!state.library || isReadOnly()) return false;
+      const library = { ...state.library };
+      for (const [name, value] of Object.entries(patch)) {
+        if (!LIBRARY_FIELDS.has(name)) throw new Error(`updateLibrary: not a library field: ${name}`);
+        if (value === undefined) delete library[name];
+        else library[name] = value;
+      }
+      set({ library, dirty: true });
+      await recheck();
+      return true;
+    },
 
     /**
      * EDT-60, EDT-62, SG-11: load a key file into the crypto worker. With a signed library open, the key
@@ -155,8 +182,8 @@ export function createSession({ client, crypto = null, now = () => new Date() })
       const needsConfirm = unchanged && (state.findings || []).some((f) => MANIFEST_DIFFERS.has(f.code));
       const changed = !unchanged || needsConfirm;
       let findings = state.findings || [];
-      if (changed && !lib.author) {
-        const r = await client.request('check', { library: lib, now: now() });
+      if (changed && !isReadOnly()) {
+        const r = await check(lib);
         if (r.findings) findings = r.findings;
       }
       const version = lib.isNew ? 1 : changed ? lib.version + 1 : lib.version;
@@ -180,7 +207,7 @@ export function createSession({ client, crypto = null, now = () => new Date() })
       const copy = r.bytes.slice();
       const o = await client.request('open', { bytes: copy }, [copy.buffer]);
       if (o.library) {
-        set({ library: o.library, songs: o.songs || state.songs, findings: o.findings, converted: null, dirty: false,
+        set({ generation: state.generation + 1, library: o.library, songs: o.songs || state.songs, findings: o.findings, converted: null, dirty: false,
           authorFingerprint: await authorOf(o.library) });
       }
       return { ok: true, bytes: r.bytes, fileName: r.fileName, version: r.version, findings: r.findings };
@@ -189,14 +216,14 @@ export function createSession({ client, crypto = null, now = () => new Date() })
     /** EDT-70, EDT-71: the open library becomes a copy: new ID, version 1, no author, the given title. */
     async copy(title) {
       const library = await client.request('copy', { library: state.library, now: now(), title });
-      set({ library, converted: null, dirty: false, authorFingerprint: null });
+      set({ generation: state.generation + 1, library, converted: null, dirty: false, authorFingerprint: null });
       await recheck();
       return library;
     },
 
     /** EDT-01, EDT-03: close the session. With changes not yet downloaded, the caller asks M-60 first. */
     close() {
-      set({ library: null, songs: [], findings: null, converted: null, dirty: false, authorFingerprint: null });
+      set({ generation: state.generation + 1, library: null, songs: [], findings: null, converted: null, dirty: false, authorFingerprint: null });
     },
   };
 }
