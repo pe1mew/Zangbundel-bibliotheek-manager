@@ -93,7 +93,7 @@ for (const { useWebCrypto, label } of PATHS) {
     assert.equal((await handle({ id: 3, op: 'exportKeyFile', payload: {} })).result.message, 'M-64');
     const exported = (await handle({ id: 4, op: 'exportKeyFile', payload: { acknowledged: true } })).result;
     assert.equal(exported.accepted, true);
-    assert.equal(exported.fileName, 'Leiding.zbkey');
+    assert.equal(exported.fileName, 'sleutel-Leiding.zbkey');   // GD-14
     assert.equal((await handle({ id: 5, op: 'exportKeyFile', payload: { acknowledged: true } })).result.accepted, false);
     const file = readKeyFile(exported.bytes);
     assert.deepEqual(file.key.publicKey, made.publicKey);

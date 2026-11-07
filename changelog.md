@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M6.4: the key group** (`design/implementationPlan.md`).
+  - ***Sleutel maken*:** a new key in the browser; its file `sleutel-<name>.zbkey` downloads once, after the M-64 tick. Until then the key cannot sign.
+  - ***Sleutel vergeten*:** removes the key at once; the library stays. A key not yet downloaded is asked about first.
+  - **Inactivity:** after 30 minutes without input, a 60-second warning, then the key is forgotten. A key not yet downloaded is never forgotten by itself.
+  - **Code:** `app/idle.js`; key dialogs in `library-ui.js`; `toast()` in `dialog.js`.
+  - **Tests:** `idle.test.mjs`; `node --test` 304 of 304; container 81 of 81. Checked in Chromium.
+  - **Docs:** webappGUI draft 0.17 (GD-14), securityAssessment draft 0.14 (SR-41).
+
+### Fixed
+- **The signing tests on Node 18:** they used the global `File`, which Node 18 lacks, so the container test failed for the committed M6.3. They now import it from `node:buffer`.
 - **M6.3: signing, read-only signed libraries, *Opslaan als kopie*** (`design/implementationPlan.md`).
   - ***Sleutel laden*:** loads a `.zbkey` into the crypto worker, which reads the file itself; the page never holds its bytes. With a signed library open, only its author's key is accepted (M-30).
   - **Read-only:** a signed library without its key shows its author and fingerprint, and downloads only unchanged.

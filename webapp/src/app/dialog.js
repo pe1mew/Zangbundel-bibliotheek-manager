@@ -19,22 +19,25 @@ export function closeDialog() {
  * the close button; with actions, closeLabel is the cancel button. Focus starts in the first field, else
  * on the primary button. Returns { dlg, close }: close() takes the dialog out of the page at once, so a
  * dialog opened next never finds this one still there (the browser's own close event comes later).
+ * closePrimary: the close button is the primary choice and comes last (GD-40 *Sleutel houden*).
  */
-export function openDialog({ title, sub, logo = false, wide = false, closeLabel, actions = [] }, children) {
+export function openDialog({ title, sub, logo = false, wide = false, closeLabel, actions = [], closePrimary = false }, children) {
   closeDialog();
   const opener = document.activeElement;
   const head = el('div', { class: 'dlghead' }, [
     logo ? el('div', { class: 'logo small', 'aria-hidden': 'true' }) : null,
     el('div', {}, [el('h2', { id: 'dlgtitle' }, [title]), sub ? el('p', { class: 'muted' }, [sub]) : null]),
   ]);
-  const closeBtn = el('button', { type: 'button', class: actions.length ? 'btn btn-text' : 'btn btn-primary', on: { click: () => close() } }, [closeLabel]);
+  const closeBtn = el('button', { type: 'button', class: actions.length && !closePrimary ? 'btn btn-text' : 'btn btn-primary',
+    on: { click: () => close() } }, [closeLabel]);
   const actionBtns = actions.map((a) => el('button', { type: 'button', class: a.primary ? 'btn btn-primary' : 'btn btn-outline',
     on: { click: () => a.onClick(close) } }, [a.label]));
   const corner = el('button', { type: 'button', class: 'iconbtn dlgx', 'aria-label': closeLabel, title: closeLabel,
     on: { click: () => close() } }, [icon('close')]);
   // the content sits in .dlgbody, which carries the padding, so only the backdrop has the dialog as target
   const dlg = el('dialog', { class: wide ? 'dialog wide' : 'dialog', 'aria-labelledby': 'dlgtitle' }, [
-    el('div', { class: 'dlgbody' }, [corner, head, ...children, el('div', { class: 'buttons' }, [closeBtn, ...actionBtns])]),
+    el('div', { class: 'dlgbody' }, [corner, head, ...children,
+      el('div', { class: 'buttons' }, closePrimary ? [...actionBtns, closeBtn] : [closeBtn, ...actionBtns])]),
   ]);
   let done = false;
   const cleanup = () => {                                // once, whether closed here or by Escape
@@ -58,6 +61,20 @@ export function openDialog({ title, sub, logo = false, wide = false, closeLabel,
   currentClose = close;
   dlg.showModal();
   const field = dlg.querySelector('input:not([type=file]), textarea');
-  (field || actionBtns.find((b, i) => actions[i].primary) || closeBtn).focus();
+  (field || (closePrimary ? closeBtn : actionBtns.find((b, i) => actions[i].primary)) || closeBtn).focus();
   return { dlg, close };
+}
+
+let toastNode = null;
+/** A short notice at the bottom that goes by itself (GD-39 *Sleutel vergeten*), read out politely. */
+export function toast(text, ms = 4000) {
+  if (toastNode) toastNode.remove();
+  const node = el('div', { class: 'toast', role: 'status', 'aria-live': 'polite' }, [text]);
+  toastNode = node;
+  document.body.append(node);
+  setTimeout(() => {
+    node.remove();
+    if (toastNode === node) toastNode = null;
+  }, ms);
+  return node;
 }

@@ -2,7 +2,7 @@
 // The screens of opening, starting and closing a library (FDS 7.2, 7.3, M-41, M-42, M-60; webappGUI
 // GD-23, GD-28; implementationPlan M6.1). They ask and report; session.js does the work.
 
-import { el, listen } from './dom.js';
+import { el, icon, listen } from './dom.js';
 import { openDialog } from './dialog.js';
 import { t, tParts } from './i18n.js';
 import { messageFor } from './check.js';
@@ -99,6 +99,7 @@ export function downloadDialog(lang, preview, key, { onDownload, onCheck, onSign
       t(lang, preview.changed ? 'dlVersion' : 'dlUnchanged', { v: preview.version })]),
     sign ? el('label', { class: 'ack', for: 'dl-sign' }, [sign, t(lang, 'dlSign', { name: key.name, fp: key.fingerprint })]) : null,
     preview.mustSign ? el('p', { class: 'muted small' }, [t(lang, 'dlSignedKeep')]) : null,
+    preview.signWaitsForFile ? el('p', { class: 'muted small' }, [t(lang, 'dlSignNeedsFile')]) : null,
     note ? el('div', { class: 'field' }, [el('label', { for: 'dl-note' }, [t(lang, 'dlNote')]), note]) : null,
     preview.readOnly ? el('p', { class: 'blocked' }, [t(lang, 'dlReadOnly')])
       : preview.blocked ? el('p', { class: 'blocked' }, [t(lang, 'dlErrors')]) : null,
@@ -129,6 +130,83 @@ export function copyDialog(lang, title, onCopy) {
 export function keyFailedDialog(lang, result) {
   const text = result.message === 'M-30' ? t(lang, 'M30') : result.message === 'selftest' ? t(lang, 'keySelftest') : t(lang, 'M31');
   return openDialog({ title: t(lang, 'keyFailedTitle'), closeLabel: t(lang, 'close') }, [el('p', {}, [text])]);
+}
+
+/** GD-14: a key in memory is replaced only after a question; one not yet downloaded would be lost. */
+export function keyReplaceConfirm(lang, key, onYes) {
+  return openDialog({ title: t(lang, 'keyReplaceTitle'), closeLabel: t(lang, 'cancel'),
+    actions: [{ label: t(lang, 'keyMake'), primary: true, onClick: (close) => { close(); onYes(); } }] }, [
+    el('p', {}, [t(lang, 'keyInUse'), ' ', el('b', {}, [key.name]), ' · ', el('span', { class: 'fp' }, [key.fingerprint])]),
+    key.needsExport ? el('p', { class: 'blocked' }, [t(lang, 'keyNotSaved')]) : null,
+  ]);
+}
+
+/** EDT-61, GD-14, SR-45: the author's name for a new key; it is not checked (1 to 100 characters). */
+export function keyMakeDialog(lang, onMake) {
+  const input = el('input', { id: 'key-name', type: 'text', maxlength: 100, autocomplete: 'off', spellcheck: 'false',
+    placeholder: t(lang, 'keyNamePh') }, []);
+  const go = (close) => {
+    const name = input.value.trim();
+    if (!name) {
+      input.focus();
+      return;
+    }
+    close();
+    onMake(name);
+  };
+  return openDialog({ title: t(lang, 'keyMake'), closeLabel: t(lang, 'cancel'),
+    actions: [{ label: t(lang, 'create'), primary: true, onClick: go }] }, [
+    el('p', {}, [t(lang, 'keyMakeText')]),
+    el('div', { class: 'field' }, [el('label', { for: 'key-name' }, [t(lang, 'keyName')]), input]),
+    el('p', { class: 'muted small' }, [t(lang, 'keyMakeNote')]),
+  ]);
+}
+
+/**
+ * EDT-61, M-64, SR-44, GD-14: the key's name and fingerprint, the notice M-64 and the safety advice;
+ * the key file downloads only after the tick. fresh: right after making it, with *Later*.
+ */
+export function keySaveDialog(lang, key, fresh, onSave) {
+  const ack = el('input', { type: 'checkbox', id: 'key-ack' }, []);
+  const d = openDialog({ title: t(lang, fresh ? 'keyMade' : 'keyDownload'), closeLabel: t(lang, fresh ? 'later' : 'cancel'),
+    actions: [{ label: t(lang, 'keyFileDl'), primary: true, onClick: (close) => {
+      if (!ack.checked) return;
+      close();
+      onSave();
+    } }] }, [
+    el('div', { class: 'keycard' }, [icon('key'), el('div', {}, [el('b', {}, [key.name]), el('div', { class: 'fp' }, [key.fingerprint])])]),
+    el('p', { class: 'notice' }, [t(lang, 'M64')]),
+    el('p', { class: 'muted small' }, [t(lang, 'keySafety')]),
+    el('label', { class: 'ack', for: 'key-ack' }, [ack, t(lang, 'keyRead')]),
+    fresh ? el('p', { class: 'muted small' }, [t(lang, 'keyLaterNote')]) : null,
+  ]);
+  const button = d.dlg.querySelector('.buttons .btn-primary');
+  button.disabled = true;
+  listen(ack, 'change', () => { button.disabled = !ack.checked; });
+  return d;
+}
+
+/** GD-39: a key not yet downloaded is forgotten only after this question. */
+export function keyForgetConfirm(lang, { onDownload, onForget }) {
+  return openDialog({ title: t(lang, 'keyForgetUnsavedTitle'), closeLabel: t(lang, 'cancel'), actions: [
+    { label: t(lang, 'keyFileDl'), onClick: (close) => { close(); onDownload(); } },
+    { label: t(lang, 'keyForgetAnyway'), primary: true, onClick: (close) => { close(); onForget(); } },
+  ] }, [el('p', {}, [t(lang, 'keyForgetUnsavedText')])]);
+}
+
+/**
+ * GD-40: after 30 minutes without input. A downloaded key gets a countdown (setSeconds); a key not yet
+ * downloaded is never forgotten by itself, so its dialog offers the download instead. *Sleutel houden*,
+ * Escape and the backdrop keep the key; onClosed runs however the dialog closes.
+ */
+export function idleDialog(lang, { unsaved, seconds, onForget, onDownload, onClosed }) {
+  const count = el('b', {}, [String(seconds)]);
+  const actions = [{ label: t(lang, 'forgetNow'), onClick: (close) => { close(); onForget(); } }];
+  if (unsaved) actions.push({ label: t(lang, 'keyFileDl'), onClick: (close) => { close(); onDownload(); } });
+  const d = openDialog({ title: t(lang, 'idleTitle'), closeLabel: t(lang, 'keepKey'), closePrimary: true, actions },
+    [el('p', {}, unsaved ? [t(lang, 'idleUnsaved')] : tParts(lang, 'idleText', { s: count }))]);
+  listen(d.dlg, 'close', onClosed);
+  return { ...d, setSeconds: (n) => { count.textContent = String(n); } };
 }
 
 /** EDT-56: what was saved, its size, and above the sharing threshold M-08 (PKG-09). */

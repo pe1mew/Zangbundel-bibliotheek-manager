@@ -77,7 +77,7 @@ export function createCryptoHandler({ useWebCrypto = true } = {}) {
       if (!key || !key.needsExport) return refuse('export', 'only a new key that has not been saved yet can be exported');
       if (acknowledged !== true) return refuse('M-64', 'the notice M-64 must be acknowledged first');
       const bytes = writeKeyFile(key);
-      const fileName = `${safeFileName(key.name, 90)}.zbkey`;
+      const fileName = `sleutel-${safeFileName(key.name, 90)}.zbkey`;   // GD-14
       await seal(key);
       return { accepted: true, bytes, fileName };
     },

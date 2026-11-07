@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.13 |
+| **Status** | Draft 0.14 |
 | **Date** | 2026-11-07 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
@@ -217,7 +217,7 @@ Every requirement applies to the production site and, unless stated, to the test
 | ID | Requirement |
 |---|---|
 | SR-40 | Private keys MUST live only in a dedicated Web Worker (`crypto`), as `Uint8Array`, never as a string except while the worker builds the bytes of a key file for an explicit download. The main thread MUST NOT receive the private key; it sends data to sign and receives signatures, the public key and the fingerprint. |
-| SR-41 | The private key MUST be overwritten with zeros in the worker when the user replaces or forgets it (SR-46), when the library session ends, and on `pagehide`; the worker is then terminated. |
+| SR-41 | The private key MUST be overwritten with zeros in the worker when the user replaces or forgets it (SR-46), when the library session ends, and on `pagehide`; the worker is then terminated. *Clarified 2026-11-07 by the owner:* for the web app the session that ends is the page's; the key stays through *Sluiten* and downloads, so one key can sign several libraries, and is forgotten on *Sleutel vergeten*, after inactivity (SR-46) and when the page closes. |
 | SR-42 | Nothing about a key or a library MUST be written to local storage, session storage, IndexedDB, the Cache API, cookies, the URL or the history. An automated test MUST inspect all storage after making, loading and using a key (SC-06). Local storage MAY hold only the keys `zbm.lang` and `zbm.bars` (GD-34), enforced by an allow-list in the code. |
 | SR-43 | The production build MUST NOT write library content, key material or file names to the console, and MUST NOT send error reports anywhere. |
 | SR-44 | Key-related texts MUST say, besides M-64: keep the key file outside shared folders and off shared computers; the manager and its makers never ask for your key file; only `https://zangbundel.nl` is the manager. |
@@ -610,3 +610,4 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 | Draft 0.11 | 2026-11-06 | 7.4 records the vendoring of M1.2 (`vendor.py`): SR-12 checks as run, fflate 0.8.3 without published provenance (accepted, recorded), SR-14's GitLab check by hand. |
 | Draft 0.12 | 2026-11-06 | The owner keeps `fflate` 0.8.3 although it publishes no provenance: an accepted risk in section 9, noted in 7.4. |
 | Draft 0.13 | 2026-11-07 | Section 7.3: the crypto worker's operations as implemented in M3. DNS set by the owner. Two deviations accepted: no null MX, because Openprovider refuses one, so no MX and port 25 closed (SR-07); no transfer lock, because `.nl` has none, so the registrar account's two-factor authentication protects the domain (SR-05). Section 7.2 and SC-12 follow. |
+| Draft 0.14 | 2026-11-07 | SR-41 clarified by the owner: the key lives until the page closes, not until *Sluiten*. M6.4 recheck (SR-91): key-file bytes reach the main thread only for the explicit download of a new key (SR-40) and are zeroed after the Blob is made; the name field has `autocomplete="off"` (SR-45); SR-44's advice is shown with M-64. |

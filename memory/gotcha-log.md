@@ -116,6 +116,11 @@
 **Root cause**: The library path (read, then transfer) was copied to the key path, where the rule is stricter: library bytes may pass the page, key bytes may not.
 **Fix**: Post the `File` itself (structured-cloneable); the worker reads it and zeroes the bytes. Tested by making every read method of the page's `File` throw. Rule: when data must stay in a worker, send the handle (File, Blob, port), never its contents.
 
+### A check run before the last edit was reported for the final state (2026-11-07) [RESOLVED]
+**Problem**: M6.3 reported "container 81 of 81", but the container ran before the signing tests switched to the global `File`, which the container's Node 18 lacks. The committed M6.3 failed 9 tests there.
+**Root cause**: The checks ran in the order the work was done, and an edit made after a check was never checked again. Local Node 26 hid the difference.
+**Fix**: `File` imported from `node:buffer`; M6.4 ran every check after its last edit. Rule: a reported check result describes the tree it ran on; rerun the whole set after the last edit, before staging.
+
 ## Promoted
 
 <!-- Track gotchas that have been promoted to topic files or the memory index.

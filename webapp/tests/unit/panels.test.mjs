@@ -82,3 +82,18 @@ test('GD-04, GD-14: the bottom bar draws every group; buttons that wait for M5/M
   assert.deepEqual(loaded, ['key']);
   assert.ok(withKey.some((n) => n.text === 'Leiding · 21FE-31DF-A154-A261'));
 });
+
+test('GD-14, GD-39, M6.4: the key group; only a new key\'s file downloads, with a dot; forgetting needs a key', () => {
+  const handlers = { onMakeKey() {}, onLoadKey() {}, onDownloadKey() {}, onForgetKey() {} };
+  const keyButtons = (key) => bottomBar({ lang: 'nl', ...handlers, key }).flatMap((n) => [...walk(n)])
+    .filter((n) => n.tag === 'button' && /^Sleutel /.test(n.attrs.title));
+  const state = (bs) => bs.map((b) => [b.attrs.title, !('disabled' in b.attrs), /dirty/.test(b.attrs.class)]);
+  assert.deepEqual(state(keyButtons(null)), [
+    ['Sleutel maken', true, false], ['Sleutel laden', true, false],
+    ['Sleutel downloaden: Maak of laad eerst een sleutel.', false, false], ['Sleutel vergeten: Maak of laad eerst een sleutel.', false, false]]);
+  const fresh = { name: 'Leiding', fingerprint: 'AB12-CD34-EF56-7890', needsExport: true };
+  assert.deepEqual(state(keyButtons(fresh)).slice(2), [['Sleutel downloaden', true, true], ['Sleutel vergeten', true, false]]);
+  const saved = { ...fresh, needsExport: false };
+  assert.deepEqual(state(keyButtons(saved)).slice(2), [
+    ['Sleutel downloaden: Het sleutelbestand staat al op je computer.', false, false], ['Sleutel vergeten', true, false]]);
+});

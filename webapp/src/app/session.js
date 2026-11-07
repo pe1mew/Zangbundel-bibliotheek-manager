@@ -18,7 +18,8 @@ const sameKey = (a, b) => a instanceof Uint8Array && b instanceof Uint8Array && 
 /**
  * client: the library worker's client; crypto: the crypto worker's client (crypto-client.js), or
  * stand-ins in tests. State: { library, songs, findings, converted, dirty, busy, key, authorFingerprint }
- * where key is { name, fingerprint, publicKey } of the loaded key, or null.
+ * where key is { name, fingerprint, publicKey, needsExport } of the key in memory, or null;
+ * needsExport: a key made in this session whose key file has not been downloaded yet.
  */
 export function createSession({ client, crypto = null, now = () => new Date() }) {
   let state = { library: null, songs: [], findings: null, converted: null, dirty: false, busy: false, key: null, authorFingerprint: null };
@@ -100,9 +101,41 @@ export function createSession({ client, crypto = null, now = () => new Date() })
       const expect = state.library && state.library.author ? state.library.author.publicKey : undefined;
       const r = await crypto.request('load', { file, expect });
       if (!r.accepted) return { ok: false, message: r.message, reason: r.reason };
-      const key = { name: r.name, fingerprint: r.fingerprint, publicKey: r.publicKey };
+      const unlocked = isReadOnly();
+      const key = { name: r.name, fingerprint: r.fingerprint, publicKey: r.publicKey, needsExport: false };
+      set({ key });
+      return { ok: true, key, unlocked: unlocked && !isReadOnly() };
+    },
+
+    /**
+     * EDT-61, GD-14: make a new key pair in the crypto worker, replacing any key in memory. It cannot
+     * sign until its key file has been downloaded (exportKey). Returns { ok: true, key } or { ok: false, message, reason }.
+     */
+    async makeKey(name) {
+      if (!crypto) return { ok: false, message: 'selftest', reason: 'no crypto worker' };
+      const r = await crypto.request('make', { name, now: now() });
+      if (!r.accepted) return { ok: false, message: r.message, reason: r.reason };
+      const key = { name: r.name, fingerprint: r.fingerprint, publicKey: r.publicKey, needsExport: true };
       set({ key });
       return { ok: true, key };
+    },
+
+    /**
+     * EDT-61, M-64, SR-16: the key file of a new key, once, after the user acknowledged M-64; the worker
+     * then keeps the key non-extractable. Returns { ok: true, bytes, fileName } or { ok: false, message, reason }.
+     */
+    async exportKey() {
+      if (!crypto || !state.key || !state.key.needsExport) return { ok: false, message: 'export', reason: 'no new key to download' };
+      const r = await crypto.request('exportKeyFile', { acknowledged: true });
+      if (!r.accepted) return { ok: false, message: r.message, reason: r.reason };
+      set({ key: { ...state.key, needsExport: false } });
+      return { ok: true, bytes: r.bytes, fileName: r.fileName };
+    },
+
+    /** SR-41, SR-46, GD-39: the key is overwritten and the crypto worker ended; the library stays as it is. */
+    async forgetKey() {
+      if (crypto) await crypto.forget();
+      set({ key: null });
     },
 
     /**
@@ -113,7 +146,9 @@ export function createSession({ client, crypto = null, now = () => new Date() })
      */
     async preview({ sign = false } = {}) {
       const lib = state.library;
-      const canSign = Boolean(state.key) && !isReadOnly();
+      // EDT-61: a new key signs only once its key file is downloaded
+      const keyNeedsExport = Boolean(state.key && state.key.needsExport);
+      const canSign = Boolean(state.key) && !keyNeedsExport && !isReadOnly();
       const mustSign = Boolean(lib.author) && canSign;
       const signing = mustSign || (canSign && sign);
       const unchanged = !state.dirty && !lib.isNew && !(signing && !lib.author);
@@ -128,7 +163,8 @@ export function createSession({ client, crypto = null, now = () => new Date() })
       // EDT-23: without its key a signed library is saved only unchanged; anything else is a copy (EDT-70)
       const readOnly = isReadOnly() && changed;
       return { changed, version, fileName: libraryFileName(lib.title, version), needsConfirm, findings,
-        blocked: readOnly || blocking(findings), readOnly, sign: signing, mustSign, canSign };
+        blocked: readOnly || blocking(findings), readOnly, sign: signing, mustSign, canSign,
+        signWaitsForFile: keyNeedsExport && !lib.author };
     },
 
     /**

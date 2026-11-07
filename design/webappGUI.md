@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.16 |
+| **Status** | Draft 0.17 |
 | **Date** | 2026-11-07 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -169,7 +169,7 @@ The app's library chips and colour squares are left out, since the manager has o
 | Button (Dutch UI) | Behaviour | FDS |
 |---|---|---|
 | *Sleutel maken* | Asks for the author's name, makes a new key pair, and shows the name and the fingerprint (`AB12-CD34-EF56-7890`, SG-20). Before the key file can be downloaded, the user must tick that they have read notice M-64. Then *Sleutelbestand downloaden* saves it as `sleutel-<name>.zbkey`; *Later* keeps the key in memory only. If a key is already in memory, the user confirms replacing it first. | EDT-61, SG-12, SG-20, M-64 |
-| *Sleutel downloaden* | Available only while a key is in memory. Shows its name and fingerprint and the same notice, then saves the key file. While a key made in this session has not been downloaded yet, the button carries a dot: without the file, the key is lost when the page closes (EDT-02, EDT-64). | EDT-61, EDT-64 |
+| *Sleutel downloaden* | Available only while a key made in this session has not been downloaded yet, and only once (*amended 2026-11-07 by the owner*: after the download, and right after loading, the crypto worker keeps the key non-extractable, securityAssessment SR-16, so no key file can be made again; the button then says the file is already on the computer). Shows its name and fingerprint and the same notice, then saves the key file. While a key made in this session has not been downloaded yet, the button carries a dot: without the file, the key is lost when the page closes (EDT-02, EDT-64). | EDT-61, EDT-64 |
 | *Sleutel laden* | Not in the owner's request, added because the FDS needs it: opens a key file (`.zbkey`), checks it (SG-11, M-31) and keeps it in memory for this session. The file stays on the user's computer (TD-06). | EDT-60, EDT-62, SG-11 |
 
 The key lives in the page's memory only; closing the page forgets it, and nothing about it is stored in the browser (EDT-64, TD-06). Signing the open library with this key (*Bibliotheek ondertekenen*, EDT-60, EDT-53) and checking a loaded key against a signed library (EDT-62, M-30) are not designed yet (GQ-18).
@@ -367,3 +367,4 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.16 | 2026-11-07 | GD-41 (resolves GQ-21): the centre keeps at least 360 px; bars give way, the right first, and come back in a wider window. |
 | Draft 0.15 | 2026-11-07 | GQ-21: a minimum width for the centre area, found while building the layout (M4.3). |
 | Draft 0.14 | 2026-11-07 | GD-35 amended by the owner: the Google Play badge is left out until the app is listed. Google's badge guidelines ask for the badge unaltered, so it cannot be shown greyed. The F-Droid badge stays greyed with *binnenkort*. |
+| Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |

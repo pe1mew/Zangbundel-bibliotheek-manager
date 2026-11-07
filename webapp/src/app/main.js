@@ -6,9 +6,12 @@
 // M4.4: the bottom bar's groups, the *Android-app* panel and *Over* (panels.js).
 // M6.1: a library is opened, started and closed (session.js, library-ui.js); the right bar shows it
 // and *Controle* its findings. M6.2: *Downloaden*. M6.3: a key loaded into the crypto worker signs;
-// a signed library is read-only without its key; *Opslaan als kopie*. Editing comes with M5.
+// a signed library is read-only without its key; *Opslaan als kopie*. M6.4: the key group (make,
+// download, forget) and forgetting the key after 30 minutes without input. Editing comes with M5.
 
 import { el, extLink, icon, replace } from './dom.js';
+import { toast } from './dialog.js';
+import { createIdleWatch } from './idle.js';
 import { createLanguage, t } from './i18n.js';
 import { createLayout } from './layout.js';
 import { aboutDialog, androidContent, androidDialog, bottomBar, privacyUrl } from './panels.js';
@@ -16,9 +19,10 @@ import { checkDialog } from './check.js';
 import { createLibraryClient } from './library-client.js';
 import { createCryptoClient } from './crypto-client.js';
 import { createSession } from './session.js';
-import { closeConfirm, convertedDialog, copyDialog, downloadDialog, keyFailedDialog, manifestConfirm, newLibraryDialog, openFailedDialog,
-  pickFile, saveFailedDialog, savedDialog } from './library-ui.js';
-import { LIBRARY_MIME, offerDownload } from './download.js';
+import { closeConfirm, convertedDialog, copyDialog, downloadDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
+  keyReplaceConfirm, keySaveDialog, manifestConfirm, newLibraryDialog, openFailedDialog, pickFile, saveFailedDialog,
+  savedDialog } from './library-ui.js';
+import { KEY_MIME, LIBRARY_MIME, offerDownload } from './download.js';
 import { VERSION } from './version.js';
 
 const SPLASH_MS = 3000;   // GD-27
@@ -141,7 +145,59 @@ function start() {
   const onLoadKey = () => pickFile(async (file) => {
     const r = await session.loadKey(file);
     if (!r.ok) keyFailedDialog(language.get(), r);
+    else toast(r.unlocked ? t(language.get(), 'keyUnlocked') : t(language.get(), 'keyLoaded', { name: r.key.name }));
   }, '.zbkey,application/json');
+  // GD-14, EDT-61, M-64: the key file of a new key, once, after the tick; the worker then seals the key
+  const saveKeyFile = async () => {
+    const r = await session.exportKey();
+    if (!r.ok) {
+      keyFailedDialog(language.get(), r);
+      return;
+    }
+    offerDownload(r.bytes, r.fileName, KEY_MIME);
+    r.bytes.fill(0);                                      // the Blob holds its own copy until the link is revoked
+    toast(t(language.get(), 'keySaved', { file: r.fileName }));
+  };
+  const onDownloadKey = () => {
+    const key = session.get().key;
+    if (key && key.needsExport) keySaveDialog(language.get(), key, false, saveKeyFile);
+  };
+  const makeKey = () => keyMakeDialog(language.get(), async (name) => {
+    const r = await session.makeKey(name);
+    if (!r.ok) keyFailedDialog(language.get(), r);
+    else keySaveDialog(language.get(), r.key, true, saveKeyFile);
+  });
+  const onMakeKey = () => {
+    const key = session.get().key;
+    if (key) keyReplaceConfirm(language.get(), key, makeKey);
+    else makeKey();
+  };
+  // GD-39: the key goes, the library stays; a key not yet downloaded is asked about first
+  const forget = async () => {
+    idle.keep();
+    await session.forgetKey();
+    toast(t(language.get(), 'keyForgotten'));
+  };
+  const onForgetKey = () => {
+    const key = session.get().key;
+    if (!key) return;
+    if (key.needsExport) keyForgetConfirm(language.get(), { onDownload: onDownloadKey, onForget: forget });
+    else forget();
+  };
+  // GD-40, SR-46: 30 minutes without input, then 60 seconds of warning
+  let warning = null;
+  const idle = createIdleWatch({
+    keyState: () => { const key = session.get().key; return key ? (key.needsExport ? 'unsaved' : 'saved') : null; },
+    onWarn: ({ unsaved, seconds }) => {
+      warning = idleDialog(language.get(), { unsaved, seconds, onForget: forget, onDownload: onDownloadKey,
+        onClosed: () => { warning = null; idle.keep(); } });
+    },
+    onTick: (seconds) => { if (warning) warning.setSeconds(seconds); },
+    onExpire: () => {
+      if (warning) warning.close();
+      forget();
+    },
+  });
   // GD-23, GD-24, FDS 7.6 to 7.8: Downloaden keeps the library open; signing is a tick box
   const onDownload = async (sign = false, confirmed = false) => {
     const lang = language.get();
@@ -185,7 +241,8 @@ function start() {
     replace(layout.left, el('p', { class: 'empty' }, [t(lang, state.library ? 'libHomeLead' : 'tileNeedLib')]));
     replace(layout.bottom, ...bottomBar({ lang, onLanguage: () => language.next(),
       onAndroid: () => androidDialog(language.get()), onAbout: () => aboutDialog(language.get()),
-      onOpen, onNew, onClose, onCheck, onDownload: () => onDownload(), onLoadKey, key: state.key, hasLibrary: Boolean(state.library), busy: state.busy,
+      onOpen, onNew, onClose, onCheck, onDownload: () => onDownload(), onLoadKey, onMakeKey, onDownloadKey, onForgetKey,
+      key: state.key, hasLibrary: Boolean(state.library), busy: state.busy,
       findings: state.library ? state.findings || [] : null }));
     replace(narrow, narrowPage(lang));
   };

@@ -89,10 +89,10 @@ function checkButton(lang, findings, onCheck) {
 
 /**
  * The bottom bar's groups (GD-04): the library, *Controle*, the key (GD-14, GD-39) and the general
- * buttons. key is { name, fingerprint, saved } or null; until M6 there is none.
+ * buttons. key is { name, fingerprint, needsExport } or null. A button whose handler is not given waits.
  */
-export function bottomBar({ lang, onLanguage, onAndroid, onAbout, onCheck, onOpen, onNew, onClose, onDownload, onLoadKey, hasLibrary = false, busy = false,
-  findings = null, key = null }) {
+export function bottomBar({ lang, onLanguage, onAndroid, onAbout, onCheck, onOpen, onNew, onClose, onDownload, onLoadKey, onMakeKey,
+  onDownloadKey, onForgetKey, hasLibrary = false, busy = false, findings = null, key = null }) {
   const soon = t(lang, 'tileSoon');
   const wait = (name, label) => navButton(name, label, { disabled: true, title: `${label}: ${soon}` });
   const sep = () => el('span', { class: 'nav-sep', 'aria-hidden': 'true' }, []);
@@ -111,11 +111,20 @@ export function bottomBar({ lang, onLanguage, onAndroid, onAbout, onCheck, onOpe
     checkButton(lang, findings, onCheck),
     sep(),
     el('div', { class: 'navgroup keys', role: 'group', 'aria-label': `${t(lang, 'keyGroup')}: ${keyLabel}` }, [
-      wait('key', t(lang, 'keyMake')), onLoadKey
+      onMakeKey ? navButton('key', t(lang, 'keyMake'), { onClick: onMakeKey }) : wait('key', t(lang, 'keyMake')),
+      onLoadKey
         ? navButton('upload', t(lang, 'keyLoad'), { onClick: onLoadKey, disabled: busy })
         : wait('upload', t(lang, 'keyLoad')),
-      wait('download', t(lang, 'keyDownload')),
-      wait('close', t(lang, 'keyForget')),
+      // GD-14: only a new key's file can be downloaded, once (SR-16); the dot says it is not saved yet
+      onDownloadKey
+        ? navButton('download', t(lang, 'keyDownload'), { onClick: onDownloadKey, disabled: !(key && key.needsExport),
+          dot: Boolean(key && key.needsExport),
+          title: key && key.needsExport ? t(lang, 'keyDownload') : `${t(lang, 'keyDownload')}: ${t(lang, key ? 'keyFileHave' : 'keyNone')}` })
+        : wait('download', t(lang, 'keyDownload')),
+      onForgetKey
+        ? navButton('close', t(lang, 'keyForget'), { onClick: onForgetKey, disabled: !key,
+          title: key ? t(lang, 'keyForget') : `${t(lang, 'keyForget')}: ${t(lang, 'keyNone')}` })
+        : wait('close', t(lang, 'keyForget')),
       el('span', { class: 'navgroup-label', 'aria-hidden': 'true' }, [keyLabel]),
     ]),
     sep(),

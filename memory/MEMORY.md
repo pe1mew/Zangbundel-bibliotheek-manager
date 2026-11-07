@@ -127,8 +127,14 @@
     - `session.preview()` gives {changed, version, fileName, needsConfirm, findings, blocked}; `session.save({changed, changes})` reopens the saved bytes as the open library.
     - `download.js` has offerDownload(bytes, name, mime), LIBRARY_MIME and KEY_MIME. No TT policy is needed for blob links.
     - Browser check: stub URL.createObjectURL and HTMLAnchorElement.prototype.click to catch the download.
-  - M6.3 done (uncommitted).
+  - M6.3 done (committed).
     - `session.loadKey(file)` passes the File to the crypto worker unread (SR-40); `crypto-handler` `load({file})` reads it and zeroes the bytes.
     - `isReadOnly()`, `preview({sign})` → {…, sign, mustSign, canSign, readOnly}, `save({sign})` signs over a MessagePort, `copy(title)`.
     - Browser harness: the page's CSP has connect-src 'none', so serve `scratchpad/csp_server_harness.py` (adds connect-src 'self') and fetch test files from `m3build/__test/`; never paste big base64 by hand. The read-only bar may need over 1.5 s after opening.
-  - Next: M6.4 the key group (make, download with M-64, forget, 30-minute idle warning, SR-41/SR-46).
+  - M6.4 done (uncommitted).
+    - `session.makeKey/exportKey/forgetKey`; key.needsExport; preview.signWaitsForFile. `app/idle.js` createIdleWatch (keyState, onWarn/onTick/onExpire; injectable now/every/target).
+    - Owner 2026-11-07: the key lives until the page closes (SR-41 clarified); *Sleutel downloaden* only for a new key, once (GD-14 amended).
+    - Container runs Node 18: no global `File` (import from node:buffer). Run the container test after the last test edit, not before.
+    - Browser harness: never stub HTMLInputElement.prototype.click without calling the original for non-file inputs; move time with Date.now.
+    - Open: FDS EDT-01/EDT-02 read literally end the key with *Sluiten*; asked the owner whether FDS 0.11 should say a key may live until the program closes.
+  - Next: M5 editing (M6's exit needs it), or runbook steps 8 to 10.

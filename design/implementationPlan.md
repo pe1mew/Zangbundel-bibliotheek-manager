@@ -467,7 +467,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - signing an unsigned library (SIG and MAN rules pass);
   - a copy of a signed library;
   - SIG-03 blocking, and its copy not blocked.
-- **`node --test`:** 293 of 293. Container test: 81 of 81.
+- **`node --test`:** 293 of 293. Container test: 81 of 81, run before the signing tests switched to `File`. The committed M6.3 tests fail under the container's Node 18, where `File` is not global; M6.4 imports it from `node:buffer`.
 - **In the browser pane (Chromium), through both bundled workers, under the SR-20 CSP with `connect-src 'self'` added only so the harness could fetch the test files:**
   - `valid-signed` showed the read-only bar and downloaded unchanged, byte-identical;
   - the RFC 8032 test key loaded while every read method of the page's `File` threw, so only the worker read it;
@@ -479,6 +479,40 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - a changed, signed download in the browser waits for editing (M5);
   - Firefox, Safari and Edge (SC-05);
   - make, download and forget a key, and the inactivity timeout, are M6.4.
+
+**M6.4 done.** The key group of the bottom bar works; M6 has its four steps.
+- ***Sleutel maken* (EDT-61, GD-14):**
+  - asks for the author's name (1 to 100 characters, `autocomplete="off"`, SR-45);
+  - makes the key in the crypto worker and shows its name and fingerprint, M-64 and the SR-44 advice;
+  - *Sleutelbestand downloaden* works only after the tick and saves `sleutel-<name>.zbkey`; *Later* keeps the key in the page only.
+  - A key already in memory is replaced only after a question, which warns when that key was never downloaded.
+- **A new key signs only once its file is downloaded (EDT-61).** Until then the download dialog says so instead of offering the tick.
+- ***Sleutel downloaden*:** only for a new key not yet downloaded, once, and the button carries a dot until then. Afterwards the worker keeps the key non-extractable (SR-16), so no file can be made again; the button then says the file is already on the computer. The owner's decision (2026-11-07) amends GD-14 (webappGUI draft 0.17).
+- ***Sleutel vergeten* (GD-39, SR-41, SR-46):**
+  - overwrites the key, ends the crypto worker and says so; the library stays as it is, and a signed one is read-only again;
+  - a key not yet downloaded is forgotten only after a question, which offers the download.
+- **The key stays until the page closes:** through *Sluiten* and downloads, so one key can sign several libraries. The owner's decision (2026-11-07) clarifies SR-41 (securityAssessment draft 0.14).
+- **Inactivity (GD-40, SR-46):** `app/idle.js`.
+  - After 30 minutes without input, a warning with a 60-second countdown, *Sleutel houden* (primary) and *Nu vergeten*.
+  - Without an answer the key is forgotten. Input during the warning does not answer it.
+  - Time is measured, not counted, so a background tab keeps the rule.
+  - A key not yet downloaded is warned about but never forgotten by itself; its warning offers the download.
+- **`dialog.js`:** `toast()` for short notices; `closePrimary` for a dialog whose close button is the primary choice.
+- **Tested:**
+  - `tests/unit/idle.test.mjs`: 7 tests with a fake clock;
+  - `signing-session.test.mjs`: make, export once, then sign; forget; unlock;
+  - `panels.test.mjs`: the key buttons.
+  - `node --test`: 304 of 304. Container test: 81 of 81, with the fix above.
+- **In the browser pane (Chromium), both workers bundled, the SR-20 CSP with `connect-src 'self'` for the harness only:**
+  - *Sleutel maken*, *Later* (dot), the dialog's note before the download, the questions for replacing and forgetting an unsaved key;
+  - the key file `sleutel-Leiding Troep 12.zbkey` with all its fields, after the tick only, then the signing tick in *Downloaden*;
+  - with the page clock moved forward: no warning at 29 minutes; at 31 the warning with its countdown; the key forgotten after 60 seconds, the library still open;
+  - an unsaved key's warning still open 10 minutes later, and *Sleutel houden*;
+  - local and session storage, cookies, IndexedDB and caches empty after making a key (SR-42); console clean.
+- **Open:**
+  - SR-42/SC-06 asks for an *automated* storage test; the browser check here was by hand (M7);
+  - Firefox, Safari and Edge (SC-05);
+  - M6's exit: libraries made and signed here through the independent checker and the phone (after M5).
 
 ### M7 — Hardening and test release (M)
 

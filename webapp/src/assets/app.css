@@ -197,6 +197,13 @@ svg.sev-ok { fill: var(--fire-orange); }
   background: var(--night-blue); border-left: 4px solid var(--fire-orange); border-radius: 0 10px 10px 0; }
 .robar span { flex: 1; min-width: 200px; }
 .btn-small { min-height: 36px; padding: 0 14px; font-size: 14px; }
+/* M6.4: the key group (GD-14, GD-39, GD-40) */
+.keycard { display: flex; gap: 14px; align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 12px; margin: 8px 0 14px; background: var(--bg); }
+.keycard svg { width: 32px; height: 32px; fill: var(--fire-orange); flex: none; }
+.fp { font-family: ui-monospace, Consolas, monospace; letter-spacing: .03em; }
+.notice { border-left: 3px solid var(--fire-orange-light); padding: 8px 12px; background: var(--bg); border-radius: 0 8px 8px 0; }
+.toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); max-width: min(90vw, 640px); background: var(--white); color: #000;
+  padding: 10px 18px; border-radius: 999px; font-weight: 600; z-index: 20; animation: fadein .2s; text-align: center; }
 .ack { display: flex; gap: 10px; align-items: center; margin: 12px 0; cursor: pointer; min-height: 44px; }
 .ack input { width: 20px; height: 20px; accent-color: var(--fire-orange); flex: none; }
 .blocked { border-left: 3px solid var(--fire-orange); padding: 6px 12px; background: var(--bg); border-radius: 0 8px 8px 0; }
@@ -256,5 +263,5 @@ svg.sev-ok { fill: var(--fire-orange); }
   .narrowbox h3 { margin-top: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .app, .edge, .splash { transition: none; animation: none; }
+  .app, .edge, .splash, .toast { transition: none; animation: none; }
 }

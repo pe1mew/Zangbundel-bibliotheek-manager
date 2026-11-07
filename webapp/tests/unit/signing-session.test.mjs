@@ -6,12 +6,14 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { File } from 'node:buffer';                    // global only from Node 20; the container has Node 18
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createSession } from '../../src/app/session.js';
 import { handleMessage } from '../../src/workers/library-handler.js';
 import { createCryptoHandler } from '../../src/workers/crypto-handler.js';
 import { validateLibrary } from '../../src/core/validate.js';
+import { readKeyFile } from '../../src/core/keyfile.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const LIBS = join(HERE, '..', '..', '..', 'test-libraries');
@@ -34,10 +36,12 @@ function cryptoClient() {
       await this.request('serve', { port: port2 });
       return port1;
     },
+    forgotten: 0,
+    async forget() { this.forgotten += 1; await this.request('forget'); },   // the real client also ends the worker
     handle,
   };
 }
-const session = () => createSession({ client, crypto: cryptoClient(), now: () => NOW });
+const session = (crypto = cryptoClient()) => createSession({ client, crypto, now: () => NOW });
 
 test('EDT-23: a signed library without its key is read-only, saves only unchanged, and shows its author', async () => {
   const s = session();
@@ -127,4 +131,55 @@ test('EDT-50, EDT-70: a library with a wrong signature (SIG-03) is blocked as it
   await s.copy('Kopie');
   const q = await s.preview();
   assert.deepEqual([q.changed, q.version, q.blocked], [true, 1, false]);
+});
+
+test('EDT-61, GD-14: a new key cannot sign until its file is downloaded, once; then it signs', async () => {
+  const s = session();
+  await s.open(file(corpus('valid-unsigned')));
+  const made = await s.makeKey('Leiding Troep 12');
+  assert.equal(made.ok, true);
+  assert.equal(s.get().key.needsExport, true);
+  assert.match(s.get().key.fingerprint, /^[0-9A-F]{4}(-[0-9A-F]{4}){3}$/);
+  const waiting = await s.preview({ sign: true });
+  assert.deepEqual([waiting.canSign, waiting.sign, waiting.signWaitsForFile, waiting.changed], [false, false, true, false]);
+  const exported = await s.exportKey();
+  assert.equal(exported.ok, true);
+  assert.equal(exported.fileName, 'sleutel-Leiding Troep 12.zbkey');
+  const keyFile = readKeyFile(exported.bytes);
+  assert.equal(keyFile.ok, true);
+  assert.equal(keyFile.key.name, 'Leiding Troep 12');
+  assert.equal(s.get().key.needsExport, false);
+  assert.equal((await s.exportKey()).ok, false);          // SR-16: once; the key is sealed now
+  const p = await s.preview({ sign: true });
+  assert.deepEqual([p.canSign, p.sign, p.signWaitsForFile, p.version], [true, true, false, 2]);
+  const saved = await s.save({ changed: p.changed, sign: p.sign });
+  assert.equal(saved.ok, true);
+  const v = await validateLibrary(saved.bytes);
+  assert.equal(v.signed, true);
+  assert.deepEqual(v.findings.filter((f) => /^(SIG|MAN)/.test(f.code)), []);
+  assert.equal(s.get().library.author.name, 'Leiding Troep 12');
+});
+
+test('GD-39, SR-41: forgetting the key ends it in the worker and leaves the library as it is', async () => {
+  const crypto = cryptoClient();
+  const s = session(crypto);
+  await s.open(file(corpus('valid-signed')));
+  await s.loadKey(file(TEST_KEY, 'test.zbkey'));
+  assert.equal(s.isReadOnly(), false);
+  const library = s.get().library;
+  await s.forgetKey();
+  assert.equal(crypto.forgotten, 1);
+  assert.equal(s.get().key, null);
+  assert.equal(s.get().library, library);                // untouched
+  assert.equal(s.isReadOnly(), true);                    // GD-39: a signed library is read-only again
+  assert.equal((await crypto.request('info')).loaded, false);
+});
+
+test('EDT-62: a key loaded for a signed library reports that it unlocked it', async () => {
+  const s = session();
+  await s.open(file(corpus('valid-signed')));
+  assert.equal((await s.loadKey(file(TEST_KEY, 'test.zbkey'))).unlocked, true);
+  const t = session();
+  await t.open(file(corpus('valid-unsigned')));
+  assert.equal((await t.loadKey(file(TEST_KEY, 'test.zbkey'))).unlocked, false);
 });
