@@ -158,6 +158,28 @@ h3 { font-size: 13px; color: var(--secondary); text-transform: uppercase; letter
 .dialog .buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 .dialog p { margin: 0 0 10px; }
 
+/* ---- Controle, the validation panel (GD-20, GD-29) ---- */
+.ckcount { position: absolute; top: 4px; right: 14px; display: flex; gap: 3px; }
+.ckcount b { font-size: 11px; line-height: 16px; min-width: 16px; padding: 0 4px; border-radius: 8px; color: #000; }
+.ckcount b.e { background: var(--fire-orange); }
+.ckcount b.w { background: var(--fire-orange-light); }
+svg.sev { width: 18px; height: 18px; vertical-align: -3px; margin-right: 6px; flex: none; }
+svg.sev-error { fill: var(--fire-orange); }
+svg.sev-warning { fill: var(--fire-orange-light); }
+svg.sev-info { fill: var(--secondary); }
+svg.sev-ok { fill: var(--fire-orange); }
+.vgroup { margin-top: 14px; }
+.vgroup h3 { display: flex; align-items: center; }
+.vitem {
+  display: grid; grid-template-columns: 140px 180px 1fr auto; gap: 12px; align-items: center; width: 100%; min-height: 48px;
+  padding: 8px 12px; margin: 4px 0; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; cursor: pointer; text-align: left;
+}
+.vitem:hover, .vitem:focus-visible { border-color: var(--fire-orange); outline: none; }
+.vsev { display: flex; align-items: center; color: var(--secondary); font-size: 14px; }
+.vwhere { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vgo { color: var(--fire-orange); white-space: nowrap; }
+.allclear { display: flex; align-items: center; }
+
 /* ---- The Android panel (GD-15, GD-35) ---- */
 .badges { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 18px 0 10px; }
 .soonbadge { position: relative; display: inline-block; }

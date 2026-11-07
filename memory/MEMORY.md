@@ -111,4 +111,10 @@
     - `dialog.js` uses a native <dialog> with showModal. Its content sits in .dlgbody, so only the backdrop has the dialog as click target. The `close` event arrives a moment after close().
     - Images are CSS backgrounds, so the build renames them; JS never names an asset.
     - The pane's width changes clear the emulated viewport: check innerWidth first.
-  - Next: M4.5 *Controle* (validation panel, counts, *Ga naar*); then M5.
+  - M4.5 done (uncommitted).
+    - `check.js` has messageFor, locationOf, checkContent, checkDialog and counts.
+    - `messages.js` was generated from FDS section 9 by a scratch script (gen_messages.py: en verbatim, nl/de translated, placeholders checked). A test compares the en with the FDS: change both together.
+    - Findings now carry `params` (line, directive, chord, value, field, what, count, size, names, reason, song, set, title). `chordpro.parseSong` also returns problems.at, metaLines and unknownAt.
+    - The container's run.sh copies design/FDS.md to /tmp/design for check.test.mjs.
+    - The owner should review the nl/de message translations.
+  - Next: M4 exit (the owner looks at the shell beside the mock); then M5 (editing) or M6 (open/save), which make the screens usable.

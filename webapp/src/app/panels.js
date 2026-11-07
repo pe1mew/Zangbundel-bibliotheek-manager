@@ -5,6 +5,7 @@
 
 import { el, extLink, icon } from './dom.js';
 import { openDialog } from './dialog.js';
+import { counts } from './check.js';
 import { t, tParts } from './i18n.js';
 import { VERSION } from './version.js';
 
@@ -71,10 +72,26 @@ export function aboutDialog(lang) {
 }
 
 /**
+ * GD-20: *Controle* with the numbers of errors and warnings and the icon of the worst; without a
+ * library (findings null) it waits.
+ */
+function checkButton(lang, findings, onCheck) {
+  if (findings === null) {
+    return navButton('check', t(lang, 'check'), { disabled: true, title: `${t(lang, 'check')}: ${t(lang, 'tileNeedLib')}` });
+  }
+  const { e, w } = counts(findings);
+  const label = `${t(lang, 'check')} (${t(lang, 'checkCounts', { e, w })})`;
+  return el('button', { type: 'button', class: 'navbtn', title: label, 'aria-label': label, on: { click: onCheck } }, [
+    el('span', { class: 'ckcount', 'aria-hidden': 'true' }, [e ? el('b', { class: 'e' }, [String(e)]) : null, w ? el('b', { class: 'w' }, [String(w)]) : null]),
+    icon(e ? 'error' : w ? 'warning' : 'check'), el('span', {}, [t(lang, 'check')]),
+  ]);
+}
+
+/**
  * The bottom bar's groups (GD-04): the library, *Controle*, the key (GD-14, GD-39) and the general
  * buttons. key is { name, fingerprint, saved } or null; until M6 there is none.
  */
-export function bottomBar({ lang, onLanguage, onAndroid, onAbout, key = null }) {
+export function bottomBar({ lang, onLanguage, onAndroid, onAbout, onCheck, findings = null, key = null }) {
   const soon = t(lang, 'tileSoon');
   const wait = (name, label) => navButton(name, label, { disabled: true, title: `${label}: ${soon}` });
   const sep = () => el('span', { class: 'nav-sep', 'aria-hidden': 'true' }, []);
@@ -85,7 +102,7 @@ export function bottomBar({ lang, onLanguage, onAndroid, onAbout, key = null }) 
       wait('download', t(lang, 'download')), wait('close', t(lang, 'close')),
     ]),
     sep(),
-    navButton('check', t(lang, 'check'), { disabled: true, title: `${t(lang, 'check')}: ${t(lang, 'tileNeedLib')}` }),
+    checkButton(lang, findings, onCheck),
     sep(),
     el('div', { class: 'navgroup keys', role: 'group', 'aria-label': `${t(lang, 'keyGroup')}: ${keyLabel}` }, [
       wait('key', t(lang, 'keyMake')), wait('upload', t(lang, 'keyLoad')), wait('download', t(lang, 'keyDownload')),

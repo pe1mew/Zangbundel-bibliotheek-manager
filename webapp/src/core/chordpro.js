@@ -73,7 +73,7 @@ export function canonicalize(bytes) {
 }
 
 /** The display text of a content line (9.1): chords and annotations removed, escapes resolved. */
-function displayText(line, problems) {
+function displayText(line, problems, mark = () => {}) {
   let out = '';
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
@@ -85,17 +85,20 @@ function displayText(line, problems) {
       const j = line.indexOf(']', i + 1);
       if (j < 0 || line.slice(i + 1, j).includes('[')) {
         problems.bracket = true;                          // SNG-05
+        mark('bracket');
         out += ch;
         continue;
       }
       const token = line.slice(i + 1, j);
       if (!token.startsWith('*') && !CHORD.test(token)) {
         problems.chordName = true;                        // SNG-08
+        mark('chordName', { chord: token });
       }
       i = j;
     } else {
       if (ch === ']') {
         problems.bracket = true;
+        mark('bracket');
       }
       out += ch;
     }
@@ -114,20 +117,36 @@ function trimEndSpace(s) {
 
 /**
  * Parse the canonical text of a song. Returns
- * { meta: Map<name, string[]>, unknown: Set, lines: [canonical line list], problems } where
- * problems has the flags malformed, envError, chorusEarly, newSong, bracket, chordName.
+ * { meta: Map<name, string[]>, unknown: Set, lines: [canonical line list], problems, metaLines, unknownAt }:
+ * problems has the flags malformed, envError, chorusEarly, newSong, bracket, chordName, and in
+ * problems.at the first place of each, { line, ... } (FDS EDT-40: the location of a message);
+ * metaLines gives the line of every value of meta, unknownAt the first line of each unknown directive.
+ * Line numbers count the lines of the canonical text from 1; they are the lines of the file.
  */
 export function parseSong(text) {
   const meta = new Map();
   const unknown = new Set();
-  const problems = { malformed: false, envError: false, chorusEarly: false, newSong: false, bracket: false, chordName: false };
+  const problems = { malformed: false, envError: false, chorusEarly: false, newSong: false, bracket: false, chordName: false, at: {} };
+  const metaLines = new Map();                            // name -> [line of each value]
+  const unknownAt = new Map();                            // unknown directive -> its first line
+  let n = 0;                                              // the current line, from 1
+  let envLine = 0;                                        // where the open environment started
+  const mark = (key, info) => { if (!problems.at[key]) problems.at[key] = { line: n, ...info }; };
   const lines = [];
   const choruses = [];                                    // [{ label, lines }] in file order
   let env = null;
   let chorus = null;                                      // the chorus being collected
-  const put = (name, value) => meta.set(name, [...(meta.get(name) || []), value]);
+  const put = (name, value) => {
+    meta.set(name, [...(meta.get(name) || []), value]);
+    metaLines.set(name, [...(metaLines.get(name) || []), n]);
+  };
+  const unknownName = (name) => {
+    unknown.add(name);
+    if (!unknownAt.has(name)) unknownAt.set(name, n);
+  };
 
   for (const raw of text.split('\n')) {
+    n += 1;
     const line = trimBlank(raw);
     // 5.2 (v0.25): a file comment's first character is '#', with no trimming; '  # x' is a lyric line
     if (line === '' || raw.startsWith('#')) {
@@ -140,6 +159,7 @@ export function parseSong(text) {
     const strayBrace = [...inner].some((ch, i) => (ch === '{' || ch === '}') && !escaped(inner, i));
     if (starts !== ends || strayBrace) {
       problems.malformed = true;                          // SNG-04, never shown as lyrics
+      mark('malformed');
       continue;
     }
     if (starts) {
@@ -152,7 +172,7 @@ export function parseSong(text) {
         const m = /^([^ \t]+)[ \t]*(.*)$/.exec(value);              // 5.3: split at the first run of spaces or tabs
         const mname = m ? m[1].toLowerCase() : '';
         if (!META_NAMES.has(mname)) {
-          unknown.add(`meta ${mname}`);
+          unknownName(`meta ${mname}`);
         }
         put(mname, m ? trimBlank(m[2]) : '');
       } else if (METADATA_DIRECTIVES.has(name)) {
@@ -160,12 +180,15 @@ export function parseSong(text) {
       } else if (name.startsWith('start_of_')) {
         if (env !== null) {
           problems.envError = true;                       // nested
+          mark('envError', { start: envLine });
         }
         env = name.slice('start_of_'.length);
+        envLine = n;
         chorus = env === 'chorus' ? { label: value, lines: [] } : null;
       } else if (name.startsWith('end_of_')) {
         if (env !== name.slice('end_of_'.length)) {
           problems.envError = true;                       // closed without being open, or another one
+          mark('envError', { start: env !== null ? envLine : n });
         }
         if (env === 'chorus' && chorus) {
           choruses.push(chorus);
@@ -175,6 +198,7 @@ export function parseSong(text) {
       } else if (name === 'chorus') {
         if (choruses.length === 0) {
           problems.chorusEarly = true;                    // SNG-13
+          mark('chorusEarly');
         } else {
           // 7.2: the chorus that carried exactly this label (the most recent such, as a plain {chorus}
           // takes the most recent chorus), otherwise the most recent chorus
@@ -184,15 +208,16 @@ export function parseSong(text) {
         }
       } else if (name === 'new_song') {
         problems.newSong = true;
+        mark('newSong');
       } else if (!OTHER.has(name) && !LAYOUT.has(name)) {
-        unknown.add(name);
+        unknownName(name);
       }
       continue;
     }
     if (env !== null && !SHOWN_ENVS.has(env)) {
       continue;                                           // tab, grid, abc, unknown: skipped (10.1)
     }
-    const shown = displayText(raw, problems);
+    const shown = displayText(raw, problems, mark);
     if (shown !== '') {
       lines.push(shown);
       if (chorus) {
@@ -202,6 +227,7 @@ export function parseSong(text) {
   }
   if (env !== null) {
     problems.envError = true;                             // still open at the end
+    if (!problems.at.envError) problems.at.envError = { line: envLine, start: envLine };
   }
-  return { meta, unknown, lines, problems };
+  return { meta, unknown, lines, problems, metaLines, unknownAt };
 }

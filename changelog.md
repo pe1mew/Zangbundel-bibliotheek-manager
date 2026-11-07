@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M4.5: *Controle*, the validation panel** (`design/implementationPlan.md`).
+  - **The panel:** findings grouped by severity with counts, each with its song and line and its message; a click goes there (EDT-40, EDT-41; GD-20, GD-29).
+  - **Messages:** `app/messages.js` holds the 53 rule messages of FDS section 9. The English is verbatim from the FDS; Dutch and German are translations for review.
+  - **Engine:** `validate.js` and `chordpro.js` now give each finding the details of its message, such as line, directive, chord, value, field or count. Conformance is unchanged.
+  - **Tests:** `tests/unit/check.test.mjs` has 4 tests; `node --test` 279 of 279. The container test copies `design/FDS.md` for them.
 - **M4.4: the bottom bar, the *Android-app* panel and *Over*** (`design/implementationPlan.md`).
   - **Bottom bar:** every group is drawn; the library and key buttons wait, disabled, for M5 and M6.
   - ***Android-app* panel:** F-Droid's badge greyed with *binnenkort*, and links to the APK, the manuals and the sources, opening in a new tab without a referrer.

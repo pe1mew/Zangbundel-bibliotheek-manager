@@ -366,6 +366,22 @@ Each milestone ends with its exit checks passing and the result written to `desi
     - *Over*: its privacy link; the backdrop closes it, a click inside does not;
     - the narrow page's links at 827 px;
     - no console message.
+- **M4.5 done.** *Controle* is `app/check.js`.
+  - **The panel:** it groups the findings into *Fouten* (Error and Fatal), *Waarschuwingen* and *Info* with their counts (GD-29). Each item shows the severity word and icon, its place (song and line, set, file or library) and its message; a click closes the panel and goes there (EDT-40, EDT-41). The bottom bar's button shows the numbers of errors and warnings and the worst icon (GD-20).
+  - **Messages:** `app/messages.js` holds the 53 messages of the section 6 rules. MAN-08 uses M-39; the app's M-75 is not needed here.
+    - The English is the FDS's section 9, verbatim; a test compares the two.
+    - The Dutch and German are translated with the same placeholders. **They are for the owner's review.**
+    - The file is generated from the FDS; the mock's drafts, which had drifted, were not used.
+  - **The engine gives each finding the details of its message** (`params` in validate.js), so the place has a line:
+    - `chordpro.js` records where each problem first occurs (`problems.at`), the line of every metadata value and the first line of each unknown directive;
+    - VIEW-03 names the field an older app refuses;
+    - conformance (code, severity, location) is unchanged at 58 of 58.
+  - **Tested:** `tests/unit/check.test.mjs` renders every finding of all 58 test libraries in nl, en and de with no placeholder or "…" left, and checks five line numbers against the songs.
+  - **Checked in the browser pane** with a temporary page: the button's counts, the grouped modal panel in Dutch, the go-to click, no console message.
+  - **Not yet in the app:** *Controle* waits for an open library (M6); *Ga naar* gets its targets with the song and set screens (M5).
+- **M4 state:** M4.1 to M4.5 are done.
+  - **SC-03:** no CSP or Trusted Types violation on any screen built so far.
+  - **Still for the exit:** the shell beside the mock in the three languages, looked at by the owner.
 - **`zbm-download` moves to M6.2, where the download is built.** Assigning a `blob:` URL to `a.href` is not a Trusted Types sink, so that policy has nothing to guard at that point. The download helper will create and revoke the `blob:` URL itself (SR-36); whether SR-32 still needs a policy of that name is for the M6 review.
 
 ### M5 — Editing (L)

@@ -37,41 +37,54 @@ const SHARING = 16 * 1024 * 1024;                     // FDS 3.5, PKG-09 (Editor
 /** FDS 6.6 for one song file songs/<id>/<id>.cho; returns its title, or null. */
 function checkSong(id, bytes, add) {
   if (bytes.length > SONG_MAX) {
-    add('SNG-18', 'Error', id);                         // not parsed further: bounded work on input (SR-33)
-    add('SNG-17', 'Warning', id);                       // larger than 8 KiB, too
+    add('SNG-18', 'Error', id, { song: id });           // not parsed further: bounded work on input (SR-33)
+    add('SNG-17', 'Warning', id, { song: id, what: ['size'] });   // larger than 8 KiB, too
     return null;
   }
   const c = canonicalize(bytes);
   if (!c.bytesOk || c.controlChars) {
-    add('SNG-01', 'Error', id);
+    add('SNG-01', 'Error', id, { song: id });
     return null;
   }
-  const { meta, unknown, lines, problems } = parseSong(c.text);
+  const { meta, unknown, lines, problems, metaLines, unknownAt } = parseSong(c.text);
   const get = (k) => meta.get(k) || [];
   const title = get('title')[0] || '';
-  if (problems.malformed) add('SNG-04', 'Error', id);
-  if (!title) add('SNG-02', 'Error', id);
-  if ([...meta].some(([k, v]) => SINGLE.has(k) && v.length > 1)) add('SNG-03', 'Error', id);
-  if (problems.bracket) add('SNG-05', 'Warning', id);
-  if (problems.envError) add('SNG-06', 'Error', id);
-  if (unknown.size) add('SNG-07', 'Info', id);
-  if (problems.chordName) add('SNG-08', 'Warning', id);
-  if (lines.length === 0) add('SNG-09', 'Error', id);
+  const song = title || id;                             // messages name a song by its title (FDS section 9)
+  const at = (key, more) => ({ song, ...problems.at[key], ...more });
+  if (problems.malformed) add('SNG-04', 'Error', id, at('malformed'));
+  if (!title) add('SNG-02', 'Error', id, { folder: id });
+  const twice = [...meta].find(([k, v]) => SINGLE.has(k) && v.length > 1);
+  if (twice) add('SNG-03', 'Error', id, { song, directive: twice[0], line: metaLines.get(twice[0])[1] });
+  if (problems.bracket) add('SNG-05', 'Warning', id, at('bracket'));
+  if (problems.envError) add('SNG-06', 'Error', id, at('envError', { line: problems.at.envError.start || problems.at.envError.line }));
+  if (unknown.size) {
+    const [directive, line] = [...unknownAt].sort((a, b) => a[1] - b[1])[0];
+    add('SNG-07', 'Info', id, { song, directive, line, count: unknown.size });
+  }
+  if (problems.chordName) add('SNG-08', 'Warning', id, at('chordName'));
+  if (lines.length === 0) add('SNG-09', 'Error', id, { song });
   const lang = get('language');
-  if (lang.length !== 1 || !isLanguageTag(lang[0])) add('SNG-11', 'Error', id);
-  if (get('id').length !== 1 || get('id')[0] !== id) add('SNG-12', 'Info', id);
-  if (problems.chorusEarly) add('SNG-13', 'Error', id);
-  if (problems.newSong) add('SNG-14', 'Error', id);
-  if (get('redistribute').some((v) => v !== 'yes' && v !== 'no') || get('year').some((v) => !/^\d{4}$/.test(v))
-      || [...get('variant-group'), ...get('tag')].some((v) => !isSongId(v))) {
-    add('SNG-15', 'Error', id);
-  }
-  const recommended = (get('lyricist').length || get('composer').length) && get('copyright').length
-    && get('license').length && get('source').length && get('tag').length;
-  if (!recommended || get('license').some((v) => !SONG_LICENSE.test(v))) add('SNG-16', 'Warning', id);
-  if ([...title].length > 60 || lines.some((l) => [...l].length > 120) || lines.length > 254 || bytes.length > SONG_RECOMMENDED) {
-    add('SNG-17', 'Warning', id);
-  }
+  if (lang.length !== 1 || !isLanguageTag(lang[0])) add('SNG-11', 'Error', id, { song });
+  if (get('id').length !== 1 || get('id')[0] !== id) add('SNG-12', 'Info', id, { folder: id });
+  if (problems.chorusEarly) add('SNG-13', 'Error', id, at('chorusEarly'));
+  if (problems.newSong) add('SNG-14', 'Error', id, { song, ...problems.at.newSong });
+  // SNG-15: the first value that breaks its rule, with its directive and line
+  const badValue = [
+    ['redistribute', (v) => v !== 'yes' && v !== 'no'], ['year', (v) => !/^\d{4}$/.test(v)],
+    ['variant-group', (v) => !isSongId(v)], ['tag', (v) => !isSongId(v)],
+  ].flatMap(([k, bad]) => get(k).map((v, i) => (bad(v) ? { directive: k, value: v, line: metaLines.get(k)[i] } : null)))
+    .filter(Boolean).sort((a, b) => a.line - b.line)[0];
+  if (badValue) add('SNG-15', 'Error', id, { song, ...badValue });
+  // SNG-16: the first recommended field that is missing, or the licence that is not valid
+  const missing = !(get('lyricist').length || get('composer').length) ? 'fieldWho' : !get('copyright').length ? 'fieldCopyright'
+    : !get('license').length || get('license').some((v) => !SONG_LICENSE.test(v)) ? 'fieldLicense'
+      : !get('source').length ? 'fieldSource' : !get('tag').length ? 'fieldTag' : null;
+  if (missing) add('SNG-16', 'Warning', id, { song, field: missing });
+  const what = [
+    [...title].length > 60 ? 'title' : null, lines.some((l) => [...l].length > 120) ? 'line' : null,
+    lines.length > 254 ? 'lines' : null, bytes.length > SONG_RECOMMENDED ? 'size' : null,
+  ].filter(Boolean);
+  if (what.length) add('SNG-17', 'Warning', id, { song, what });
   return title || null;
 }
 
@@ -85,29 +98,33 @@ function deepEqual(a, b, depth = 0) {
 }
 
 /** Song format 4.3, L002 to L006, for the view's zangbundel.json (VIEW-03). */
-function viewLibraryOk(bytes) {
+/** VIEW-03: what an app of PF-41's version would refuse in the view's zangbundel.json (L002 to L006),
+ *  named by its field for message M-38, or null when it accepts it. */
+function viewProblem(bytes) {
   let v;
   try {
     v = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
   } catch {
-    return false;                                       // L002
+    return 'JSON';                                      // L002
   }
   const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x);
-  if (!isObj(v) || ['format', 'format_version', 'id', 'name', 'description', 'min_app_version'].some((k) => typeof v[k] !== 'string')) return false;
-  if (!isObj(v.maintainer) || typeof v.maintainer.name !== 'string' || !(v.maintainer.email || v.maintainer.url)) return false;
-  if (!isObj(v.license) || ['id', 'file', 'summary'].some((k) => typeof v.license[k] !== 'string')) return false;
-  if (v.format !== 'zangbundel-library') return false;                       // L003
-  if (!/^1\.\d+$/.test(v.format_version)) return false;                      // L004
+  if (!isObj(v)) return 'JSON';
+  const missing = ['format', 'format_version', 'id', 'name', 'description', 'min_app_version'].find((k) => typeof v[k] !== 'string');
+  if (missing) return missing;
+  if (!isObj(v.maintainer) || typeof v.maintainer.name !== 'string' || !(v.maintainer.email || v.maintainer.url)) return 'maintainer';
+  if (!isObj(v.license) || ['id', 'file', 'summary'].some((k) => typeof v.license[k] !== 'string')) return 'license';
+  if (v.format !== 'zangbundel-library') return 'format';                    // L003
+  if (!/^1\.\d+$/.test(v.format_version)) return 'format_version';           // L004
   const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(v.min_app_version);
-  if (!m) return false;                                                       // L005
+  if (!m) return 'min_app_version';                                           // L005
   const want = m.slice(1).map(Number);
   for (let i = 0; i < 3; i++) {
     if (want[i] !== VIEW_APP_VERSION[i]) {
-      if (want[i] > VIEW_APP_VERSION[i]) return false;
+      if (want[i] > VIEW_APP_VERSION[i]) return 'min_app_version';
       break;
     }
   }
-  return isSongId(v.id);                                                      // L006
+  return isSongId(v.id) ? null : 'id';                                        // L006
 }
 
 function sameBytes(a, b) {
@@ -127,7 +144,9 @@ async function sha256hex(bytes) {
 export async function validateLibrary(bytes, options = {}) {
   const verify = options.verify || strictVerify;
   const findings = [];
-  const add = (code, severity, where) => findings.push(where == null ? { code, severity } : { code, severity, where });
+  // params: the details the finding's message needs (FDS section 9 placeholders; EDT-40: the line)
+  const add = (code, severity, where, params) => findings.push({ code, severity, ...(where == null ? {} : { where }),
+    ...(params ? { params } : {}) });
   const fatal = (e) => {
     if (e instanceof ZipError) {
       return { findings: [{ code: e.code, severity: 'Fatal', ...(e.where ? { where: e.where } : {}) }], fatal: true };
@@ -156,13 +175,13 @@ export async function validateLibrary(bytes, options = {}) {
 
   // ---- PKG-09: above the sharing threshold (a Warning; checked on opening and on save)
   if (bytes.length > SHARING) {
-    add('PKG-09', 'Warning');
+    add('PKG-09', 'Warning', undefined, { size: (bytes.length / (1024 * 1024)).toFixed(1) });
   }
 
   // ---- PKG-08: ignored system files, set aside before any other rule
   const kept = entries.filter((e) => !isIgnored(e.name));
   if (kept.length < entries.length) {
-    add('PKG-08', 'Info');
+    add('PKG-08', 'Info', undefined, { count: entries.length - kept.length });
   }
 
   // All paths, with the folders they imply.
@@ -216,7 +235,7 @@ export async function validateLibrary(bytes, options = {}) {
   }
   for (const names of children.values()) {
     for (const group of caseClashes(names)) {
-      add('PKG-07', 'Error', group.join(', '));
+      add('PKG-07', 'Error', group.join(', '), { name1: group[0], name2: group[1] });
     }
   }
 
@@ -263,7 +282,8 @@ export async function validateLibrary(bytes, options = {}) {
     if (c.dirs.length) add('STR-07', 'Error', where);
     if (!c.files.includes(own)) add('STR-05', 'Error', where);
     if (chos.length > 1) add('STR-06', 'Error', where);      // a second .cho is STR-06 only (O-11)
-    if (c.files.some((f) => !f.endsWith('.cho'))) add('STR-08', 'Error', where);
+    const other = c.files.find((f) => !f.endsWith('.cho'));
+    if (other !== undefined) add('STR-08', 'Error', where, { folder: id, name: other });
     if (c.files.includes(own)) {
       songs.push({ id, path: `${where}/${own}` });
     }
@@ -274,16 +294,18 @@ export async function validateLibrary(bytes, options = {}) {
 
   // ---- SNG: every songs/<id>/<id>.cho; SNG-10 over the titles of the library
   const titles = new Map();
+  const titleOf = new Map();                          // song id -> its title, for messages
   for (const song of songs) {
     const title = checkSong(song.id, rel.get(song.path), add);
     if (title) {
+      titleOf.set(song.id, title);
       const k = title.toLowerCase();
       titles.set(k, [...(titles.get(k) || []), song.id]);
     }
   }
   for (const ids of titles.values()) {
     if (ids.length > 1) {
-      add('SNG-10', 'Warning', [...ids].sort(compareOrdinal).join(', '));
+      add('SNG-10', 'Warning', [...ids].sort(compareOrdinal).join(', '), { title: titleOf.get(ids[0]) });
     }
   }
 
@@ -361,24 +383,27 @@ export async function validateLibrary(bytes, options = {}) {
   const seenNames = new Set();
   for (const set of sets) {
     const name = set.name;
-    if (set.songs.some((id) => !folderIds.has(id))) add('SET-01', 'Error', name);
+    const unknownSong = set.songs.find((id) => !folderIds.has(id));
+    if (unknownSong !== undefined) add('SET-01', 'Error', name, { set: name, song: unknownSong });
     if (seenNames.has(name.toLowerCase())) add('SET-02', 'Error', name);
     seenNames.add(name.toLowerCase());
     if (set.songs.length === 0) add('SET-03', 'Warning', name);
-    if (new Set(set.songs).size !== set.songs.length) add('SET-04', 'Warning', name);
-    if (set.songs.length > 200) add('SET-05', 'Warning', name);
+    const again = set.songs.find((id, i) => set.songs.indexOf(id) !== i);
+    if (again !== undefined) add('SET-04', 'Warning', name, { set: name, song: again });
+    if (set.songs.length > 200) add('SET-05', 'Warning', name, { set: name, count: set.songs.length });
   }
 
   // ---- VIEW (6.8): the 1.1 view against the manifest (Info in the Editor; it writes a new view)
   const want = new Set(['zangbundel.json', 'LICENSE', ...sets.map((_, i) => `setlists/set-${i + 1}.zbs`)]);
   const have = new Set([...rel.keys()].filter((p) => p === 'zangbundel.json' || p === 'LICENSE' || p.startsWith('setlists/')));
   if (want.size !== have.size || [...want].some((p) => !have.has(p))) {
-    add('VIEW-01', 'Info');
+    add('VIEW-01', 'Info', undefined, { names: [...want].filter((p) => !have.has(p)).sort(compareOrdinal).join(', ') });
   }
   const lic = m.license !== null && typeof m.license === 'object' ? m.license : {};
   const view = rel.get('zangbundel.json');
   if (view !== undefined) {
-    if (!viewLibraryOk(view)) add('VIEW-03', 'Info', 'zangbundel.json');
+    const reason = viewProblem(view);
+    if (reason) add('VIEW-03', 'Info', 'zangbundel.json', { reason });
     let v = null;
     try {
       v = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(view));
