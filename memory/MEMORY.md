@@ -117,4 +117,10 @@
     - Findings now carry `params` (line, directive, chord, value, field, what, count, size, names, reason, song, set, title). `chordpro.parseSong` also returns problems.at, metaLines and unknownAt.
     - The container's run.sh copies design/FDS.md to /tmp/design for check.test.mjs.
     - The owner should review the nl/de message translations.
-  - Next: M4 exit (the owner looks at the shell beside the mock); then M5 (editing) or M6 (open/save), which make the screens usable.
+  - M6.1 done (uncommitted).
+    - `session.js` (createSession({client}): open(file), create, recheck, close; state library, songs, findings, converted, dirty, busy) and `library-ui.js` (pickFile, openFailedDialog, convertedDialog, newLibraryDialog, closeConfirm).
+    - The worker's `open` and `check` return `songs` [{id, title}]. `check` drops VIEW findings.
+    - `openDialog` returns {dlg, close}; actions get `close`. Always close through it, never dlg.close(), or a stale <dialog> lingers in the pane.
+    - Browser test of opening: stub HTMLInputElement.prototype.click for type=file, then set input.files via DataTransfer and dispatch change.
+    - The owner still owes the M4 exit look (the shell beside the mock).
+  - Next: M6.2 *Downloaden* (version rule, change note, M-63 block, blob download with zbm-download?); then M6.3 and M6.4.

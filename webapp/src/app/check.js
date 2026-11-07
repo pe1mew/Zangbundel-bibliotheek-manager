@@ -84,8 +84,8 @@ export function checkContent(lang, findings, onGoto) {
 
 /** Open *Controle*. onGoto(finding) closes it and goes to the finding's place (EDT-41). */
 export function checkDialog(lang, findings, onGoto) {
-  let dlg = null;
-  dlg = openDialog({ title: t(lang, 'checkTitle'), sub: t(lang, 'checkCounts', counts(findings)), wide: true, closeLabel: t(lang, 'close') },
-    checkContent(lang, findings, (f) => { dlg.close(); if (onGoto) onGoto(f); }));
-  return dlg;
+  let opened = null;
+  opened = openDialog({ title: t(lang, 'checkTitle'), sub: t(lang, 'checkCounts', counts(findings)), wide: true, closeLabel: t(lang, 'close') },
+    checkContent(lang, findings, (f) => { opened.close(); if (onGoto) onGoto(f); }));
+  return opened;
 }

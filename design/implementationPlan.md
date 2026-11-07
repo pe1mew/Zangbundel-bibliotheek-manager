@@ -407,6 +407,28 @@ Each milestone ends with its exit checks passing and the result written to `desi
 
 **Exit:** libraries made and signed by the manager pass the independent checker `test-libraries/check_test_libraries.py` (written as new cases), and import in the Songbook app on a test phone; SC-06 and SC-07 for a full edit, sign and download cycle.
 
+**State (2026-11-07).** M6.1 is done.
+- **`app/session.js`** holds the open library, its song titles, its findings and whether it has changes not yet downloaded. It speaks to the library worker through `library-client.js`.
+- **`app/library-ui.js`:**
+  - **The file picker (GD-28):** a hidden file input; the bytes go to the worker.
+  - **A file that cannot be opened (EDT-20):** its Fatal findings in the FDS's messages. A file above 64 MiB is refused before it is read.
+  - **A converted ZIP (EDT-25, EDT-26):** the report of M-41 and M-42, and what was left out.
+  - ***Nieuw* (EDT-10):** title and optional description.
+  - ***Sluiten* with changes not yet downloaded:** the question of M-60 (EDT-03).
+- **On screen:** the right bar shows the library's title, version, signing status and songs by title; *Controle* gets its findings.
+- **The library worker gained:**
+  - `check`: the findings of the library as it would be saved, without the VIEW rules, which concern a stored file (EDT-42);
+  - a song summary, so the main thread never parses a song (SR-30).
+- **`dialog.js`:** action buttons, and dialogs are taken out of the page at once when the app closes them; the browser's own close event can come late.
+- **Tested:** `tests/unit/session.test.mjs` has 5 tests with the real handler.
+- **In the browser pane, through the bundled library worker under the SR-20 CSP:**
+  - `valid-unsigned` opened with its four songs and *Controle* 0/1;
+  - a new library listed licence, maintainer and no songs;
+  - *Sluiten* closed it, and a file that is not a ZIP was refused with M-01;
+  - browser storage stayed empty and the console clean.
+- **Not yet in the browser:** the conversion report; the unit tests cover it.
+- **Waiting:** *Ga naar* targets (M5) and *Downloaden* (M6.2).
+
 ### M7 — Hardening and test release (M)
 
 | # | Work | Requirements |

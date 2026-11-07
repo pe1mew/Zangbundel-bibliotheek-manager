@@ -2,7 +2,7 @@
 // The library worker's work, as a plain module so it can be tested without a browser
 // (securityAssessment SR-30; implementationPlan M2.8). library-worker.js wires it to messages.
 //
-// Request  { id, op, payload }            op: 'validate' | 'open' | 'save' | 'copy' | 'new'
+// Request  { id, op, payload }            op: 'validate' | 'open' | 'check' | 'save' | 'copy' | 'new'
 // Response { id, ok: true, result }  or  { id, ok: false, error }
 //
 // Every library byte is read here, never on the main thread. Results are structured data only
@@ -13,6 +13,12 @@
 
 import { validateLibrary } from '../core/validate.js';
 import { copyLibrary, newLibrary, openLibrary, saveLibrary } from '../core/library.js';
+import { parseSong } from '../core/chordpro.js';
+
+/** The songs as the screens list them: { id, title }, read here so the main thread never parses a song (SR-30). */
+export function songSummary(library) {
+  return [...library.songs].map(([id, text]) => ({ id, title: text === null ? null : (parseSong(text).meta.get('title') || [null])[0] }));
+}
 
 const SIGN_TIMEOUT_MS = 10000;
 
@@ -58,7 +64,21 @@ export async function handleMessage(message) {
       case 'validate':
         return { id, ok: true, result: validation(await validateLibrary(payload.bytes)) };
       case 'open':
-        return { id, ok: true, result: await openLibrary(payload.bytes) };
+      {
+        const r = await openLibrary(payload.bytes);
+        return { id, ok: true, result: r.library ? { ...r, songs: songSummary(r.library) } : r };
+      }
+      case 'check': {
+        // EDT-42: the findings of the library as it would be saved now, without the file. A signed
+        // library is built only with its key (M6.3); until then the findings of its opening stand.
+        const songs = songSummary(payload.library);
+        if (payload.library.author) return { id, ok: true, result: { findings: null, songs } };
+        const r = await saveLibrary(payload.library, { changed: true, now: payload.now });
+        // The VIEW rules are about the view inside a stored file; the Editor writes a new view on every save, so for
+        // the library being edited they would only repeat MAN-07 or MAN-08 (a view cannot be written without them).
+        const findings = r.findings.filter((f) => !f.code.startsWith('VIEW-'));
+        return { id, ok: true, result: { findings, reason: findings.length ? null : r.reason, songs } };
+      }
       case 'save':
         return { id, ok: true, result: await saveLibrary(payload.library, { changed: payload.changed, now: payload.now, changes: payload.changes,
           signer: payload.signer ? portSigner(payload.signer) : undefined }) };

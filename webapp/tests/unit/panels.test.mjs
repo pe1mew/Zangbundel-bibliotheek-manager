@@ -56,17 +56,20 @@ test('SR-52: the privacy statement in the interface language; extLink refuses an
   assert.throws(() => extLink('javascript:alert(1)', 'x'), /https/);
 });
 
-test('GD-04, GD-14: the bottom bar draws every group; buttons that wait for M5/M6 are disabled and say why', () => {
+test('GD-04, GD-14: the bottom bar draws every group; buttons that wait for M5/M6 or a library are disabled and say why', () => {
   const calls = [];
-  const items = bottomBar({ lang: 'nl', onLanguage: () => calls.push('lang'), onAndroid: () => calls.push('android'), onAbout: () => calls.push('about') });
+  const items = bottomBar({ lang: 'nl', onLanguage: () => calls.push('lang'), onAndroid: () => calls.push('android'), onAbout: () => calls.push('about'),
+    onOpen: () => calls.push('open'), onNew: () => calls.push('new'), onClose: () => calls.push('close') });
   const buttons = items.flatMap((n) => [...walk(n)]).filter((n) => n.tag === 'button');
   assert.equal(buttons.length, 13);                  // 5 library, Controle, 4 key, Android, language, Over
   const waiting = buttons.filter((b) => 'disabled' in b.attrs);
-  assert.equal(waiting.length, 10);
+  assert.equal(waiting.length, 8);                  // edit, download, close (no library), Controle, 4 key buttons
   for (const b of waiting) assert.ok(b.attrs.title && b.attrs.title.includes(':'), b.attrs.title);
   const working = buttons.filter((b) => !('disabled' in b.attrs));
   working.forEach((b) => b.listeners.click());
-  assert.deepEqual(calls, ['android', 'lang', 'about']);
-  assert.match(working[1].attrs['aria-label'], /^Taal: Nederlands/);
+  assert.deepEqual(calls, ['open', 'new', 'android', 'lang', 'about']);
+  assert.match(working[3].attrs['aria-label'], /^Taal: Nederlands/);
+  const open = bottomBar({ lang: 'nl', hasLibrary: true, findings: [], onClose: () => {}, onCheck: () => {} }).flatMap((n) => [...walk(n)]).filter((n) => n.tag === 'button');
+  assert.equal(open.filter((b) => 'disabled' in b.attrs).length, 6);   // with a library: Sluiten and Controle work
   assert.ok(items.flatMap((n) => [...walk(n)]).some((n) => n.text === 'geen sleutel'));   // GD-14: no key yet
 });

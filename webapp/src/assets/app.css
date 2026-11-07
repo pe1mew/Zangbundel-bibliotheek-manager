@@ -63,6 +63,20 @@ h3 { font-size: 13px; color: var(--secondary); text-transform: uppercase; letter
 .left, .right { overflow-x: hidden; }
 .libhead { padding: 20px 20px 12px; border-bottom: 1px solid var(--line); }
 .libhead h3 { margin: 0; }
+.libhead .title { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 6px; overflow-wrap: anywhere; }
+.libhead .small { margin-top: 2px; }
+svg.inl { width: 18px; height: 18px; fill: var(--secondary); flex: none; }
+.listhead { padding: 14px 20px 0; margin: 0; }
+.songlist { list-style: none; margin: 0; padding: 8px 0; }
+.song { padding: 10px 20px; border-left: 4px solid transparent; overflow-wrap: anywhere; }
+.song .t { font-size: 16px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 13px; color: var(--secondary); margin-bottom: 4px; }
+.field input, .field textarea {
+  width: 100%; min-height: 44px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--grey);
+  background: var(--bg); color: var(--white); font: inherit;
+}
+.field input:focus, .field textarea:focus { outline: none; border: 2px solid var(--fire-orange); padding: 7px 11px; }
 
 /* GD-03: during the splash the bars are greyed and do nothing */
 .app.onsplash .left, .app.onsplash .right, .app.onsplash .bottom { opacity: .35; }

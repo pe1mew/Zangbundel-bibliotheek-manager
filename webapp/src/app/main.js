@@ -4,11 +4,17 @@
 // the bars greyed (GD-03, GD-27, GD-30), then the home screen's primary actions; a page of its own
 // in a window narrower than 980 px (GD-32). The language switches at once (GD-17, M4.2).
 // M4.4: the bottom bar's groups, the *Android-app* panel and *Over* (panels.js).
+// M6.1: a library is opened, started and closed (session.js, library-ui.js); the right bar shows it
+// and *Controle* its findings. Editing (M5) and downloading (M6.2) come next.
 
 import { el, extLink, icon, replace } from './dom.js';
 import { createLanguage, t } from './i18n.js';
 import { createLayout } from './layout.js';
 import { aboutDialog, androidContent, androidDialog, bottomBar, privacyUrl } from './panels.js';
+import { checkDialog } from './check.js';
+import { createLibraryClient } from './library-client.js';
+import { createSession } from './session.js';
+import { closeConfirm, convertedDialog, newLibraryDialog, openFailedDialog, pickFile } from './library-ui.js';
 import { VERSION } from './version.js';
 
 const SPLASH_MS = 3000;   // GD-27
@@ -42,27 +48,51 @@ function splash(lang, onDone) {
   return node;
 }
 
-/** A primary action (GD-03). Until the library screens exist (M5, M6), each says why it waits. */
-function tile(name, title, sub, why) {
-  return el('button', { type: 'button', class: 'tile', disabled: true, title: why }, [
+/** A primary action (GD-03); one that waits for a later step says why. */
+function tile(name, title, sub, { onClick, why } = {}) {
+  return el('button', { type: 'button', class: 'tile', disabled: !onClick, title: why || title, on: onClick ? { click: onClick } : undefined }, [
     icon(name),
-    el('span', { class: 'tiletext' }, [el('b', {}, [title]), el('span', {}, [sub]), el('span', { class: 'why' }, [why])]),
+    el('span', { class: 'tiletext' }, [el('b', {}, [title]), el('span', {}, [sub]), why ? el('span', { class: 'why' }, [why]) : null]),
   ]);
 }
 
 /** GD-03: the home screen's primary actions in the centre. */
-function home(lang) {
+function home(lang, { onOpen, onNew, busy }) {
+  const soon = t(lang, 'tileSoon');
   return el('div', { class: 'home' }, [
     el('h1', {}, [t(lang, 'homeTitle')]),
     el('p', { class: 'muted' }, [t(lang, 'homeLead')]),
     el('div', { class: 'tiles' }, [
-      tile('open', t(lang, 'tileOpen'), t(lang, 'tileOpenSub'), t(lang, 'tileSoon')),
-      tile('add', t(lang, 'tileNew'), t(lang, 'tileNewSub'), t(lang, 'tileSoon')),
-      tile('edit', t(lang, 'tileEdit'), t(lang, 'tileNeedLib'), t(lang, 'tileSoon')),
-      tile('download', t(lang, 'tileDownload'), t(lang, 'tileNeedLib'), t(lang, 'tileSoon')),
+      tile('open', t(lang, 'tileOpen'), busy ? t(lang, 'opening') : t(lang, 'tileOpenSub'), { onClick: busy ? null : onOpen }),
+      tile('add', t(lang, 'tileNew'), t(lang, 'tileNewSub'), { onClick: busy ? null : onNew }),
+      tile('edit', t(lang, 'tileEdit'), t(lang, 'tileNeedLib'), { why: soon }),
+      tile('download', t(lang, 'tileDownload'), t(lang, 'tileNeedLib'), { why: soon }),
     ]),
     el('p', { class: 'note' }, [t(lang, 'privacy')]),
   ]);
+}
+
+/** The right bar: the library's head and its songs by title (the full song list of GD-13 is M5.1). */
+function rightBar(lang, state) {
+  const lib = state.library;
+  if (!lib) {
+    return [el('div', { class: 'libhead' }, [el('h3', {}, [t(lang, 'songs')])]), el('p', { class: 'empty' }, [t(lang, 'noLibrary')])];
+  }
+  const status = [
+    lib.isNew ? t(lang, 'newUnsaved') : t(lang, 'versionN', { v: lib.version }),
+    lib.author ? t(lang, 'signedBy', { name: lib.author.name }) : t(lang, 'unsigned'),
+  ].join(' · ');
+  const songs = [...state.songs].sort((a, b) => (a.title || a.id).localeCompare(b.title || b.id, lang));
+  return [
+    el('div', { class: 'libhead' }, [
+      el('div', { class: 'title' }, [lib.author ? icon('lock', 'inl') : null, lib.title]),
+      el('div', { class: 'muted small' }, [status]),
+    ]),
+    el('h3', { class: 'listhead' }, [`${t(lang, 'songs')} (${songs.length})`]),
+    songs.length
+      ? el('ul', { class: 'songlist' }, songs.map((s) => el('li', { class: 'song' }, [el('span', { class: 't' }, [s.title || t(lang, 'noTitle')])])))
+      : el('p', { class: 'empty' }, [t(lang, 'libEmpty')]),
+  ];
 }
 
 /** GD-32: shown instead of the main screen in a window narrower than 980 px (CSS decides), with the
@@ -82,27 +112,47 @@ function start() {
   const root = document.getElementById('app');
   const language = createLanguage({ preferred: navigator.languages });
   const layout = createLayout({ getLang: language.get });
+  const session = createSession({ client: createLibraryClient() });
   const narrow = el('div', { class: 'narrow' }, []);
   const banner = isTestInstance(location.hostname)
     ? el('div', { class: 'testbanner', role: 'note', lang: 'nl' }, [TEST_BANNER])
     : null;
   let screen = 'splash';
 
+  // ---- the session's actions (FDS 7.1 to 7.3)
+  const onOpen = () => pickFile(async (file) => {
+    let r;
+    try {
+      r = await session.open(file);
+    } catch {
+      r = { ok: false, findings: [] };
+    }
+    if (!r.ok) openFailedDialog(language.get(), file.name, r.findings);
+    else if (r.converted) convertedDialog(language.get(), r.converted);
+  });
+  const onNew = () => newLibraryDialog(language.get(), (title, description) => session.create(title, description));
+  const onClose = () => (session.get().dirty ? closeConfirm(language.get(), () => session.close()) : session.close());
+  const onCheck = () => checkDialog(language.get(), session.get().findings || [], () => {});   // Ga naar: the targets come with M5
+
   const render = () => {
     const lang = language.get();
+    const state = session.get();
     document.documentElement.lang = lang;
-    document.title = t(lang, 'appName');
+    document.title = state.library ? `${state.library.title} · ${t(lang, 'appName')}` : t(lang, 'appName');
     layout.setSplash(screen === 'splash');
-    replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); }) : home(lang));
-    replace(layout.right, el('div', { class: 'libhead' }, [el('h3', {}, [t(lang, 'songs')])]),
-      el('p', { class: 'empty' }, [t(lang, 'noLibrary')]));
-    replace(layout.left, el('p', { class: 'empty' }, [t(lang, 'tileNeedLib')]));
+    replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); })
+      : home(lang, { onOpen, onNew, busy: state.busy }));
+    replace(layout.right, ...rightBar(lang, state));
+    replace(layout.left, el('p', { class: 'empty' }, [t(lang, state.library ? 'libHomeLead' : 'tileNeedLib')]));
     replace(layout.bottom, ...bottomBar({ lang, onLanguage: () => language.next(),
-      onAndroid: () => androidDialog(language.get()), onAbout: () => aboutDialog(language.get()) }));
+      onAndroid: () => androidDialog(language.get()), onAbout: () => aboutDialog(language.get()),
+      onOpen, onNew, onClose, onCheck, hasLibrary: Boolean(state.library), busy: state.busy,
+      findings: state.library ? state.findings || [] : null }));
     replace(narrow, narrowPage(lang));
   };
   replace(root, banner, layout.app, narrow);
   language.onChange(render);                              // GD-17: at once, without losing work
+  session.onChange(render);
   render();
 }
 

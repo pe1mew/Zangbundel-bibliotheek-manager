@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M6.1: opening, starting and closing a library** (`design/implementationPlan.md`).
+  - ***Openen*:** reads a `.zbl` or ZIP in the library worker. A file it refuses gets the reason in the FDS's messages; a converted ZIP gets its report (M-41, M-42).
+  - ***Nieuw*:** starts an empty library. ***Sluiten*** asks first when there are changes (M-60).
+  - **On screen:** the right bar shows the open library and its songs; *Controle* shows its findings.
+  - **Code:** `app/session.js`, `app/library-ui.js`; the worker gained `check` and a song summary.
+  - **Tests:** `tests/unit/session.test.mjs` has 5 tests; `node --test` 284 of 284. Checked in the browser with real test libraries.
+  - **Container test:** its release check now accepts worker bundles next to `main` (hashed names in `assets/` only); 81 of 81.
 - **M4.5: *Controle*, the validation panel** (`design/implementationPlan.md`).
   - **The panel:** findings grouped by severity with counts, each with its song and line and its message; a click goes there (EDT-40, EDT-41; GD-20, GD-29).
   - **Messages:** `app/messages.js` holds the 53 rule messages of FDS section 9. The English is verbatim from the FDS; Dutch and German are translations for review.

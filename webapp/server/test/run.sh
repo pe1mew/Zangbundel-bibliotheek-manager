@@ -60,7 +60,7 @@ check "trial build of test-holding" \
   python3 /repo/webapp/tools/build.py build --src /repo/webapp/test-holding --name test-holding --version 0.1.0 --out $W/dist/test-holding-0.1.0 --allow-dirty
 check "trial build of the manager (bundled, TD-22)" \
   python3 /repo/webapp/tools/build.py build --src /repo/webapp/src --name manager --version "$(sed -n "s/^export const VERSION = '\\(.*\\)';/\\1/p" /repo/webapp/src/app/version.js)" --out $W/dist/manager --allow-dirty
-check "manager release holds a bundle, no JS source" sh -c "ls $W/dist/manager/assets/main.*.js && test \$(find $W/dist/manager -name '*.js' | wc -l) -eq 1"
+check "manager release holds bundles only, no JS source (main + workers, hashed names in assets/)" sh -c "ls $W/dist/manager/assets/main.*.js && test -z \"\$(find $W/dist/manager -name '*.js' | grep -Ev '/assets/[a-z-]+\.[0-9a-f]{12}\.js\$')\""
 check "a second build of the manager is byte-identical (SR-10)" sh -c "python3 /repo/webapp/tools/build.py build --src /repo/webapp/src --name manager --version \$(sed -n \"s/^export const VERSION = '\\\\(.*\\\\)';/\\\\1/p\" /repo/webapp/src/app/version.js) --out /tmp/manager2 --allow-dirty >/dev/null && diff -r $W/dist/manager /tmp/manager2"
 check "sign and pack manager" bash $W/tools/sign-release.sh $W/dist/manager $W/rk/test-release
 for n in placeholder test-holding; do

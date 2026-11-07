@@ -37,6 +37,7 @@ test('every text exists in every language, non-empty, with the same placeholders
       assert.ok(typeof TEXTS[lang][k] === 'string' && TEXTS[lang][k].trim(), `${lang}.${k}`);
       assert.equal(holes(TEXTS[lang][k]), holes(TEXTS.nl[k]), `placeholders of ${lang}.${k}`);
       assert.doesNotMatch(TEXTS[lang][k], /<[a-z/!]/i, `no markup in ${lang}.${k}`);      // plain text only (SR-32)
+      assert.doesNotMatch(TEXTS[lang][k], /\b(FDS|EDT-\d|GD-\d|SR-\d|M-\d)/, `no design reference in ${lang}.${k}`);
     }
   }
   for (const k of ['mockPicker', 'downloaded', 'playTm']) assert.equal(TEXTS.nl[k], undefined, `${k} is mock-only`);
