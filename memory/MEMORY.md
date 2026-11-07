@@ -67,3 +67,9 @@
   - Browser check method: a temporary page in webapp/src, `build.py --out <scratchpad>`, served by a scratch CSP server through a temporary launch.json entry; all removed after.
   - **Open:** SC-05 in Firefox, Safari and Edge.
   - **Owner gave SSH access to contabo6 as `remko@rfsee.net`** (keys set up, 2026-11-07): use it only for steps the owner asks for.
+- **2026-11-07: runbook step 4 done on contabo6** (`ssh rfsee.net`, host vmi3462578, Ubuntu 24.04.5, nginx 1.24.0, certbot 2.9.0).
+  - `sudo` needs a password, so I prepare a script in `~/zbm/` and the owner runs `ssh -t rfsee.net 'sudo bash ~/zbm/<script>'`. I check read-only afterwards.
+  - sshd has `AllowUsers remko`, so zbm-deploy must be added in step 3/4.
+  - contabo6 now has IPv6 `2a02:c207:2346:2578::1`.
+  - The local Windows resolver cached the old `127.0.0.1` for zangbundel.nl (one-day TTL): test with `curl --resolve`.
+  - Next: the owner's step 3 (keys, git tag signing), then step 5 (certbot).

@@ -61,7 +61,7 @@ Directories: `/srv/zangbundel/releases/` and `/srv/zangbundel-test/releases/` (r
 
 - **Delete the parked records** the domain came with: `mail` (A `127.0.0.1`), and the CNAMEs `ftp`, `webmail` and `www`. nginx serves no such names and the certificates do not cover them.
 - **Port 25 must stay closed.** Without an MX, a sender tries the A record. Check from outside: `nc -vz -w 5 169.58.68.107 25` must be refused or time out.
-- **AAAA only if IPv6 works.** contabo6 publishes no IPv6 address today. Add AAAA records only when `ip -6 addr show scope global` shows one and `curl -6 https://zangbundel.nl/` works from another network. A broken AAAA record is worse than none.
+- **AAAA only if IPv6 works.** contabo6 had no IPv6 address on 2026-11-06; on 2026-11-07 it showed `2a02:c207:2346:2578::1`, and nginx listens on `[::]:80` and `[::]:443`, so the check below decides. Add AAAA records only when `ip -6 addr show scope global` shows one and `curl -6 https://zangbundel.nl/` works from another network. A broken AAAA record is worse than none.
 - **CAA covers `test.zangbundel.nl` as well**, because CAA is inherited by subdomains.
 - **Check.** `dig +dnssec zangbundel.nl A MX TXT CAA`, `dig test.zangbundel.nl A`, `dig _dmarc.zangbundel.nl TXT`. Then check the DNSSEC chain at https://dnsviz.net/d/zangbundel.nl/dnssec/.
 
@@ -149,6 +149,21 @@ If `sshd_config` has an `AllowUsers` or `AllowGroups` line, add `zbm-deploy` to 
 ln -s ../sites-available/zangbundel-http.conf /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
 ```
+
+*Done 2026-11-07, except what needs step 3.* The owner ran the commands above as one script (`sudo bash ~/zbm/install-step4.sh`, written from this step).
+- **Checked afterwards:**
+  - the installed files equal this folder byte for byte, with the modes and owners of *What goes where*;
+  - both users exist;
+  - `htpasswd` is present, and nginx reloaded cleanly.
+- **From outside:**
+  - `http://zangbundel.nl/` and `http://test.zangbundel.nl/` redirect to `https://` with path and query;
+  - `/.well-known/acme-challenge/` is served from `/var/www/acme`;
+  - `Server: nginx` shows no version;
+  - the log keeps anonymised addresses only.
+- **Still open, after step 3:**
+  - `/etc/zangbundel/allowed_signers`;
+  - the deploy key in `authorized_keys`;
+  - `zbm-deploy` added to `AllowUsers remko` in `/etc/ssh/sshd_config`.
 
 ## 5. Certificates (M0.3, SR-01, SR-03)
 
