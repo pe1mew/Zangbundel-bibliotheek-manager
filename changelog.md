@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M2.8: the library worker** (`design/implementationPlan.md` draft 0.14). Every library byte is now read in a Web Worker, which returns structured data only (SR-30).
+  - **`src/workers/library-handler.js` and `library-worker.js`:** validate, open, save, copy and new.
+  - **`src/app/library-client.js`** starts the worker through the Trusted Types policy `zbm-worker` (`src/app/trusted.js`, TD-23). After 20 s it ends the worker with PKG-02 (M-02), and the next request starts a new one (SR-31).
+  - **Tested** with the real handler behind a fake worker. In the browser pane, a scratch page under the full CSP ran the bundled worker through the policy, and a raw `new Worker()` was refused.
+- **M2.9: fuzzing of the ZIP and ChordPro readers** (SR-35, SC-11). `webapp/tests/fuzz.mjs` mutates the test libraries; every input must give findings, never throw, within 2 s.
+  - **Long run:** 20,000 libraries and 2,000 songs with 0 failures, slowest 577 ms, at most 296 MB.
+  - **Short run:** every `node --test` runs a short version.
 - **M2: writing and saving a library** (`design/implementationPlan.md` draft 0.12).
   - **New core modules:** `webapp/src/core/zip.js` writes ZIPs deterministically; `view.js` writes the 1.1 view; `library.js` opens a library into the Editor's model and saves it.
   - **Unchanged:** saved byte for byte as opened, signature included (EDT-51).

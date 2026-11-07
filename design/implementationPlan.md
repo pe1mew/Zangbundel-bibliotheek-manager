@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.13 |
+| **Status** | Draft 0.14 |
 | **Date** | 2026-11-06 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.12, `test-libraries/` (56 cases) |
 
@@ -232,7 +232,16 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - **copies independent of the original;** dropped files reported; non-UTF-8 songs kept as found; `__proto__` fields kept.
 
   The readings this needed are listed in FDS O-11 (draft 0.8) for the app to confirm. `node --test` 220 of 220, container 81 of 81.
-- **To do:** M2.3's block form and its round trip (GD-18, GD-19, locked blocks byte-exact), conversion (M2.7), the library worker (M2.8, with its time limit) and fuzzing (M2.9).
+- **M2.8 done.** The library worker runs `src/workers/library-handler.js`: validate, open, save, copy, new; answers are structured data only (SR-30).
+  - `src/app/library-client.js` starts it through the Trusted Types policy `zbm-worker` (`src/app/trusted.js`, TD-23). A request still open after 20 s ends the worker with PKG-02 (M-02); the next request starts a new one (SR-31).
+  - **Tested in `tests/unit/library-worker.test.mjs`:** the real handler behind a fake worker, the timeout, recovery from a worker error, and a seeded missing `terminate`.
+  - **Checked once in the browser pane,** not in the repository's tests: a scratch page built with `build.py` and served under the SR-20 CSP and Trusted Types ran the bundled worker through `zbm-worker`, and a raw `new Worker()` was refused.
+  - **Still to come:** signing a library goes through the crypto worker (M3); the screens use the client from M4.
+- **M2.9 done (SC-11).** `tests/fuzz.mjs` mutates the 56 test libraries: bytes, cuts, splices, directory and local-header fields, song text, manifest JSON. Every input must give findings without throwing (validate, open, save) within 2 s.
+  - **Long run** (`node webapp/tests/fuzz.mjs --iterations 20000 --seed 1`, 2026-11-07): 20,000 libraries and 2,000 random songs, 0 failures; slowest input 577 ms, memory at most 296 MB, about 40 different first findings reached.
+  - **Short run:** every `node --test` runs 400 libraries and 300 songs.
+  - **The fuzzer finds real defects:** on the pre-review code it found the save that threw instead of refusing (111 hits in 6,000).
+- **To do:** M2.3's block form and its round trip (GD-18, GD-19, locked blocks byte-exact) and conversion (M2.7).
 
 ### M3 — Keys and signing (M)
 
@@ -389,3 +398,4 @@ The placeholder and the manager have separate release directories and separate m
 | Draft 0.11 | 2026-11-06 | M2: every rule family implemented; SC-04 met on all 56 test libraries; readings beyond the corpus and what is left of M2 listed under M2. |
 | Draft 0.12 | 2026-11-06 | M2: writing and saving done (deterministic ZIP, view writer, `library.js` with EDT-50 to EDT-58 and EDT-71); left: block form, conversion, worker, fuzzing. |
 | Draft 0.13 | 2026-11-07 | M2 reviewed: findings fixed and listed under M2; the §9.3 test described as far as it goes. |
+| Draft 0.14 | 2026-11-07 | M2.8 (library worker, client, `zbm-worker` policy, 20 s limit) and M2.9 (fuzzing, SC-11: 20,000 inputs, 0 failures) done. |

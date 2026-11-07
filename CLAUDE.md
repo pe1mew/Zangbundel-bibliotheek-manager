@@ -71,7 +71,7 @@ Zangbundel-bibliotheek-manager/
 ├── webapp/
 │   ├── mock/                     ← clickable mock of webappGUI (static HTML, CSS, JS; app icon CC BY-SA 4.0); never deployed
 │   ├── placeholder/              ← zangbundel.nl until go-live: nl/en/de pages, privacy, security.txt (no script)
-│   ├── src/                      ← the web app: index.html, app/ (ES modules, bundled by the build, TD-22), core/ (the library engine: zip, names, manifest, fingerprint, chordpro, validate, view, library), assets/
+│   ├── src/                      ← the web app: index.html, app/ (ES modules, bundled by the build, TD-22; library-client, trusted), core/ (the library engine: zip, names, manifest, fingerprint, chordpro, validate, view, library), workers/ (library worker), assets/
 │   ├── tests/                    ← test_build.py, test_bundle.py, test_vendor.py, test_engine_bundle.py (need node); unit/, conformance.test.mjs (node --test)
 │   ├── vendor/                   ← fflate 0.8.3, @noble/ed25519 3.2.0 with licences; VENDOR.md (hashes, provenance), written by tools/vendor.py
 │   ├── test-holding/             ← test.zangbundel.nl until M1.4
@@ -101,7 +101,8 @@ python webapp/tests/test_build.py
 python webapp/tests/test_bundle.py
 python webapp/tests/test_vendor.py
 python webapp/tests/test_engine_bundle.py           # the bundled engine = the native engine on all 56 test libraries
-node --test webapp/tests/                          # unit tests + test-library conformance (SC-04: all 56 cases, every rule family)
+node --test webapp/tests/                          # unit tests + test-library conformance (SC-04: all 56 cases, every rule family) + a short fuzz
+node webapp/tests/fuzz.mjs --iterations 20000      # the long fuzz (SR-35, SC-11): before a release and after changing a reader
 python webapp/tools/vendor.py check                # vendored files against VENDOR.md (vendor.py add needs npm and the network)
 
 # Trial build of the web app (the version must equal webapp/src/app/version.js; needs node on PATH for its syntax check)
