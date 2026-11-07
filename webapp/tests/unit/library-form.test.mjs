@@ -29,7 +29,7 @@ globalThis.document = {
   createElementNS: (ns, t) => new FakeNode(t, ns),
   createTextNode: (s) => ({ text: s }),
 };
-const { chooseLicense, createLibraryForm, fieldsOf, LICENSES, licenseOf, maintainerOf } = await import('../../src/app/library-form.js');
+const { chooseLicense, contactOf, createLibraryForm, fieldsOf, LICENSES, licenseOf, maintainerOf, otherContactOf } = await import('../../src/app/library-form.js');
 
 function* walk(n) {
   yield n;
@@ -52,16 +52,31 @@ test('EDT-13: the common licences bring their summary; a summary the user wrote 
   assert.deepEqual(licenseOf('MIT', 'Kort.', ''), { id: 'MIT', summary: 'Kort.' });
 });
 
-test('EDT-14: the maintainer from its fields; empty ones are left out, all empty is none', () => {
-  assert.deepEqual(maintainerOf('Leiding', 'leiding@example.org', ''), { name: 'Leiding', email: 'leiding@example.org' });
-  assert.deepEqual(maintainerOf('Leiding', '', 'https://example.org'), { name: 'Leiding', url: 'https://example.org' });
-  assert.deepEqual(maintainerOf('', '', 'https://example.org'), { name: '', url: 'https://example.org' });   // MAN-08 will say so
-  assert.equal(maintainerOf('', '', ''), null);
+test('EDT-14, GD-37: one contact field; a scheme makes it the website, else the e-mail address; all empty is none', () => {
+  assert.deepEqual(maintainerOf(null, 'Leiding', 'leiding@example.org'), { name: 'Leiding', email: 'leiding@example.org' });
+  assert.deepEqual(maintainerOf(null, 'Leiding', 'https://example.org'), { name: 'Leiding', url: 'https://example.org' });
+  assert.deepEqual(maintainerOf(null, 'Leiding', 'http://example.org'), { name: 'Leiding', url: 'http://example.org' });   // MAN-08 says https
+  assert.deepEqual(maintainerOf(null, '', 'https://example.org'), { name: '', url: 'https://example.org' });   // MAN-08 says the name
+  assert.equal(maintainerOf(null, '', ''), null);
+  const email = { name: 'Leiding', email: 'a@example.org' };
+  assert.deepEqual(maintainerOf(email, 'Leiding', 'https://example.org'), { name: 'Leiding', url: 'https://example.org' });   // replaced
+});
+
+test('GD-37: a maintainer with both contacts shows the e-mail address; the website stays and is listed, never dropped', () => {
+  const both = { name: 'Leiding', email: 'a@example.org', url: 'https://example.org' };
+  assert.equal(contactOf(both), 'a@example.org');
+  assert.equal(otherContactOf(both), 'https://example.org');
+  assert.equal(contactOf({ name: 'x', url: 'https://example.org' }), 'https://example.org');
+  assert.equal(otherContactOf({ name: 'x', url: 'https://example.org' }), '');
+  assert.deepEqual(maintainerOf(both, 'Leiding Troep 12', 'a@example.org'), { name: 'Leiding Troep 12', email: 'a@example.org', url: 'https://example.org' });
+  assert.deepEqual(maintainerOf(both, 'Leiding', 'b@example.org'), { name: 'Leiding', email: 'b@example.org', url: 'https://example.org' });
+  assert.deepEqual(maintainerOf(both, 'Leiding', 'https://new.example.org'), { name: 'Leiding', url: 'https://new.example.org' });
+  assert.deepEqual(maintainerOf(both, 'Leiding', ''), { name: 'Leiding', url: 'https://example.org' });
 });
 
 test('the worker\'s findings say which field they are about', () => {
   assert.deepEqual(fieldsOf({ code: 'MAN-07' }), ['license']);
-  assert.deepEqual(fieldsOf({ code: 'MAN-08' }), ['maintainer']);
+  assert.deepEqual(fieldsOf({ code: 'MAN-08' }), ['maintainer', 'contact']);
   assert.deepEqual(fieldsOf({ code: 'MAN-02', detail: 'title is not 1–80 characters; license.text is not a string of at most 32,000 characters' }),
     ['title', 'licenseText']);
   assert.deepEqual(fieldsOf({ code: 'MAN-02', detail: 'sets is not an array' }), []);
@@ -94,7 +109,7 @@ test('GD-22, GD-37: the fields apply on change; an empty title or a bad SPDX cod
   change('lib-license-id', 'MIT');
   assert.deepEqual(patches.at(-1), { license: { id: 'MIT', summary: 'Vrij te delen en te bewerken, met naamsvermelding, onder dezelfde licentie.' } });
   change('lib-mname', 'Leiding Troep 12');
-  change('lib-murl', 'https://troep12.example.org');
+  change('lib-mcontact', 'https://troep12.example.org');
   assert.deepEqual(patches.at(-1), { maintainer: { name: 'Leiding Troep 12', url: 'https://troep12.example.org' } });
 });
 
@@ -103,10 +118,12 @@ test('GD-37: findings mark their fields with the FDS message; fixed, the mark go
   form.update({ findings: [{ code: 'MAN-07', severity: 'Error' }, { code: 'MAN-08', severity: 'Error' }] });
   const lic = boxOf(form.node, 'lib-license');
   const mt = boxOf(form.node, 'lib-mname');
-  assert.ok(lic.classes.has('invalid') && mt.classes.has('invalid'));
+  const contact = boxOf(form.node, 'lib-mcontact');
+  assert.ok(lic.classes.has('invalid') && mt.classes.has('invalid') && contact.classes.has('invalid'));
   assert.match(textOf(mt), /Vul in wie deze bibliotheek beheert/);    // M-39
-  form.update({ findings: [] });
-  assert.ok(!lic.classes.has('invalid') && !mt.classes.has('invalid'));
+  form.update({ findings: [], library: { ...LIB, maintainer: { name: 'L', email: 'a@example.org', url: 'https://example.org' } } });
+  assert.ok(!lic.classes.has('invalid') && !mt.classes.has('invalid') && !contact.classes.has('invalid'));
+  assert.match(textOf(contact), /Ook: https:\/\/example\.org/);
 });
 
 test('EDT-23: a read-only library shows its fields disabled and listens to none of them', () => {
@@ -115,7 +132,7 @@ test('EDT-23: a read-only library shows its fields disabled and listens to none 
   const fields = [...walk(form.node)].filter((x) => ['input', 'textarea', 'select'].includes(x.tag));
   assert.ok(fields.length >= 8);
   assert.ok(fields.every((x) => 'disabled' in x.attrs && Object.keys(x.listeners).length === 0));
-  assert.equal(byId(form.node, 'lib-memail').value, 'akela@example.org');
+  assert.equal(byId(form.node, 'lib-mcontact').value, 'akela@example.org');
   assert.equal(byId(form.node, 'lib-license-id').value, '');                 // a common licence: no own code
   const other = createLibraryForm({ lang: 'nl', library: { ...library, license: { id: 'MIT', summary: 'Kort.' } }, readOnly: true, onChange() {} });
   assert.equal(byId(other.node, 'lib-license-id').value, 'MIT');

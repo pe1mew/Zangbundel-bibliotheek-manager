@@ -45,8 +45,29 @@ export function licenseOf(id, summary, text) {
   return lic;
 }
 
-/** EDT-14: the maintainer from its three fields; an empty field is left out, all empty is none. */
-export function maintainerOf(name, email, url) {
+const isUrl = (v) => /^[a-z][a-z0-9+.-]*:\/\//i.test(v);
+
+/** GD-37: the one contact field shows the e-mail address, or else the website. */
+export const contactOf = (m) => (m && (m.email || m.url)) || '';
+
+/** The contact the field does not show: the website of a maintainer that has both. */
+export const otherContactOf = (m) => (m && m.email && m.url) || '';
+
+/**
+ * EDT-14, GD-37: the maintainer after its name or its one contact field changed. What is typed
+ * replaces the contact the field showed: a value with a scheme (https://…) is the website, anything
+ * else the e-mail address. A second contact the field did not show stays. All empty is no maintainer.
+ */
+export function maintainerOf(previous, name, contact) {
+  const prev = previous || {};
+  let email = prev.email;
+  let url = prev.url;
+  if (email) email = undefined;                          // the field showed the e-mail address
+  else url = undefined;                                  // or the website
+  if (contact) {
+    if (isUrl(contact)) url = contact;
+    else email = contact;
+  }
   if (!name && !email && !url) return null;
   const m = { name };
   if (email) m.email = email;
@@ -57,7 +78,7 @@ export function maintainerOf(name, email, url) {
 /** The form fields a finding is about: MAN-07 the licence, MAN-08 the maintainer, MAN-02 by its reasons. */
 export function fieldsOf(finding) {
   if (finding.code === 'MAN-07') return ['license'];
-  if (finding.code === 'MAN-08') return ['maintainer'];
+  if (finding.code === 'MAN-08') return ['maintainer', 'contact'];
   if (finding.code !== 'MAN-02') return [];
   const out = [];
   for (const reason of String(finding.detail || '').split('; ')) {
@@ -98,8 +119,9 @@ export function createLibraryForm({ lang, library, readOnly, onChange }) {
   const summary = area('lib-summary', lic ? lic.summary : '', { maxlength: 200, rows: 2, 'aria-required': 'true' });
   const text = area('lib-license-text', lic ? lic.text : '', { maxlength: 32000, rows: 3 });
   const mName = input('lib-mname', mt.name, { maxlength: 100, 'aria-required': 'true' });
-  const mEmail = input('lib-memail', mt.email, { type: 'email', maxlength: 254, inputmode: 'email' });
-  const mUrl = input('lib-murl', mt.url, { type: 'url', maxlength: 2000, inputmode: 'url', placeholder: 'https://' });
+  const mContact = input('lib-mcontact', contactOf(mt), { maxlength: 2000, spellcheck: 'false', 'aria-required': 'true' });
+  const also = el('div', { class: 'muted small' }, []);
+  let maintainer = library.maintainer || null;            // as the session holds it now (update)
 
   const showOther = (on) => { otherBox.hidden = !on; };
   showOther(choice === OTHER);
@@ -148,8 +170,8 @@ export function createLibraryForm({ lang, library, readOnly, onChange }) {
       onChange({ license: currentLicense() });
     });
     for (const f of [summary, text]) listen(f, 'change', () => onChange({ license: currentLicense() }));
-    for (const f of [mName, mEmail, mUrl]) {
-      listen(f, 'change', () => onChange({ maintainer: maintainerOf(mName.value.trim(), mEmail.value.trim(), mUrl.value.trim()) }));
+    for (const f of [mName, mContact]) {
+      listen(f, 'change', () => onChange({ maintainer: maintainerOf(maintainer, mName.value.trim(), mContact.value.trim()) }));
     }
   }
 
@@ -163,18 +185,20 @@ export function createLibraryForm({ lang, library, readOnly, onChange }) {
     box('licenseText', [label('lib-license-text', t(lang, 'fLicenseText')), text]),
     el('h3', {}, [t(lang, 'fMaintainer')]),
     box('maintainer', [label('lib-mname', t(lang, 'fMaintName'), true), mName]),
-    el('div', { class: 'field' }, [label('lib-memail', t(lang, 'fMaintEmail')), mEmail]),
-    el('div', { class: 'field' }, [label('lib-murl', t(lang, 'fMaintUrl')), mUrl]),
-    el('p', { class: 'muted small' }, [t(lang, 'maintOneOf'), ' ', t(lang, 'maintNote')]),
+    box('contact', [label('lib-mcontact', t(lang, 'fMaintContact'), true), mContact, also]),
+    el('p', { class: 'muted small' }, [t(lang, 'maintNote')]),
   ]);
 
   return {
     node,
     /** The worker's findings mark their fields (EDT-42); the form's own input checks stay until fixed. */
     update(state) {
+      if (state.library) maintainer = state.library.maintainer || null;
+      const other = otherContactOf(maintainer);
+      also.replaceChildren(...(other ? [t(lang, 'maintAlso', { contact: other })] : []));
       const marked = {};
       for (const f of state.findings || []) for (const name of fieldsOf(f)) marked[name] ??= messageFor(lang, f);
-      for (const name of ['description', 'license', 'summary', 'licenseText', 'maintainer']) setError(name, marked[name] || null);
+      for (const name of ['description', 'license', 'summary', 'licenseText', 'maintainer', 'contact']) setError(name, marked[name] || null);
       if (marked.title) setError('title', marked.title);
     },
   };
