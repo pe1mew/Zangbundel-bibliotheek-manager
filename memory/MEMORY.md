@@ -80,4 +80,5 @@
     - I can't type passwords or passphrases: open a terminal tab (`run_in_terminal`) for the owner to type in. Pasting there may not work; cmd with right-click does.
   - Step 5: certificates issued (ECDSA, webroot, account acct/112577467). CAA is bound to production acct/112577467 and staging acct/24760018; Openprovider accepts `accounturi` only without a space after `;`. The staging record is needed because `renew --dry-run` uses staging. Check CAA with `dig @ns1/2/3.openprovider…` from contabo6: local nslookup can't do CAA, and DoH dns.google works.
   - Step 5 done: renewal dry run succeeded for both, with CAA bound.
-  - Next: step 6 (enable the 443 sites, htpasswd for testers); git tag signing (step 3 item 3) before the first real release.
+  - Step 6 done: both 443 vhosts enabled, tester account in /etc/nginx/zangbundel-test.htpasswd; checked from outside (YE1 certs to 2027-02-05, TLS 1.0/1.1 refused, headers, 401, robots). Both answer 404 until step 7.
+  - Next: step 7 (first releases) needs git tag signing for the placeholder; the test holding page can go as a trial build.

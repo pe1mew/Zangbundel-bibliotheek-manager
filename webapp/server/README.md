@@ -215,6 +215,14 @@ nginx -t && systemctl reload nginx
 - **Testers' accounts.** Add one account per tester with `htpasswd -B /etc/nginx/zangbundel-test.htpasswd <name>` (without `-c`). Remove one with `htpasswd -D`. Pass passwords on by phone or in person, not in the GitHub issue.
 - **The default server.** Run `nginx -T | grep -n default_server`. The default server of port 443 must be another site's or a catch-all, not one of ours. Our two vhosts carry no `default_server` and must keep it that way. That default server also fixes the TLS versions on offer (`snippets/zbm-tls.conf` explains why).
 
+*Done 2026-11-07* (`sudo bash ~/zbm/install-step6.sh <tester name>`, written from this step). It checks that the certificates exist, creates or extends the password file, and reloads nginx only if `nginx -t` passes and neither of our vhosts is a `default_server`. Checked from outside:
+- **Certificates:** both are Let's Encrypt (YE1), each for its own name only, valid until 2027-02-05, and the chain verifies.
+- **TLS:** 1.2 and 1.3 are offered; 1.0 and 1.1 are refused.
+- **`zangbundel.nl`:** `/` redirects by language (302 to `/en/`).
+- **`test.zangbundel.nl`:** asks for the password (401, realm "Zangbundel test"). Its `robots.txt` is open and says `Disallow: /`, and `X-Robots-Tag: noindex, nofollow` is set.
+- **Headers:** every response carries the headers of `zbm-common-headers.conf`, with HSTS at `max-age=300` (step 9).
+- **Until step 7:** both sites answer 404, as neither has a `live` release yet.
+
 ## 7. First releases (M0.8, SR-11, SR-84)
 
 These steps run on the owner's computer, from a clean checkout of `main` whose HEAD carries a signed tag (step 3), for example `git tag -s placeholder-0.1.0 -m "Placeholder 0.1.0"`. The tag names the repository state; `--version` names the release. `build.py` refuses a HEAD not on `main`, a HEAD without a verified signed tag, and uncommitted, untracked or ignored files in the source or in `webapp/tools/`.
