@@ -11,6 +11,9 @@ const HEX64 = /^[0-9a-f]{64}$/;
 const BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LICENSE_ID = /^[A-Za-z0-9][A-Za-z0-9.+-]*$/;
+// A set name is a setlist title (FDS 4.1, song format 13.2): a directive value on one line, so no
+// control characters, no braces, no spaces at either end (a directive value is trimmed), NFC.
+const SET_NAME_BAD = /[\u0000-\u001f\u007f-\u009f{}]|^\s|\s$/;
 
 const len = (s) => [...s].length;
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -105,6 +108,10 @@ export function readManifest(bytes) {
     for (const s of m.sets) {
       if (!isObject(s) || !str(s.name, 1, 60) || !Array.isArray(s.songs) || !s.songs.every((x) => typeof x === 'string')) {
         man02('a set is not { name: 1–60 characters, songs: [song IDs] }');
+        break;
+      }
+      if (SET_NAME_BAD.test(s.name) || s.name !== s.name.normalize('NFC')) {
+        man02(`set name ${JSON.stringify(s.name)} cannot be a setlist title (line break, brace, outer space or not NFC)`);
         break;
       }
     }

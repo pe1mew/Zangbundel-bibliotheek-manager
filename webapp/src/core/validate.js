@@ -20,6 +20,10 @@ import { canonicalize, parseSong, SINGLE } from './chordpro.js';
 import { licenseBytes, setlistBytes } from './view.js';
 import { verifyAsync } from '../../vendor/noble-ed25519-3.2.0.js';
 
+// Strict RFC 8032 verification, as Web Crypto and OpenSSL do: noble's default (ZIP-215) accepts
+// signatures under small-order and non-canonical keys that every other verifier rejects.
+const strictVerify = (sig, msg, key) => verifyAsync(sig, msg, key, { zip215: false });
+
 export const IMPLEMENTED = Object.freeze(['PKG', 'STR', 'MAN', 'SIG', 'SNG', 'SET', 'VIEW']);
 
 const LIBRARY_TOP = new Set(['manifest.json', 'manifest.sig', 'zangbundel.json', 'LICENSE', 'setlists', 'songs']);
@@ -33,7 +37,11 @@ const SHARING = 16 * 1024 * 1024;                     // FDS 3.5, PKG-09 (Editor
 
 /** FDS 6.6 for one song file songs/<id>/<id>.cho; returns its title, or null. */
 function checkSong(id, bytes, add) {
-  if (bytes.length > SONG_MAX) add('SNG-18', 'Error', id);
+  if (bytes.length > SONG_MAX) {
+    add('SNG-18', 'Error', id);                         // not parsed further: bounded work on input (SR-33)
+    add('SNG-17', 'Warning', id);                       // larger than 8 KiB, too
+    return null;
+  }
   const c = canonicalize(bytes);
   if (!c.bytesOk || c.controlChars) {
     add('SNG-01', 'Error', id);
@@ -68,12 +76,13 @@ function checkSong(id, bytes, add) {
   return title || null;
 }
 
-function deepEqual(a, b) {
+function deepEqual(a, b, depth = 0) {
   if (a === b) return true;
+  if (depth > 32) return false;                       // deeper than any manifest field: not equal
   if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object' || Array.isArray(a) !== Array.isArray(b)) return false;
   const ka = Object.keys(a);
   const kb = Object.keys(b);
-  return ka.length === kb.length && ka.every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k]));
+  return ka.length === kb.length && ka.every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k], depth + 1));
 }
 
 /** Song format 4.3, L002 to L006, for the view's zangbundel.json (VIEW-03). */
@@ -117,7 +126,7 @@ async function sha256hex(bytes) {
  * crypto.subtle.
  */
 export async function validateLibrary(bytes, options = {}) {
-  const verify = options.verify || verifyAsync;
+  const verify = options.verify || strictVerify;
   const findings = [];
   const add = (code, severity, where) => findings.push(where == null ? { code, severity } : { code, severity, where });
   const fatal = (e) => {
@@ -167,6 +176,10 @@ export async function validateLibrary(bytes, options = {}) {
     }
   }
   const allNames = [...filePaths, ...folders];
+  const both = filePaths.find((p) => folders.has(p));
+  if (both !== undefined) {                           // a file and a folder of one name cannot both be unpacked
+    return { findings: [{ code: 'PKG-01', severity: 'Fatal', where: both }], fatal: true };
+  }
 
   // ---- PKG-05: exactly one top-level folder; the library folder holds manifest.json
   const tops = [...new Set(allNames.map((p) => p.split('/')[0]))].sort(compareOrdinal);
@@ -286,7 +299,11 @@ export async function validateLibrary(bytes, options = {}) {
     return { findings: [{ code: 'MAN-03', severity: 'Fatal' }], fatal: true };
   }
   for (const f of man.findings) {
-    add(f.code, f.severity);
+    if (f.code === 'MAN-02') {
+      findings.push({ code: 'MAN-02', severity: 'Error', detail: man.problems.join('; ') });   // the reasons, for M-21
+    } else {
+      add(f.code, f.severity);
+    }
   }
   const m = man.manifest;
 
@@ -337,11 +354,14 @@ export async function validateLibrary(bytes, options = {}) {
   }
 
   // ---- SET (6.7): the sets of the manifest against the song folders
-  const sets = Array.isArray(m.sets) ? m.sets.filter((x) => x !== null && typeof x === 'object' && Array.isArray(x.songs)) : [];
+  const sets = Array.isArray(m.sets)
+    ? m.sets.filter((x) => x !== null && typeof x === 'object' && typeof x.name === 'string' && Array.isArray(x.songs)
+      && x.songs.every((id) => typeof id === 'string'))
+    : [];
   const folderIds = new Set(songsDir.dirs);
   const seenNames = new Set();
   for (const set of sets) {
-    const name = String(set.name);
+    const name = set.name;
     if (set.songs.some((id) => !folderIds.has(id))) add('SET-01', 'Error', name);
     if (seenNames.has(name.toLowerCase())) add('SET-02', 'Error', name);
     seenNames.add(name.toLowerCase());

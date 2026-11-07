@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Reading a library ZIP as untrusted input (FDS 3.1, 3.5, 6.2; securityAssessment SR-31).
-// The central directory is read and every limit checked before any entry is decompressed; an entry
-// is then inflated into a buffer of exactly its declared size and its CRC-32 checked, so a ZIP bomb
-// cannot make it allocate more than the limits allow (implementationPlan M2.1).
+// The central directory is read and every limit checked before any entry is decompressed. Each local
+// header must agree with its directory entry, and no two entries may share data. An entry is then
+// inflated in small steps and stopped as soon as it passes its declared size, so a ZIP bomb costs
+// neither memory nor time beyond the limits (implementationPlan M2.1, securityAssessment SR-31).
 // Pure functions: no DOM, no workers; runs in the library worker and in node --test.
 
-import { deflateSync, inflateSync } from '../../vendor/fflate-0.8.3.js';
+import { deflateSync, Inflate } from '../../vendor/fflate-0.8.3.js';
 
 export const LIMITS = Object.freeze({
   zipSize: 64 * 1024 * 1024,          // FDS 3.5
@@ -127,10 +128,12 @@ export function readCentralDirectory(bytes) {
     const rawName = decodeName(bytes.subarray(p + 46, p + 46 + nameLen), (flags & 0x800) !== 0);
     p += 46 + nameLen + extraLen + commentLen;
 
-    // PKG-03: absolute path, drive letter, '..' segment, backslash, symbolic link
-    const segments = rawName.split('/');
-    if (rawName.startsWith('/') || /^[A-Za-z]:/.test(rawName) || rawName.includes('\\') || segments.includes('..')) {
-      throw new ZipError('PKG-03', rawName, 'a path that leaves the library folder');
+    // PKG-03: absolute path, drive letter, '..' segment, backslash, symbolic link; also empty and '.'
+    // segments ('a//b', './a'), which an unpacker resolves to another place than the name says
+    const segments = (rawName.endsWith('/') ? rawName.slice(0, -1) : rawName).split('/');
+    if (rawName.startsWith('/') || /^[A-Za-z]:/.test(rawName) || rawName.includes('\\') || segments.includes('..')
+        || segments.some((x) => x === '' || x === '.')) {
+      throw new ZipError('PKG-03', rawName, 'a path that leaves the library folder or hides its place');
     }
     if (madeBy === 3 && ((external >>> 16) & 0o170000) === 0o120000) {
       throw new ZipError('PKG-03', rawName, 'a symbolic link');
@@ -143,11 +146,31 @@ export function readCentralDirectory(bytes) {
     if (!dir && method !== 0 && method !== 8) {
       throw new ZipError('PKG-01', rawName, `compression method ${method}`);
     }
-    if (localOffset + 30 > cdOffset) {
-      throw new ZipError('PKG-01', rawName, 'a local header outside the file');
+    // The local header must agree with this entry: a streaming unpacker reads the local one.
+    if (localOffset + 30 > cdOffset || u32(bytes, localOffset) !== 0x04034b50) {
+      throw new ZipError('PKG-01', rawName, 'no local header where the directory says');
+    }
+    const lFlags = u16(bytes, localOffset + 6);
+    const lNameLen = u16(bytes, localOffset + 26);
+    const dataStart = localOffset + 30 + lNameLen + u16(bytes, localOffset + 28);
+    if (u16(bytes, localOffset + 8) !== method || (lFlags & ~0x8) !== (flags & ~0x8) || lNameLen !== nameLen
+        || !bytes.subarray(localOffset + 30, localOffset + 30 + nameLen).every((b, i) => b === bytes[p - nameLen - extraLen - commentLen + i])) {
+      throw new ZipError('PKG-01', rawName, 'a local header that differs from the directory');
+    }
+    if (dataStart + compressedSize > cdOffset) {
+      throw new ZipError('PKG-01', rawName, 'entry data beyond the start of the directory');
     }
     total += size;
-    entries.push({ name: rawName.normalize('NFC'), rawName, dir, size, compressedSize, method, crc, flags, localOffset });
+    entries.push({ name: rawName.normalize('NFC'), rawName, dir, size, compressedSize, method, crc, flags, localOffset,
+      dataStart });
+  }
+  // No two entries may share bytes: overlapping entries would count the same compressed data many
+  // times while the size checks above saw it once.
+  const ranges = entries.map((e) => [e.localOffset, e.dataStart + e.compressedSize, e.rawName]).sort((a, b) => a[0] - b[0]);
+  for (let i = 1; i < ranges.length; i++) {
+    if (ranges[i][0] < ranges[i - 1][1]) {
+      throw new ZipError('PKG-01', ranges[i][2], 'two entries that overlap');
+    }
   }
   // PKG-02: total uncompressed size and ratio, from the directory, before any inflation
   if (total > LIMITS.totalSize) {
@@ -159,21 +182,15 @@ export function readCentralDirectory(bytes) {
   return entries;
 }
 
-/** The bytes of one file entry, inflated into exactly its declared size and CRC-checked. */
+const INFLATE_STEP = 4096;   // compressed bytes per step: at most about 4 MiB of output per step
+
+/**
+ * The bytes of one file entry. Inflation runs in steps of INFLATE_STEP compressed bytes and stops as
+ * soon as the output passes the declared size, so a stream that claims few bytes but inflates to
+ * many is refused after little work (SR-31). The CRC-32 is checked at the end.
+ */
 export function readEntry(bytes, entry) {
-  const p = entry.localOffset;
-  if (u32(bytes, p) !== 0x04034b50) {
-    throw new ZipError('PKG-01', entry.rawName, 'no local header');
-  }
-  if (u16(bytes, p + 6) & 0x1) {
-    throw new ZipError('PKG-04', entry.rawName, 'an encrypted entry');
-  }
-  const start = p + 30 + u16(bytes, p + 26) + u16(bytes, p + 28);
-  const end = start + entry.compressedSize;
-  if (end > bytes.length) {
-    throw new ZipError('PKG-01', entry.rawName, 'entry data beyond the end of the file');
-  }
-  const raw = bytes.subarray(start, end);
+  const raw = bytes.subarray(entry.dataStart, entry.dataStart + entry.compressedSize);
   let data;
   if (entry.method === 0) {
     if (entry.compressedSize !== entry.size) {
@@ -181,13 +198,27 @@ export function readEntry(bytes, entry) {
     }
     data = raw.slice();
   } else {
-    const out = new Uint8Array(entry.size);
-    try {
-      data = inflateSync(raw, { out });   // never grows past entry.size (fflate keeps a given buffer)
-    } catch {
-      throw new ZipError('PKG-01', entry.rawName, 'data that does not inflate');
+    if (raw.length === 0) {
+      throw new ZipError('PKG-01', entry.rawName, 'a deflated entry without data');
     }
-    if (data.length !== entry.size) {
+    data = new Uint8Array(entry.size);
+    let n = 0;
+    const tooLarge = new ZipError('PKG-01', entry.rawName, 'data that inflates to more than its declared size');
+    const inflater = new Inflate((chunk) => {
+      if (n + chunk.length > data.length) {
+        throw tooLarge;
+      }
+      data.set(chunk, n);
+      n += chunk.length;
+    });
+    try {
+      for (let i = 0; i < raw.length; i += INFLATE_STEP) {
+        inflater.push(raw.subarray(i, i + INFLATE_STEP), i + INFLATE_STEP >= raw.length);
+      }
+    } catch (e) {
+      throw e === tooLarge ? e : new ZipError('PKG-01', entry.rawName, 'data that does not inflate');
+    }
+    if (n !== entry.size) {
       throw new ZipError('PKG-01', entry.rawName, 'inflated size differs from the directory');
     }
   }

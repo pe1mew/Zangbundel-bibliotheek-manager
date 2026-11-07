@@ -29,6 +29,27 @@ const CHORD = /^[A-G](#|b)?[^/\s[\]]*(\/[A-G](#|b)?)?$/;
 
 const utf8 = new TextDecoder('utf-8', { fatal: true });
 
+/** Spaces and tabs off the end of a line, in linear time (a regex like /[ \t]+$/ is quadratic, SR-33). */
+function trimEndBlank(s) {
+  let i = s.length;
+  while (i > 0 && (s[i - 1] === ' ' || s[i - 1] === '\t')) i--;
+  return s.slice(0, i);
+}
+
+/** Spaces and tabs off both ends: a blank line and a directive line are judged after this (5.2). */
+function trimBlank(s) {
+  let i = 0;
+  while (i < s.length && (s[i] === ' ' || s[i] === '\t')) i++;
+  return trimEndBlank(s.slice(i));
+}
+
+/** Whether the character at index i is escaped by an odd number of backslashes before it (5.4). */
+function escaped(s, i) {
+  let n = 0;
+  while (i - 1 - n >= 0 && s[i - 1 - n] === '\\') n++;
+  return n % 2 === 1;
+}
+
 /**
  * Song format 8.1: decode, drop a BOM, NFC, LF line ends, no trailing spaces or tabs, one final LF.
  * Returns { text, bytesOk, controlChars } — text is null when the bytes are not UTF-8.
@@ -40,9 +61,10 @@ export function canonicalize(bytes) {
   } catch {
     return { text: null, bytesOk: false, controlChars: false };
   }
-  const controlChars = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(text);
+  // SNG-01: control characters other than LF, CR and tab; C1 (U+0080–U+009F) are control characters too
+  const controlChars = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/.test(text);
   text = text.replace(/^﻿/, '').normalize('NFC').replace(/\r\n?/g, '\n');
-  const lines = text.split('\n').map((l) => l.replace(/[ \t]+$/, ''));
+  const lines = text.split('\n').map(trimEndBlank);
   while (lines.length && lines[lines.length - 1] === '') {
     lines.pop();
   }
@@ -77,7 +99,7 @@ function displayText(line, problems) {
       out += ch;
     }
   }
-  return out.replace(/\t/g, ' ').replace(/\s+$/, '');
+  return trimEndBlank(out.replace(/\t/g, ' '));
 }
 
 /**
@@ -96,13 +118,16 @@ export function parseSong(text) {
   const put = (name, value) => meta.set(name, [...(meta.get(name) || []), value]);
 
   for (const raw of text.split('\n')) {
-    const line = raw.trim();
+    const line = trimBlank(raw);
     if (line === '' || line.startsWith('#')) {
       continue;
     }
     const starts = line.startsWith('{');
-    const ends = line.endsWith('}');
-    if (starts !== ends) {
+    const ends = line.endsWith('}') && !escaped(line, line.length - 1);
+    // 5.2: a directive has no other { or } unless escaped; '{c: a} {new_song}' is not one directive
+    const inner = starts && ends ? line.slice(1, -1) : '';
+    const strayBrace = [...inner].some((ch, i) => (ch === '{' || ch === '}') && !escaped(inner, i));
+    if (starts !== ends || strayBrace) {
       problems.malformed = true;                          // SNG-04, never shown as lyrics
       continue;
     }
@@ -140,7 +165,10 @@ export function parseSong(text) {
         if (choruses.length === 0) {
           problems.chorusEarly = true;                    // SNG-13
         } else {
-          const picked = (value && choruses.find((c) => c.label === value)) || choruses[choruses.length - 1];
+          // 7.2: the chorus that carried exactly this label (the most recent such, as a plain {chorus}
+          // takes the most recent chorus), otherwise the most recent chorus
+          const labelled = value ? choruses.filter((c) => c.label === value) : [];
+          const picked = labelled.length ? labelled[labelled.length - 1] : choruses[choruses.length - 1];
           lines.push(...picked.lines);                    // 7.2: one repetition per {chorus}
         }
       } else if (name === 'new_song') {

@@ -127,6 +127,18 @@ VIEW-01 and VIEW-02 are `view-missing` and `view-mismatch` above.
 - **VIEW-02** compares the fields the rule names with the manifest; `format`, `format_version` and `min_app_version` are fixed by PF-41 and belong to VIEW-03 (song format L003 to L005). One VIEW-02 finding per file that disagrees (M-37 names one file).
 - **An empty set** (SET-03) is written as `setlists/set-<n>.zbs` with only its title and id lines: PF-43 asks for an empty line before the songs and for the canonical form, and the canonical form has no trailing empty line.
 
+## Known differences of `check_test_libraries.py`
+
+The checker is a second, independent reading. A comparison with the library manager's engine on 4,000 generated songs (review of 2026-11-07) found these points where the checker departs from the song format; none of them occurs in the cases, so every result above stands:
+
+- `{album: …}` is unknown to it (SNG-07), while song format §5.3 names `album` a standard name.
+- `{meta: name value}` is split at the first space only, not at the first run of whitespace (§5.3).
+- Tags and variant groups longer than 64 characters pass, while §3.2 limits ids to 64.
+- `\d` accepts non-ASCII digits in `year`.
+- A backslash before a character other than `[ ] { } \` is dropped, while §5.4 keeps it (this affects line lengths, SNG-17).
+- `{chorus}` repeats are not expanded, so SNG-17's 254-line limit counts fewer lines than the canonical line list of §9.1.
+- The readings the engine made where the song format leaves room (C1 control characters, braces inside a directive, trimming only spaces and tabs) are listed in FDS O-11 (draft 0.8).
+
 ## `<case>.expected.json`
 
 | Field | Meaning |

@@ -5,11 +5,12 @@
 //   openLibrary(bytes)            → { findings, library | null, reason }
 //   newLibrary({ title, … })      → library (EDT-10 to EDT-12)
 //   copyLibrary(library, { now }) → library (EDT-71)
-//   saveLibrary(library, { changed, now, changes, signer }) → { bytes | null, findings, refused, unchanged }
+//   saveLibrary(library, { changed, now, changes, signer }) → { bytes | null, findings, refused, reason, unchanged, dropped }
 //
 // The Editor never reads the view of a library it opens (PF-45): the model comes from the manifest
 // and the song files. Saving builds the whole ZIP from the model and then runs the rules of section
-// 6 on that output: an Error or Fatal finding refuses the save (EDT-50, M-63).
+// 6 on that output: an Error or Fatal finding refuses the save (EDT-50, M-63). EDT-50 also holds for
+// an unchanged library: one with an Error is not passed through (EDT-51 applies to saveable ones).
 
 import { writeZip } from './zip.js';
 import { validateLibrary } from './validate.js';
@@ -42,7 +43,10 @@ async function sha256hex(bytes) {
 
 /** A name that complies with FDS 3.3 (PF-20 to PF-22), for the folder and the file name. */
 export function safeName(text, maxLength = 100) {
-  let s = [...String(text).normalize('NFC').replace(/[<>:"/\\|?*\u0000-\u001f\u007f]/g, '-')].slice(0, maxLength).join('');
+  // forbidden and control characters become '-'; bidirectional controls, which can disguise a file
+  // name's extension (SR-36), are removed
+  let s = String(text).normalize('NFC').replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '');
+  s = [...s.replace(/[<>:"/\\|?*\u0000-\u001f\u007f-\u009f]/g, '-')].slice(0, maxLength).join('');
   s = s.replace(/[ .]+$/, '');
   if (s === '') {
     s = 'bibliotheek';
@@ -74,18 +78,25 @@ export async function openLibrary(bytes, options = {}) {
     return { findings: r.findings, library: null, reason: r.files && !r.manifestBytes ? 'no-manifest' : 'manifest-unreadable' };
   }
   const songs = new Map();
+  const rawSongs = new Map();                           // songs that are not valid text, kept byte for byte
   for (const { id, path } of r.songs) {
-    const c = canonicalize(r.files.get(path));
-    songs.set(id, c.bytesOk && !c.controlChars ? c.text : null);   // null: SNG-01, saving is refused
-  }
-  const extra = {};
-  for (const [k, v] of Object.entries(m)) {
-    if (!KNOWN_FIELDS.has(k)) {
-      extra[k] = v;                                      // unknown fields are kept (FDS 4.1)
+    const bytes = r.files.get(path);
+    const c = canonicalize(bytes);
+    if (c.bytesOk && !c.controlChars && bytes.length <= 64 * 1024) {
+      songs.set(id, c.text);
+    } else {
+      songs.set(id, null);
+      rawSongs.set(id, bytes);                          // saved as found, so the save names SNG-01 / SNG-18
     }
   }
-  const author = m.author && typeof m.author === 'object' && typeof m.author.publicKey === 'string'
+  // Unknown fields are kept (FDS 4.1), as [name, value] pairs: a field named __proto__ survives too.
+  const extra = Object.keys(m).filter((k) => !KNOWN_FIELDS.has(k)).map((k) => [k, m[k]]);
+  // SG-04: an author without manifest.sig is not a signed library; saving leaves the author out.
+  const author = r.signed && m.author && typeof m.author === 'object' && typeof m.author.publicKey === 'string'
     ? { name: m.author.name, publicKey: base64Bytes(m.author.publicKey) } : null;
+  // Files the model does not carry: saving a changed library leaves them out (EDT-22, M-42).
+  const kept = new Set(['manifest.json', 'manifest.sig', 'zangbundel.json', 'LICENSE', ...r.songs.map((x) => x.path)]);
+  const dropped = [...r.files.keys()].filter((p) => !kept.has(p) && !p.startsWith('setlists/')).sort(compareOrdinal);
   const library = {
     libraryId: m.libraryId,
     version: m.version,
@@ -93,42 +104,55 @@ export async function openLibrary(bytes, options = {}) {
     description: m.description,
     created: m.created,
     modified: m.modified,
-    license: m.license && typeof m.license === 'object' ? { ...m.license } : null,
-    maintainer: m.maintainer && typeof m.maintainer === 'object' ? { ...m.maintainer } : null,
+    license: m.license && typeof m.license === 'object' ? clone(m.license) : null,
+    maintainer: m.maintainer && typeof m.maintainer === 'object' ? clone(m.maintainer) : null,
     author,
     signed: Boolean(r.signed),
     sets: Array.isArray(m.sets) ? m.sets.filter((s) => s && Array.isArray(s.songs)).map((s) => ({ name: s.name, songs: [...s.songs] })) : [],
     songs,
+    rawSongs,
     extra,
+    dropped,
     isNew: false,
     opened: bytes,
   };
   return { findings: r.findings, library, reason: null };
 }
 
+/** A deep copy of a JSON value (the manifest's nested objects), so a copy shares nothing. */
+function clone(v) {
+  return v === undefined ? undefined : JSON.parse(JSON.stringify(v));
+}
+
 /** EDT-10 to EDT-12: a new, unsigned library without songs or sets. */
 export function newLibrary({ title, description, now = new Date(), libraryId = crypto.randomUUID() }) {
   return {
     libraryId, version: 1, title, description, created: isoSeconds(now), modified: isoSeconds(now),
-    license: null, maintainer: null, author: null, signed: false, sets: [], songs: new Map(), extra: {},
-    isNew: true, opened: null,
+    license: null, maintainer: null, author: null, signed: false, sets: [], songs: new Map(), rawSongs: new Map(),
+    extra: [], dropped: [], isNew: true, opened: null,
   };
 }
 
 /** EDT-71: a copy with a new libraryId, version 1, new dates, no author and no signature. */
 export function copyLibrary(library, { now = new Date(), libraryId = crypto.randomUUID(), title } = {}) {
+  const suffix = ' (copy)';                              // the proposal fits the 80 characters of FDS 4.1
+  const proposed = `${[...String(library.title)].slice(0, 80 - suffix.length).join('').trimEnd()}${suffix}`;
   return {
     ...library,
     libraryId,
     version: 1,
-    title: title ?? `${library.title} (copy)`,
+    title: title ?? proposed,
+    license: clone(library.license),
+    maintainer: clone(library.maintainer),
     created: isoSeconds(now),
     modified: isoSeconds(now),
     author: null,
     signed: false,
     sets: library.sets.map((s) => ({ name: s.name, songs: [...s.songs] })),
     songs: new Map(library.songs),
-    extra: { ...library.extra },
+    rawSongs: new Map(library.rawSongs),
+    extra: library.extra.map(([k, v]) => [k, clone(v)]),
+    dropped: [...library.dropped],
     isNew: true,
     opened: null,
   };
@@ -156,7 +180,7 @@ export async function buildLibrary(library, { now = new Date(), changes, signer 
     license: library.license, maintainer: library.maintainer, sets: library.sets };
   const files = new Map(viewFiles(manifestLike).filter(([, b]) => b !== null));
   for (const [id, text] of library.songs) {
-    files.set(`songs/${id}/${id}.cho`, text === null ? new Uint8Array(0) : enc.encode(text));
+    files.set(`songs/${id}/${id}.cho`, text === null ? library.rawSongs.get(id) ?? new Uint8Array(0) : enc.encode(text));
   }
   const paths = [...files.keys()].sort(compareOrdinal);
   const list = [];
@@ -174,7 +198,9 @@ export async function buildLibrary(library, { now = new Date(), changes, signer 
   m.maintainer = library.maintainer;
   if (author) m.author = author;
   m.sets = library.sets;
-  Object.assign(m, library.extra);
+  for (const [k, v] of library.extra) {
+    Object.defineProperty(m, k, { value: v, enumerable: true, writable: true, configurable: true });   // also __proto__
+  }
   m.files = list;
   const manifestBytes = enc.encode(`${JSON.stringify(m, null, 2)}\n`);
 
@@ -197,14 +223,21 @@ export async function buildLibrary(library, { now = new Date(), changes, signer 
  * refuses the save (EDT-50).
  */
 export async function saveLibrary(library, { changed = false, now, changes, signer, verify } = {}) {
+  const blocking = (findings) => findings.some((f) => f.severity === 'Error' || f.severity === 'Fatal');
   if (!changed && !library.isNew && library.opened) {
     const r = await validateLibrary(library.opened, { verify });
-    return { bytes: library.opened, findings: r.findings, refused: false, unchanged: true,
-      fileName: fileName(library.title, library.version), version: library.version };
+    const refused = blocking(r.findings);                // EDT-50 before EDT-51
+    return { bytes: refused ? null : library.opened, findings: r.findings, refused, reason: refused ? 'errors' : null,
+      unchanged: true, dropped: [], fileName: fileName(library.title, library.version), version: library.version };
   }
-  const built = await buildLibrary(library, { now, changes, signer });
+  let built;
+  try {
+    built = await buildLibrary(library, { now, changes, signer });
+  } catch (e) {
+    return { bytes: null, findings: [], refused: true, reason: e.message, unchanged: false, dropped: library.dropped };
+  }
   const r = await validateLibrary(built.bytes, { verify });
-  const refused = r.findings.some((f) => f.severity === 'Error' || f.severity === 'Fatal');
-  return { bytes: refused ? null : built.bytes, findings: r.findings, refused, unchanged: false,
-    fileName: built.fileName, version: built.version };
+  const refused = blocking(r.findings);
+  return { bytes: refused ? null : built.bytes, findings: r.findings, refused, reason: refused ? 'errors' : null,
+    unchanged: false, dropped: library.dropped, fileName: built.fileName, version: built.version };
 }

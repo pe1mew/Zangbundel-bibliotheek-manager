@@ -124,3 +124,31 @@ test('fingerprint of the RFC 8032 test 1 key is 21FE-31DF-A154-A261 (SG-05, SG-2
   const key = Uint8Array.from(atob('11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo='), (c) => c.charCodeAt(0));
   assert.equal(await fingerprint(key), '21FE-31DF-A154-A261');
 });
+
+// ---- regressions from the review of M2 (0f87a7e..8c22e37) ----
+
+test('SR-31: a stream that inflates past its declared size stops early, without decoding all of it', () => {
+  const big = new Uint8Array(64 * 1024 * 1024);              // 64 MiB of zeros, about 64 KiB deflated
+  const zip = makeZip([{ name: 'lib/bomb.txt', data: big, deflate: true, size: 0, crc: 0 }]);
+  const t0 = performance.now();
+  fatal(zip, 'PKG-01', 'lib/bomb.txt');
+  assert.ok(performance.now() - t0 < 500, `took ${Math.round(performance.now() - t0)} ms`);
+});
+
+test('PKG-01: a deflated entry without data, two entries sharing data, a local header that differs', () => {
+  fatal(makeZip([{ name: 'lib/a.txt', data: new Uint8Array(0), deflate: false, size: 10 }]), 'PKG-01');
+  const zip = makeZip([{ name: 'lib/a.txt', data: enc.encode('hello') }, { name: 'lib/b.txt', data: enc.encode('hello') }]);
+  const v = new DataView(zip.buffer);
+  const cd = v.getUint32(zip.length - 6, true);              // central directory offset
+  const second = cd + 46 + 'lib/a.txt'.length;
+  v.setUint32(second + 42, 0, true);                         // b.txt now points at a.txt's local header
+  fatal(zip, 'PKG-01');
+  const evil = makeZip([{ name: 'lib/LICENSE', data: enc.encode('x') }]);
+  evil.set(enc.encode('../../LICENS'), 30);                  // local name differs from the directory's
+  fatal(evil, 'PKG-01', 'lib/LICENSE');
+});
+
+test('PKG-03: empty and "." segments', () => {
+  fatal(makeZip([{ name: 'lib//run.sh', data: enc.encode('x') }]), 'PKG-03', 'lib//run.sh');
+  fatal(makeZip([{ name: 'lib/./a.txt', data: enc.encode('x') }]), 'PKG-03', 'lib/./a.txt');
+});

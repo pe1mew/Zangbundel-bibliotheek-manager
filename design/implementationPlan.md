@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.12 |
+| **Status** | Draft 0.13 |
 | **Date** | 2026-11-06 |
-| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.11, `test-libraries/` (56 cases) |
+| **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.12, `test-libraries/` (56 cases) |
 
 ---
 
@@ -204,7 +204,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
 - **SC-04 met:** all 56 test libraries give exactly their expected Editor findings, every rule family of FDS section 6 (`webapp/tests/conformance.test.mjs`, 0 to-dos). Seeded defects turn cases red: SIG-03 skipped, STR-08 for a second `.cho`, SNG-10 case-sensitive, SET-03 skipped, phase 2 directives not listed.
 - **Done:** M2.1, M2.2, M2.4 and M2.6, and the reading half of M2.3 and M2.5.
   - `webapp/src/core/`: `zip.js`, `names.js`, `manifest.js`, `fingerprint.js`, `validate.js`.
-  - `chordpro.js` gives the canonical form, the metadata, the environments, the chorus repeats and the canonical line list. It reproduces the song format's worked example of §9.3 on the corpus's `vuur-in-de-nacht`.
+  - `chordpro.js` gives the canonical form, the metadata, the environments, the chorus repeats and the canonical line list. On the corpus's `vuur-in-de-nacht` it gives the 18 lines of the song format's worked example (§9.3): the count, the first and last line, and lines 15–18 repeating 5–8 are tested; the section labels and the lines in between are not.
   - The view checks generate the exact PF-42 and PF-43 bytes.
 - **Also tested:** the bundled engine gives the same findings as the native modules on all 56 libraries (`webapp/tests/test_engine_bundle.py`).
 - **Readings beyond the test libraries:**
@@ -223,7 +223,16 @@ Each milestone ends with its exit checks passing and the result written to `desi
     - Save as copy of a signed library;
     - a refused save, and a new library needing its licence and maintainer;
     - the §3.3 names.
-- **To do:** M2.3's block form and its round trip (GD-18, GD-19, locked blocks byte-exact), conversion (M2.7), the library worker (M2.8) and fuzzing (M2.9).
+- **Reviewed 2026-11-07** (`/review-changes`, three lenses on 0f87a7e..8c22e37). The confirmed findings are fixed, each with a regression test that fails on the reviewed code:
+  - **inflation stopped at the declared size** (it ran to the end of the stream before, SR-31);
+  - **strict Ed25519 for SIG-03:** noble's default accepted a forged signature under a small-order key;
+  - **ZIP structure:** local headers must agree with the directory; overlapping entries, empty or `.` segments, and a file and folder of one name are refused;
+  - **no throw on hostile manifests;** linear trimming (SR-33);
+  - **EDT-50 before EDT-51;** set names that would inject setlist lines (MAN-02);
+  - **copies independent of the original;** dropped files reported; non-UTF-8 songs kept as found; `__proto__` fields kept.
+
+  The readings this needed are listed in FDS O-11 (draft 0.8) for the app to confirm. `node --test` 220 of 220, container 81 of 81.
+- **To do:** M2.3's block form and its round trip (GD-18, GD-19, locked blocks byte-exact), conversion (M2.7), the library worker (M2.8, with its time limit) and fuzzing (M2.9).
 
 ### M3 — Keys and signing (M)
 
@@ -379,3 +388,4 @@ The placeholder and the manager have separate release directories and separate m
 | Draft 0.10 | 2026-11-06 | M2 started (state under M2): ZIP reader, names, manifest, fingerprint, and the PKG, STR, MAN and SIG rules, conformant on all 56 cases for those families. |
 | Draft 0.11 | 2026-11-06 | M2: every rule family implemented; SC-04 met on all 56 test libraries; readings beyond the corpus and what is left of M2 listed under M2. |
 | Draft 0.12 | 2026-11-06 | M2: writing and saving done (deterministic ZIP, view writer, `library.js` with EDT-50 to EDT-58 and EDT-71); left: block form, conversion, worker, fuzzing. |
+| Draft 0.13 | 2026-11-07 | M2 reviewed: findings fixed and listed under M2; the §9.3 test described as far as it goes. |

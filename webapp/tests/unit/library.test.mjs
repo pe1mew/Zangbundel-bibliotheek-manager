@@ -99,9 +99,13 @@ test('EDT-53, EDT-60: signing an unsigned library; the signature verifies and au
 
 test('EDT-23, EDT-62: a signed library saves only with its own key', async () => {
   const { library } = await openLibrary(corpus('valid-signed'));
-  await assert.rejects(saveLibrary(library, { changed: true, now: NOW }), /only with its key loaded/);
+  const noKey = await saveLibrary(library, { changed: true, now: NOW });
+  assert.equal(noKey.refused, true);
+  assert.match(noKey.reason, /only with its key loaded/);
   const other = { name: 'X', publicKey: new Uint8Array(32).fill(7), sign: async () => new Uint8Array(64) };
-  await assert.rejects(saveLibrary(library, { changed: true, now: NOW, signer: other }), /not the key of this library/);
+  const wrong = await saveLibrary(library, { changed: true, now: NOW, signer: other });
+  assert.equal(wrong.refused, true);
+  assert.match(wrong.reason, /not the key of this library/);
   const saved = await saveLibrary(library, { changed: true, now: NOW, signer: await testSigner() });
   assert.equal(saved.refused, false);
   assert.equal(JSON.parse(file(saved.bytes, '/manifest.json')).author.name, library.author.name);   // name kept
@@ -148,4 +152,83 @@ test('EDT-54, EDT-55: names comply with FDS 3.3', () => {
   assert.equal(folderName('Liedjes...'), 'Liedjes');
   assert.equal(folderName('  '), 'bibliotheek');
   assert.ok([...folderName('x'.repeat(150))].length <= 100);
+});
+
+// ---- regressions from the review of M2 (0f87a7e..8c22e37) ----
+
+test('EDT-50 before EDT-51: an unchanged library with an Error is not saved', async () => {
+  for (const name of ['file-changed', 'stray-file', 'song-not-utf8', 'signature-orphan']) {
+    const { library } = await openLibrary(corpus(name));
+    const saved = await saveLibrary(library, { changed: false });
+    assert.equal(saved.refused, true, name);
+    assert.equal(saved.bytes, null, name);
+  }
+});
+
+test('a copy shares no object with the original', async () => {
+  const { library } = await openLibrary(corpus('valid-signed'));
+  const copy = copyLibrary(library, { now: NOW });
+  copy.license.id = 'CHANGED';
+  copy.maintainer.name = 'X';
+  copy.sets[0].songs.push('x');
+  assert.notEqual(library.license.id, 'CHANGED');
+  assert.notEqual(library.maintainer.name, 'X');
+  assert.ok(!library.sets[0].songs.includes('x'));
+});
+
+test('EDT-71: the proposed copy title fits 80 characters', async () => {
+  const { library } = await openLibrary(corpus('valid-unsigned'));
+  library.title = 'T'.repeat(80);
+  const copy = copyLibrary(library, { now: NOW });
+  assert.equal([...copy.title].length, 80);
+  assert.ok(copy.title.endsWith(' (copy)'));
+  assert.equal((await saveLibrary(copy, { now: NOW })).refused, false);
+});
+
+test('SG-04: an author without manifest.sig is not signed; saving without a key leaves the author out', async () => {
+  const { library } = await openLibrary(corpus('signature-missing'));
+  assert.equal(library.signed, false);
+  assert.equal(library.author, null);
+  const saved = await saveLibrary(library, { changed: true, now: NOW });
+  assert.equal(saved.refused, false, JSON.stringify(errors(saved.findings)));
+  assert.equal(JSON.parse(file(saved.bytes, '/manifest.json')).author, undefined);
+});
+
+test('files the model does not carry are reported as dropped on save (EDT-22, M-42)', async () => {
+  const { library } = await openLibrary(corpus('stray-file'));
+  assert.deepEqual(library.dropped, ['README.txt']);
+  const saved = await saveLibrary(library, { changed: true, now: NOW });
+  assert.deepEqual(saved.dropped, ['README.txt']);
+  assert.equal(saved.refused, false);
+});
+
+test('a song that is not UTF-8 is saved as found, so the refusal names SNG-01', async () => {
+  const { library } = await openLibrary(corpus('song-not-utf8'));
+  const saved = await saveLibrary(library, { changed: true, now: NOW });
+  assert.equal(saved.refused, true);
+  assert.deepEqual(errors(saved.findings).map((f) => f.code), ['SNG-01']);
+});
+
+test('an unknown manifest field named __proto__ is kept (FDS 4.1)', async () => {
+  const { library } = await openLibrary(corpus('valid-unsigned'));
+  library.extra.push(['__proto__', { keep: 1 }], ['x-note', 'n']);
+  const saved = await saveLibrary(library, { changed: true, now: NOW });
+  const text = file(saved.bytes, '/manifest.json');
+  assert.match(text, /"__proto__": \{\s*"keep": 1\s*\}/);
+  assert.match(text, /"x-note": "n"/);
+});
+
+test('MAN-02 for a set name that cannot be a setlist title; its reason is passed on', async () => {
+  const { library } = await openLibrary(corpus('valid-unsigned'));
+  library.sets[1].name = 'Demo}\nlibrary/injected-song';
+  const saved = await saveLibrary(library, { changed: true, now: NOW });
+  assert.equal(saved.refused, true);
+  const man02 = saved.findings.find((f) => f.code === 'MAN-02');
+  assert.ok(man02, JSON.stringify(saved.findings));
+  assert.match(man02.detail, /set name/);
+});
+
+test('SR-36: file and folder names lose bidirectional controls and C1 controls', () => {
+  assert.equal(folderName('Lied‮js.exe'), 'Liedjs.exe');
+  assert.equal(folderName('a\u0085b'), 'a-b');
 });

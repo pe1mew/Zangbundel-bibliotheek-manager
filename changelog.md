@@ -58,6 +58,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - `design/securityAssessment.md` draft 0.1: a security and privacy assessment of the web app's design. It names the assets, attackers and 20 findings (among them: the site's code as the root of trust, the shared host with end-of-life PHP sites, CVE-2026-45820 in `fflate` before 0.8.3, the unaudited `@noble/ed25519` v3, DOM injection from library content, missing security headers, no CAA, registrar lock, SPF or DMARC on the new domain), and specifies 67 binding requirements (SR-01 to SR-93), the nginx, DNS, application and release implementation, a release gate of 13 checks, accepted risks and eight open questions. webappTDS draft 0.6 makes it binding (TD-18).
 
 ### Changed
+- **Review of M2** (`/review-changes`, three lenses on 0f87a7e..8c22e37), with fixes (`design/implementationPlan.md` draft 0.13, FDS draft 0.8 O-11). Each fix has a regression test that fails on the reviewed code (`node --test` 220 of 220).
+  - **Inflation stops at the declared size.** fflate with a fixed buffer bounded memory but decoded the whole stream: minutes of CPU for a ZIP within every limit, and silent truncation (SR-31).
+  - **Signatures are verified by strict RFC 8032.** noble's ZIP-215 default accepted a forged signature under a small-order key.
+  - **ZIP structure:**
+    - local headers must agree with the central directory (a streaming unpacker reads the local name);
+    - overlapping entries, empty and `.` path segments, and a file and folder of one name are refused.
+  - **Hostile manifests no longer make the engine throw.** Trimming is linear (SR-33).
+  - **Song readings:** C1 controls are SNG-01; braces inside a directive are SNG-04; `{chorus: label}` takes the most recent chorus with that label.
+  - **Saving:**
+    - an unchanged library with an Error is not saved (EDT-50 before EDT-51);
+    - set names that would inject setlist lines are MAN-02, and MAN-02 carries its reasons;
+    - copies share nothing with the original, and copy titles fit 80 characters;
+    - files left out on save are reported;
+    - non-UTF-8 songs are kept as found, so the message is SNG-01;
+    - an author without a signature is dropped (SG-04);
+    - `__proto__` fields are kept;
+    - file names lose bidirectional controls (SR-36).
+  - **Recorded:** the readings in FDS O-11 for the app to confirm, and the independent checker's differences from the song format in `test-libraries/README.md`.
 - **Shared test libraries follow song format v0.23** (requested by the library repository's session, approved by the owner with the app's proposal on shared test libraries, 3.7 and O-11 f):
   - **`song-two-files`:** a format 1.1 app now skips only the bad copy (S004), and the song itself imports, so S005 and SL101 are gone. The `.zbl` is unchanged.
   - **FDS draft 0.8:** O-11's PKG-02 ratio reading is settled as the ZIP file size.

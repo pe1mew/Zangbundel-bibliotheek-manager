@@ -74,3 +74,27 @@ test('malformed directives (5.2) and {new_song}', () => {
   assert.equal(song('x}\n').problems.malformed, true);
   assert.equal(song('{ns}\nx\n').problems.newSong, true);
 });
+
+// ---- regressions from the review of M2 (0f87a7e..8c22e37) ----
+
+test('5.2: a directive has no other unescaped brace; an escaped closing brace does not close it', () => {
+  assert.equal(song('{c: a} {new_song}\nx\n').problems.malformed, true);
+  assert.equal(song('{title: x\\}\nx\n').problems.malformed, true);
+  assert.equal(song('{title: a \\{b\\} c}\nx\n').problems.malformed, false);
+});
+
+test('SNG-01: C1 control characters; blank lines are judged on spaces and tabs only', () => {
+  assert.equal(canonicalize(enc.encode('tekst\u009b31m\n')).controlChars, true);
+  assert.equal(song('{title: T}\n \n').lines.length, 1);          // a no-break space is content, not blank
+});
+
+test('7.2: {chorus: label} with two choruses of that label takes the most recent', () => {
+  assert.deepEqual(song('{soc: R}\nfirst\n{eoc}\n{soc: R}\nsecond\n{eoc}\n{chorus: R}\n').lines, ['first', 'second', 'second']);
+});
+
+test('SR-33: a long line of spaces is trimmed in linear time', () => {
+  const t0 = performance.now();
+  canonicalize(enc.encode(`${'a '.repeat(1)}${' '.repeat(60000)}x${' '.repeat(60000)}\n`));
+  song(`x${' \t'.repeat(30000)}\n`);
+  assert.ok(performance.now() - t0 < 200, `took ${Math.round(performance.now() - t0)} ms`);
+});

@@ -101,6 +101,16 @@
 **Root cause**: A blank is not a statement boundary; the removed statement was the boundary.
 **Fix**: Replace a removed statement with `;` plus blanks (`webapp/tools/bundle.py` `blank`). Rule: test a source transform by comparing its output's behaviour with the original's (`test_bundle.py` `same_as_native`), not only by checking that it parses.
 
+### A bounded output buffer is not bounded work (2026-11-07)
+**Problem**: zip.js inflated each entry into a buffer of exactly its declared size and called that "bounded". fflate kept decoding the whole stream and dropped the excess bytes silently: an entry declaring 0 bytes but holding 256 MiB of zeros took a second each, 20 overlapping copies 35 s, and a song could hide a tail no other reader would miss.
+**Root cause**: The check measured memory, not the amount of input processed; the overflow never reached the code that compared lengths.
+**Fix**: Streaming `Inflate` in 4 KiB steps, stopped as soon as the output passes the declared size; overlapping entries refused. Rule: when a limit protects against hostile input, test it with a timing assertion on a crafted input (`zip.test.mjs` SR-31), not only with a size check.
+
+### A crypto library's lenient default is a verification bug (2026-11-07)
+**Problem**: SIG-03 used noble's `verifyAsync` with defaults; its ZIP-215 mode accepts R = identity, S = 0 under the identity key for any message, so a "signed" library could be forged, while Web Crypto and OpenSSL reject it.
+**Root cause**: The default chosen for consensus systems is not the RFC 8032 strictness every other verifier of this format uses.
+**Fix**: `{ zip215: false }`; a regression test with the identity key. Rule: when two implementations must agree (FDS principle 2), pin the verification mode explicitly and test a known forgery.
+
 ## Promoted
 
 <!-- Track gotchas that have been promoted to topic files or the memory index.
@@ -140,6 +150,10 @@
 
 | Date | Finding shape | Check | Status | Occurrences |
 |------|---------------|-------|--------|-------------|
+| 2026-11-07 | Inflation not stopped at the declared size (work unbounded) | `webapp/tests/unit/zip.test.mjs` "SR-31" (64 MiB stream declaring 0 bytes, < 500 ms); fails on 8c22e37 | live | 0 |
+| 2026-11-07 | Lenient signature verification (ZIP-215 forgery) | `webapp/tests/unit/validate.test.mjs` "SIG-03 … identity key"; fails on 8c22e37 | live | 0 |
+| 2026-11-07 | Engine throws on hostile manifest instead of reporting | `webapp/tests/unit/validate.test.mjs` "nested deeply …"; fails on 8c22e37 | live | 0 |
+| 2026-11-07 | Pipe inside a code span in a table cell | the Step 1.5 structural pre-check of `/review-changes` (caught FDS PF-20) | live | 1 (2026-11-07) |
 | 2026-11-06 | Bundle valid but behaves differently from the modules (ASI, regex/division) | `webapp/tests/test_bundle.py` `same_as_native` (7 cases, node); against the 13f7776 bundler 9 checks went red and one crashed | live | 0 |
 | 2026-11-06 | Doc presents a one-off or manual check as a repository test | needs intent | rejected | 0 |
 | 2026-11-06 | Quiet log kept past the promised retention | `webapp/server/test/run.sh` "16 forced rotations leave the log and 13 old copies" | proposed | 0 |

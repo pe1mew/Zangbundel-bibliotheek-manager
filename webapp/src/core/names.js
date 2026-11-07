@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Names in a library (FDS 3.3, 3.6, PF-14, PF-20 to PF-23). Pure functions.
 
-const FORBIDDEN = /[<>:"/\\|?*\u0000-\u001f\u007f]/;
+const FORBIDDEN = /[<>:"/\\|?*\u0000-\u001f\u007f-\u009f]/;          // PF-20: C0 and C1 control characters too
 const RESERVED = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/i;
 const SONG_ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const IGNORED_NAMES = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
