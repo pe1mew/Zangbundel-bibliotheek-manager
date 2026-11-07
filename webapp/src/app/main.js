@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Entry point of the main thread (webappTDS TD-22: bundled with everything it imports).
-// M1.4: the splash only (webappGUI GD-27, GD-30), then a card saying what this build is.
-// M4.2: the interface language (GD-17, GD-34): remembered, switched at once, every screen redrawn.
+// M4.3: the main screen's four areas (webappGUI GD-03, GD-04, GD-10), the splash in the centre with
+// the bars greyed (GD-03, GD-27, GD-30), then the home screen's primary actions; a page of its own
+// in a window narrower than 980 px (GD-32). The language switches at once (GD-17, M4.2). The bottom
+// bar's groups come with M4.4; until then it holds only the language button.
 
-import { el, replace } from './dom.js';
+import { el, icon, replace } from './dom.js';
 import { createLanguage, t } from './i18n.js';
+import { createLayout } from './layout.js';
 import { VERSION } from './version.js';
 
 const SPLASH_MS = 3000;   // GD-27
@@ -15,14 +18,8 @@ function isTestInstance(hostname) {
   return hostname.startsWith('test.') || hostname === 'localhost' || hostname === '127.0.0.1';
 }
 
+/** GD-03, GD-27, GD-30: the photograph, icon, name and version; 3 s or until a click or a key. */
 function splash(lang, onDone) {
-  const node = el('div', { class: 'splash', role: 'button', tabindex: 0, 'aria-label': t(lang, 'clickToContinue') }, [
-    el('div', { class: 'logo', 'aria-hidden': 'true' }),   // the icon is a CSS background: the build renames it
-    el('h1', {}, [t(lang, 'appName')]),
-    el('p', {}, [t(lang, 'tagline')]),
-    el('p', {}, [t(lang, 'version', { v: VERSION })]),
-    el('p', { class: 'hint' }, [t(lang, 'clickToContinue')]),
-  ]);
   let done = false;
   const finish = () => {
     if (!done) {
@@ -30,49 +27,83 @@ function splash(lang, onDone) {
       onDone();
     }
   };
-  node.addEventListener('click', finish);
-  node.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      finish();
-    }
-  });
+  const node = el('div', { class: 'splash', role: 'button', tabindex: 0, 'aria-label': t(lang, 'clickToContinue'), on: {
+    click: finish,
+    keydown: (event) => { if (event.key === 'Enter' || event.key === ' ') finish(); },
+  } }, [
+    el('div', { class: 'logo', 'aria-hidden': 'true' }),   // the icon is a CSS background: the build renames it
+    el('h1', {}, [t(lang, 'appName')]),
+    el('p', {}, [t(lang, 'tagline')]),
+    el('p', {}, [t(lang, 'version', { v: VERSION })]),
+    el('p', { class: 'hint' }, [t(lang, 'clickToContinue')]),
+  ]);
   setTimeout(finish, SPLASH_MS);
   return node;
 }
 
-/** GD-17: the language button, NL, EN, DE and round again. Until the bottom bar (M4.4) it sits on the card. */
-function languageButton(language) {
-  const lang = language.get();
-  return el('button', { type: 'button', class: 'langbtn', title: t(lang, 'languageSwitch', { name: t(lang, 'languageName') }),
-    'aria-label': t(lang, 'languageSwitch', { name: t(lang, 'languageName') }), on: { click: () => language.next() } },
-  [t(lang, 'languageCode')]);
+/** A primary action (GD-03). Until the library screens exist (M5, M6), each says why it waits. */
+function tile(name, title, sub, why) {
+  return el('button', { type: 'button', class: 'tile', disabled: true, title: why }, [
+    icon(name),
+    el('span', { class: 'tiletext' }, [el('b', {}, [title]), el('span', {}, [sub]), el('span', { class: 'why' }, [why])]),
+  ]);
 }
 
-function home(language) {
-  const lang = language.get();
-  return el('main', { class: 'home' }, [
-    el('div', { class: 'card' }, [
-      el('h2', {}, [t(lang, 'buildingTitle')]),
-      el('p', {}, [t(lang, 'buildingText')]),
-      el('p', { class: 'note' }, [t(lang, 'privacy')]),
-      el('p', { class: 'langrow' }, [languageButton(language)]),
+/** GD-03: the home screen's primary actions in the centre. */
+function home(lang) {
+  return el('div', { class: 'home' }, [
+    el('h1', {}, [t(lang, 'homeTitle')]),
+    el('p', { class: 'muted' }, [t(lang, 'homeLead')]),
+    el('div', { class: 'tiles' }, [
+      tile('open', t(lang, 'tileOpen'), t(lang, 'tileOpenSub'), t(lang, 'tileSoon')),
+      tile('add', t(lang, 'tileNew'), t(lang, 'tileNewSub'), t(lang, 'tileSoon')),
+      tile('edit', t(lang, 'tileEdit'), t(lang, 'tileNeedLib'), t(lang, 'tileSoon')),
+      tile('download', t(lang, 'tileDownload'), t(lang, 'tileNeedLib'), t(lang, 'tileSoon')),
     ]),
+    el('p', { class: 'note' }, [t(lang, 'privacy')]),
+  ]);
+}
+
+/** GD-17: the language button, NL, EN, DE and round again (in its bottom-bar group from M4.4). */
+function languageButton(language) {
+  const lang = language.get();
+  const label = t(lang, 'languageSwitch', { name: t(lang, 'languageName') });
+  return el('button', { type: 'button', class: 'navbtn', title: label, 'aria-label': label, on: { click: () => language.next() } },
+    [icon('lang'), el('span', {}, [t(lang, 'languageCode')])]);
+}
+
+/** GD-32: shown instead of the main screen in a window narrower than 980 px (CSS decides). */
+function narrowPage(lang) {
+  return el('div', { class: 'narrowbox' }, [
+    el('div', { class: 'logo', 'aria-hidden': 'true' }),
+    el('h2', {}, [t(lang, 'appName')]),
+    el('p', {}, [t(lang, 'narrow')]),
   ]);
 }
 
 function start() {
   const root = document.getElementById('app');
   const language = createLanguage({ preferred: navigator.languages });
-  const banner = () => (isTestInstance(location.hostname)
+  const layout = createLayout({ getLang: language.get });
+  const narrow = el('div', { class: 'narrow' }, []);
+  const banner = isTestInstance(location.hostname)
     ? el('div', { class: 'testbanner', role: 'note', lang: 'nl' }, [TEST_BANNER])
-    : null);
+    : null;
   let screen = 'splash';
+
   const render = () => {
     const lang = language.get();
     document.documentElement.lang = lang;
     document.title = t(lang, 'appName');
-    replace(root, banner(), screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); }) : home(language));
+    layout.setSplash(screen === 'splash');
+    replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); }) : home(lang));
+    replace(layout.right, el('div', { class: 'libhead' }, [el('h3', {}, [t(lang, 'songs')])]),
+      el('p', { class: 'empty' }, [t(lang, 'noLibrary')]));
+    replace(layout.left, el('p', { class: 'empty' }, [t(lang, 'tileNeedLib')]));
+    replace(layout.bottom, languageButton(language));
+    replace(narrow, narrowPage(lang));
   };
+  replace(root, banner, layout.app, narrow);
   language.onChange(render);                              // GD-17: at once, without losing work
   render();
 }

@@ -1,27 +1,42 @@
 /* SPDX-License-Identifier: Apache-2.0 */
-/* The manager's styles (design/webappGUI.md). Colours: the app's night theme (GD-12).
-   All styles live here: no style attributes and no <style> elements (securityAssessment SR-24). */
+/* The manager's styles (design/webappGUI.md), taken over from the mock (webapp/mock/mock.css).
+   Colours: the app's night theme as its screens use it (GD-12). All styles live here: no style
+   attributes and no <style> elements (securityAssessment SR-24); computed values arrive only as
+   custom properties through dom.js setVar (the bar widths of GD-10). */
 
 :root {
-  --bg: #000000;
-  --sheet: #121212;
-  --divider: #2A2A2A;
-  --white: #FFFFFF;
-  --secondary: #BFBFBF;
-  --fire-orange: #FF8A3D;
-  --night-blue-dark: #0B2545;
-  --sky-blue: #4FC3F7;
+  /* The app's night theme: LyricColors.Night, SheetNight, RoundButtons (app android/app/.../ui). */
+  --bg: #000000;               /* lyric view background */
+  --sheet: #121212;            /* sheets, bars, dialogs (SheetNight) */
+  --btn: #1A1A1A;              /* round buttons (ButtonNight) */
+  --divider: #2A2A2A;          /* dividers, disabled buttons */
+  --grey: #444444;             /* inactive tracks, outlines */
+  --white: #FFFFFF;            /* text */
+  --secondary: #BFBFBF;        /* labels, secondary text */
+  --fire-orange: #FF8A3D;      /* primary, outlines, text buttons */
+  --fire-orange-light: #FFB36B;
+  --night-blue-dark: #0B2545;  /* text on orange */
+  --night-blue: #13315C;       /* highlight bar */
+  --sky-blue: #4FC3F7;         /* links, focus */
+  --line: var(--divider);
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* GD-31 */
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body { background: var(--bg); color: var(--white); font: 16px/1.45 var(--font); }
+button { font: inherit; color: inherit; }
 a { color: var(--sky-blue); }
 a:focus-visible, .splash:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
-
-.app { height: 100%; display: flex; flex-direction: column; }
+#app { height: 100%; display: flex; flex-direction: column; }
 .noscript { padding: 24px; max-width: 640px; }
+
+h1, h2, h3 { margin: 0 0 8px; font-weight: 600; }
+h1 { font-size: 34px; }
+h2 { font-size: 22px; }
+h3 { font-size: 13px; color: var(--secondary); text-transform: uppercase; letter-spacing: .06em; }
+.muted { color: var(--secondary); }
+.empty { padding: 24px 20px; margin: 0; color: var(--secondary); }
 
 /* The test instance's fixed banner (SR-81) */
 .testbanner {
@@ -29,31 +44,128 @@ a:focus-visible, .splash:focus-visible { outline: 3px solid var(--sky-blue); out
   background: var(--fire-orange); color: var(--night-blue-dark);
 }
 
-/* Splash with the app's photograph (GD-27, GD-30) */
+/* ---- The main screen: four areas (GD-04) ---- */
+.app {
+  --lw: 300px;   /* left bar width, GD-10 (set by layout.js) */
+  --rw: 340px;   /* right bar width */
+  position: relative; flex: 1; min-height: 0;
+  display: grid;
+  grid-template-columns: var(--lw) minmax(0, 1fr) var(--rw);
+  grid-template-rows: minmax(0, 1fr) 76px;
+  grid-template-areas: "left centre right" "bottom bottom bottom";
+  transition: grid-template-columns .2s ease;
+}
+.left   { grid-area: left;   border-right: 1px solid var(--line); background: var(--sheet); }
+.right  { grid-area: right;  border-left: 1px solid var(--line);  background: var(--sheet); }
+.centre { grid-area: centre; background: var(--bg); position: relative; }
+.bottom { grid-area: bottom; border-top: 1px solid var(--line); background: var(--sheet); }
+.left, .right, .centre { overflow-y: auto; }
+.left, .right { overflow-x: hidden; }
+.libhead { padding: 20px 20px 12px; border-bottom: 1px solid var(--line); }
+.libhead h3 { margin: 0; }
+
+/* GD-03: during the splash the bars are greyed and do nothing */
+.app.onsplash .left, .app.onsplash .right, .app.onsplash .bottom { opacity: .35; }
+.app.onsplash .edge { opacity: .35; pointer-events: none; }
+
+/* ---- Resizable, foldable side bars (GD-10) ---- */
+.app.resizing { transition: none; user-select: none; cursor: col-resize; }
+.app.lfold .left, .app.rfold .right { visibility: hidden; border: none; }
+.edge {
+  position: absolute; top: 0; bottom: 76px; width: 12px; z-index: 5;
+  display: flex; align-items: center; cursor: col-resize; outline: none;
+  transition: left .2s ease, right .2s ease;
+}
+.app.resizing .edge { transition: none; }
+.edge-left  { left: calc(max(var(--lw), 6px) - 6px); justify-content: flex-start; }
+.edge-right { right: calc(max(var(--rw), 6px) - 6px); justify-content: flex-end; }
+.edge::before {                       /* the line that lights up on hover, focus and while dragging */
+  content: ""; position: absolute; top: 0; bottom: 0; left: 5px; width: 2px; background: transparent; transition: background .15s;
+}
+.edge:hover::before, .edge:focus-visible::before, .edge.active::before { background: var(--sky-blue); }
+.app.lfold .edge-left, .app.rfold .edge-right { cursor: default; }
+.foldtab {
+  position: relative; z-index: 1; width: 22px; height: 64px; padding: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--sheet); color: var(--secondary); border: 1px solid var(--line);
+}
+.edge-left .foldtab  { margin-left: 6px; border-left: none;  border-radius: 0 10px 10px 0; }
+.edge-right .foldtab { margin-right: 6px; border-right: none; border-radius: 10px 0 0 10px; }
+.foldtab:hover { color: var(--fire-orange); border-color: var(--fire-orange); }
+.foldtab:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 1px; }
+.foldtab svg { width: 18px; height: 18px; fill: currentColor; }
+
+/* ---- Buttons (webappGUI 2.2, as in the app) ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; min-width: 48px; padding: 0 22px;
+  border-radius: 999px; border: 2px solid transparent; cursor: pointer; font-weight: 600; background: none;
+}
+.btn svg { width: 20px; height: 20px; fill: currentColor; }
+.btn-primary { background: var(--fire-orange); color: var(--night-blue-dark); }
+.btn-primary:hover { background: var(--fire-orange-light); }
+.btn-outline { border-color: var(--fire-orange); color: var(--fire-orange); }
+.btn-outline:hover { background: rgba(255, 138, 61, .12); }
+.btn-text { color: var(--fire-orange); padding: 0 12px; }
+.btn-text:hover { background: rgba(255, 138, 61, .10); }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.iconbtn {
+  width: 40px; height: 40px; border-radius: 50%; border: none; background: none;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--secondary);
+}
+.iconbtn:hover { background: rgba(255, 255, 255, .12); color: var(--white); }
+.iconbtn svg { width: 22px; height: 22px; fill: currentColor; }
+.btn:focus-visible, .iconbtn:focus-visible, .navbtn:focus-visible, .tile:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
+
+/* ---- Bottom bar (GD-04; its groups come with M4.4) ---- */
+.bottom { display: flex; align-items: center; justify-content: center; gap: 8px; overflow-x: auto; }
+.navbtn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-width: 84px; height: 64px; border: none; border-radius: 12px; padding: 0 6px; background: none; cursor: pointer;
+  color: var(--secondary); font-size: 13px; position: relative;
+}
+.navbtn svg { width: 26px; height: 26px; fill: currentColor; }
+.navbtn:hover:not(:disabled) { background: rgba(255, 255, 255, .10); color: var(--white); }
+.navbtn.active { color: var(--fire-orange); }
+.navbtn:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ---- Splash in the centre, with the app's photograph (GD-03, GD-27, GD-30) ---- */
 .splash {
-  flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+  height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
   padding-left: 8%; cursor: pointer; animation: fadein .3s ease-out;
   background: linear-gradient(90deg, rgba(0, 0, 0, .85) 0%, rgba(0, 0, 0, .55) 55%, rgba(0, 0, 0, .35) 100%),
               url(backdrop-3200x1440.webp) right center / cover no-repeat;
 }
-.splash .logo { width: 128px; height: 128px; border-radius: 28px; margin-bottom: 20px; background: url(zangbundel-icon.svg) center / contain no-repeat; }
+.logo { width: 128px; height: 128px; border-radius: 28px; margin-bottom: 20px; background: url(zangbundel-icon.svg) center / contain no-repeat; }
 .splash h1 { margin: 0 0 4px; font-size: 32px; }
 .splash p { margin: 0; color: var(--secondary); }
 .splash .hint { margin-top: 24px; font-size: 14px; }
 @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
 
-/* Until the main screen exists (M4): what this build is */
-.home { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
-.home .card { max-width: 560px; background: var(--sheet); border: 1px solid var(--divider); border-radius: 16px; padding: 24px; }
-.home h2 { margin: 0 0 12px; font-size: 20px; }
-.home p { margin: 0 0 12px; }
-.home p.note { color: var(--secondary); font-size: 14px; }
-.home .langrow { margin: 16px 0 0; }
-
-/* GD-17: the language button (in the bottom bar from M4.4) */
-.langbtn {
-  min-width: 48px; padding: 6px 12px; border: 1px solid var(--divider); border-radius: 8px;
-  background: transparent; color: var(--white); font: 600 14px/1 var(--font); cursor: pointer;
+/* ---- Home: the primary actions (GD-03) ---- */
+.home { max-width: 760px; margin: 0 auto; padding: 48px 32px; overflow-wrap: anywhere; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin: 24px 0; }   /* one column in a narrow centre */
+.tile {
+  text-align: left; background: var(--sheet); border: 1px solid var(--line); border-radius: 16px;
+  padding: 20px; cursor: pointer; display: flex; gap: 16px; align-items: flex-start; min-height: 112px;
 }
-.langbtn:hover { border-color: var(--sky-blue); }
-.langbtn:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
+.tile:hover:not(:disabled) { border-color: var(--fire-orange); }
+.tile:disabled { opacity: .55; cursor: not-allowed; }
+.tile svg { width: 36px; height: 36px; fill: var(--fire-orange); flex: none; }
+.tiletext { display: flex; flex-direction: column; gap: 4px; }
+.tiletext b { font-size: 18px; }
+.tiletext span { color: var(--secondary); font-size: 14px; }
+.tiletext .why { color: var(--fire-orange-light); font-size: 13px; }
+.home .note { color: var(--secondary); font-size: 14px; }
+
+/* ---- Narrow window (GD-32): below 980 px only this page shows ---- */
+.narrow { display: none; }
+@media (max-width: 979px) {
+  .app { display: none; }
+  .narrow { display: flex; flex: 1; align-items: center; justify-content: center; padding: 24px 16px; overflow-y: auto; }
+  .narrowbox { max-width: 560px; background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+  .narrowbox .logo { width: 72px; height: 72px; border-radius: 16px; margin-bottom: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app, .edge, .splash { transition: none; animation: none; }
+}

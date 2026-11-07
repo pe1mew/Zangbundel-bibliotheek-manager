@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M4.3: the main screen's layout** (`design/implementationPlan.md`).
+  - **Four areas:** left bar, centre, right bar and bottom bar.
+  - **Splash:** in the centre with the photograph, the bars greyed meanwhile.
+  - **Home screen:** the primary actions, which wait for M5 and M6.
+  - **Side bars:** resized by pointer or arrow keys and folded by their tabs, all remembered on this computer (`app/layout.js`, `app/bars.js`; GD-03, GD-04, GD-10, GD-34).
+  - **Narrow page:** below 980 px (GD-32).
+  - **Tests:** `tests/unit/bars.test.mjs` has 4 tests; `node --test` 269 of 269. Checked in the browser.
+  - **webappGUI draft 0.15** asks for a minimum width of the centre (GQ-21).
 - **M4.2: the interface in Dutch, English and German** (`design/implementationPlan.md`).
   - **`app/texts.js`** holds the mock's 242 texts in all three languages; the mock-only texts and the Google Play notice are left out.
   - **`app/i18n.js`** opens in the language remembered on this computer, else the browser's, else English, and switches at once (GD-17, GD-34).

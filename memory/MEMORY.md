@@ -101,4 +101,8 @@
     - `createLanguage({preferred, store})` gives get/set/next/onChange; main.js redraws on change.
     - `storage.js` is the allow-list; the build refuses storage APIs elsewhere.
     - The language button sits on the start card until M4.4's bottom bar.
-  - Next: M4.3 layout (four areas, resizable bars, splash, narrow page), from mock.css/mock.js but built with el().
+  - M4.3 done (uncommitted): layout.js (createLayout: app, left, centre, right, bottom, setSplash, relabel) and bars.js (pure); main.js renders the splash, then home, into layout.centre.
+    - The index.html root is `<div id="app">` without class: `.app` is the grid.
+    - Open: GQ-21, the centre's minimum width.
+    - Pane checks: a click on an edge's middle hits the fold tab, so focus the edge by JS. Dispatch PointerEvents for a drag. The grid animates 0.2 s, so read it after a pause.
+  - Next: M4.4 bottom bar groups, the Android panel (with the narrow page's links), *Over*; M4.5 Controle.
