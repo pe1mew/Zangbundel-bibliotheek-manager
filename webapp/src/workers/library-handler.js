@@ -19,12 +19,12 @@ import { fromBlocks, toBlocks } from '../core/blocks.js';
 /** The songs as the screens list them: { id, title }, read here so the main thread never parses a song (SR-30). */
 export function songSummary(library) {
   return [...library.songs].map(([id, text]) => {
-    if (text === null) return { id, title: null, sortTitle: null, language: null, lyricist: null, tags: [], words: '' };
+    if (text === null) return { id, title: null, sortTitle: null, language: null, lyricist: null, tags: [], words: '', editable: false };
     const song = parseSong(text);
     const first = (name) => (song.meta.get(name) || [null])[0] || null;
     // GD-13: what the song list searches, sorts and filters on; words are the lyrics as shown, without chords
     return { id, title: first('title'), sortTitle: first('sorttitle'), language: first('language'), lyricist: first('lyricist'),
-      tags: [...new Set(song.meta.get('tag') || [])], words: song.lines.join('\n') };
+      tags: [...new Set(song.meta.get('tag') || [])], words: song.lines.join('\n'), editable: true };
   });
 }
 

@@ -7,6 +7,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M5.3a: editing a song in blocks** (`design/implementationPlan.md`).
+  - ***Bewerken*** opens the song's verses, choruses and bridges as blocks, each with its kind and label.
+  - **Blocks:** move them up and down, delete them, add new ones; remarks and notes stay locked in their place.
+  - ***Toepassen*** applies the song (also with an Error) and shows it; *Annuleren* throws the changes away.
+  - **Leaving the editor** by another action asks first, naming the song (GD-36).
+  - **Code:** `app/editor.js`; `session.updateSong`.
+  - **Tests:** `editor.test.mjs`; `node --test` 351 of 351. Checked in Chromium.
+
+### Changed
+- **The block form keeps a section editable around a remark** (webappGUI draft 0.20, GD-19 clarified by the owner): a `{comment}`, `#` note or unknown directive inside a verse, chorus or bridge stays in its place as a locked line, instead of locking the whole section.
+
+### Added
 - **M2.3: the block form of a song** (`core/blocks.js`), for the section editor of M5.3.
   - **Blocks:** a song becomes sections, chorus repeats, metadata lines and locked blocks, and back to text.
   - **Nothing lost:** unchanged blocks come back byte for byte, for all 401 songs of the test libraries; locked blocks are never rewritten.

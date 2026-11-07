@@ -38,10 +38,10 @@ export function lyricsNode(lang, sections) {
 
 /**
  * GD-13, GD-16: the selected song in view mode: its title, who wrote it, *Verwijderen* and *Bewerken*
- * (M5.3), then its lyrics. details: { sections, meta } from the worker, sections null when the song is
+ * (the song editor, M5.3), then its lyrics. details: { sections, meta } from the worker, sections null when the song is
  * not text.
  */
-export function songViewNode(lang, id, details, { readOnly, onDelete }) {
+export function songViewNode(lang, id, details, { readOnly, onDelete, onEdit }) {
   const meta = details.meta || {};
   const title = meta.title || t(lang, 'noTitle');
   const by = [
@@ -50,8 +50,10 @@ export function songViewNode(lang, id, details, { readOnly, onDelete }) {
   ].filter(Boolean).join(' · ');
   const del = el('button', { type: 'button', class: 'btn btn-text', disabled: readOnly, on: readOnly ? undefined : { click: () => onDelete(id, title) } },
     [icon('delete'), t(lang, 'delete')]);
-  const edit = el('button', { type: 'button', class: 'btn btn-outline', disabled: true, title: `${t(lang, 'edit')}: ${t(lang, 'tileSoon')}` },
-    [icon('edit'), t(lang, 'edit')]);
+  const canEdit = !readOnly && onEdit && details.sections !== null;
+  const edit = el('button', { type: 'button', class: 'btn btn-outline', disabled: !canEdit,
+    title: canEdit || readOnly ? t(lang, 'edit') : `${t(lang, 'edit')}: ${t(lang, 'tileSoon')}`, on: canEdit ? { click: () => onEdit(id) } : undefined },
+  [icon('edit'), t(lang, 'edit')]);
   return el('div', { class: 'view' }, [
     el('div', { class: 'viewhead' }, [
       el('div', {}, [el('h1', {}, [title]), meta.subtitle ? el('div', { class: 'muted' }, [meta.subtitle]) : null,

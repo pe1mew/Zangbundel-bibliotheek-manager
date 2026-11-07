@@ -117,6 +117,34 @@ export function createSession({ client, crypto = null, now = () => new Date() })
       return true;
     },
 
+    /**
+     * GD-09, GD-20 (M5.3): the song id takes text, canonical from the block form or the code mode. It is
+     * applied also with an Error; the findings follow (EDT-42) and the library has changes not yet
+     * downloaded. A read-only library is not changed (EDT-23). Returns true when applied.
+     */
+    async updateSong(id, text) {
+      const lib = state.library;
+      if (!lib || isReadOnly() || typeof text !== 'string' || !lib.songs.has(id)) return false;
+      const library = { ...lib, songs: new Map(lib.songs), rawSongs: new Map(lib.rawSongs || []) };
+      library.songs.set(id, text);
+      library.rawSongs.delete(id);
+      set({ library, dirty: true });
+      await recheck();
+      return true;
+    },
+
+    /** M2.3, GD-19: a song as blocks for the section editor, made in the worker (SR-30). */
+    async songBlocks(id) {
+      const lib = state.library;
+      if (!lib || typeof lib.songs.get(id) !== 'string') return null;
+      return client.request('blocks', { text: lib.songs.get(id) });
+    },
+
+    /** M2.3: blocks back to text in the worker: { text } or { problem }. */
+    unblocks(form) {
+      return client.request('unblocks', { form });
+    },
+
     /** GD-05, GD-19: one song's sections and metadata, parsed in the worker (SR-30); null when it is gone. */
     async songDetails(id) {
       const lib = state.library;

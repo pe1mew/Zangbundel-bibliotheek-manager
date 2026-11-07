@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.19 |
+| **Status** | Draft 0.20 |
 | **Date** | 2026-11-07 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -252,6 +252,8 @@ The owner's answers to the open questions, and two further requests made during 
 | Chords (`[G]`, §5.4) | Typed inline in the text; shown highlighted. |
 | Everything else: `{comment}`, tab, grid and ABC blocks, `#` maintainer notes, unknown directives, implicit verses | A locked block in its place, showing its text greyed with *Alleen te wijzigen in de ChordPro-tekst*. It is written back exactly as it was, so the song's content hash does not change by accident. |
 
+*Clarified 2026-11-07 by the owner:* a locked line inside a verse, chorus or bridge (a `{comment}` such as *zachter*, a `#` note, an unknown directive) stays in its place within the section, and the section stays editable around it in *Blokken*; the locked line may be removed but is never changed. Only a broken structure (an environment not closed by its own end) and tab, grid, ABC and unknown environments are locked as a whole.
+
 **GD-20 — *Toepassen* always applies; problems are marked and listed.** *(Resolves GQ-12.)* *Toepassen* takes the song into the library also when it has an Error. A song with an Error or Warning gets the severity icon of GD-29 on its row in the song list. A button *Controle* in the bottom bar shows the number of Errors and Warnings and opens the validation panel (FDS EDT-40 to EDT-42): all messages grouped by severity, each with its location (set, song, line), and a click on one goes there. *Downloaden* stays blocked while any Error is present (EDT-50, M-63) and says so. This supersedes the refusal shown in the first mock.
 
 **GD-21 — Sets are a tab in the right bar.** *(Resolves GQ-11.)* The right bar has two tabs, *Liedjes* and *Sets*, like the app's *Setlist* and *Zangbundel* tabs. *Sets* lists the sets (add, rename, delete with M-62, drag to reorder; EDT-31). Opening a set shows its songs in order in the centre area, with drag and up/down reordering as in the section editor (GD-08, GD-11) and a bin per entry that removes the song from the set only. Songs are added to the open set from the *Liedjes* tab with a *+ Set* button on each row while a set is open. A song can be in several sets (D-22).
@@ -372,3 +374,4 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.20 | 2026-11-07 | GD-19 clarified by the owner: a locked line inside a section keeps its place there, and the section stays editable around it. |

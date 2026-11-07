@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.17 |
 | **Date** | 2026-11-07 |
-| **Depends on** | `design/FDS.md` draft 0.11, `design/webappGUI.md` draft 0.19, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (58 cases) |
+| **Depends on** | `design/FDS.md` draft 0.11, `design/webappGUI.md` draft 0.20, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (58 cases) |
 
 ---
 
@@ -252,14 +252,14 @@ Each milestone ends with its exit checks passing and the result written to `desi
 - **Tag labels** (FDS draft 0.10, D-44): the manifest's optional `tags` is checked by MAN-02 (`tagsProblem` in `manifest.js`), kept in the model as `tags`, written into the manifest and never into the view, copied by Save as copy, and carried over from `zangbundel.json` on conversion, with what breaks §4.1 left out and listed as `tagsLeftOut`. The test libraries `tag-labels` and `tag-label-invalid` bring the corpus to 58 (SC-04: 58 of 58); `tests/unit/tags.test.mjs` has 5 tests. Editing the labels is a screen (M4 or M5, webappGUI GQ-20).
 - **Done since (2026-11-07):** M2.3's block form, `core/blocks.js`, before M5.3 needs it.
   - `toBlocks(text)`: the song in file order as metadata lines, sections (verse, chorus, bridge, implicit verses), chorus repeats and locked blocks.
-  - An environment is an editable section only when it holds nothing but lyric and blank lines. One with a `{comment}`, a `#` note or anything else inside is locked as a whole, for the *Code (ChordPro)* mode (GD-38). So are tab, grid, ABC and unknown blocks, comments, layout and unknown directives, and malformed lines; locked runs of lines are merged.
+  - A verse, chorus or bridge environment is an editable section. A `{comment}`, a `#` note, an unknown directive or a malformed line inside it is a locked line in its place (`{ locked: line }`), and the section stays editable around it (GD-19 as clarified by the owner, webappGUI draft 0.20). A locked line may be left out but not changed, doubled or made up. An environment not closed by its own end, and tab, grid, ABC and unknown environments, are locked as a whole for the *Code (ChordPro)* mode (GD-38); so are comments, layout and unknown directives outside sections. Locked runs of lines are merged.
   - `fromBlocks(form)`: a block that still equals how it was read is written back as its original lines, so switching modes without a change gives the song back byte for byte (GD-38). A changed block is written canonically (EDT-57): `{start_of_<kind>[: label]}`, `{chorus[: label]}`, `{name: value}` or `{meta: name value}`. An implicit verse stays implicit while it has no label and no blank line. Locked blocks are never rewritten (GD-19).
   - It refuses what would change meaning: a typed line that would be a directive, a `#` comment or contain a control character (`lyricLineProblem`, GD-07), a label or value with a brace (`valueProblem`). The editor will check these while typing.
   - `metaValues` and `setMeta` read and set a metadata field in place; a new field joins the song's head (EDT-34, GD-05).
   - `chordpro.js` `readLine` classifies one line by the parser's own rules; the worker has ops `blocks` and `unblocks` (the latter answers a problem, never half a song).
-  - **Tested:** `tests/unit/blocks.test.mjs`, 9 tests. All 401 songs of the test libraries come back byte for byte, also after `structuredClone`. Others cover: edits written canonically with the locked blocks byte-exact; kinds, labels and implicit verses; new and reordered blocks; refused lines and values; metadata; 3,000 random songs round-tripped and edited; the worker ops.
+  - **Tested:** `tests/unit/blocks.test.mjs`, 10 tests. All 401 songs of the test libraries come back byte for byte, also after `structuredClone`. Others cover: edits written canonically with the locked blocks byte-exact; kinds, labels and implicit verses; new and reordered blocks; refused lines and values; metadata; 3,000 random songs round-tripped and edited; the worker ops.
   - **Fuzz:** the ChordPro part of `fuzz.mjs` now also runs `songView` and the block round trip. `--iterations 20000` passed: 20,000 library and 2,000 ChordPro iterations, no failures.
-  - `node --test`: 343 of 343. Container test: 81 of 81.
+  - `node --test`: 344 of 344, after the clarification of GD-19 (a test of a section edited around its remark). Long fuzz and container test (81 of 81) rerun after it.
 
 ### M3 — Keys and signing (M)
 
@@ -473,7 +473,44 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - the reading position kept while searching the list;
   - deleting from the view after M-62, the next song shown; the library title back to the library;
   - console clean, apart from Chrome refusing a leave prompt when the tool reloaded a tab with changes (Chrome shows it only after a user gesture).
-- **Next:** M5.3 song editor (the block form of M2.3 is ready); M5.5 sets.
+
+**M5.3 is built in five steps:**
+- **M5.3a:** *Blokken* with *Toepassen*, *Annuleren* and the leave question.
+- **M5.3b:** the *Code (ChordPro)* mode.
+- **M5.3c:** the song's fields in the left bar.
+- **M5.3d:** *Lied toevoegen*.
+- **M5.3e:** dragging with auto-scroll.
+
+**M5.3a done.**
+- **`app/editor.js`:** the song editor in *Blokken* mode, on the block form the worker makes (M2.3).
+  - Each block shows its kind (*Couplet*, *Refrein*, *Brug* in a list; *Refrein herhalen* and *Vergrendeld blok* as fixed names), a label field (empty: generated), *Omhoog*, *Omlaag* and *Blok verwijderen* (GD-33).
+  - A section's text is edited in text fields around its locked lines, which show greyed with a button to remove them (GD-19 as clarified); locked blocks show greyed with *Alleen te wijzigen in de ChordPro-tekst*; a repeat names the chorus it repeats.
+  - Typing (GD-07): braces and control characters are taken out with the hint *Accolades { } en stuurtekens kunnen niet in een liedtekst*; a line starting with `#` is flagged.
+  - Adding: *Couplet*, *Refrein*, *Brug* and *Refrein herhalen* below the blocks; the new block gets focus. Moving keeps focus on the moved block's button.
+  - Metadata lines are kept as they are; the left bar edits them in M5.3c.
+- **Opening:** *Bewerken* on a song's row, above the song in view mode, and in the bottom bar (only with a song selected). A song that is not text has no *Blokken* (M5.3b gives it the code mode).
+- ***Toepassen* (GD-09, GD-20):** the worker writes the blocks back (`unblocks`) and the song is applied with its findings (`session.updateSong`), also with an Error. The song then shows in view mode with *Wijzigingen toegepast*, or *Toegepast, met n fout(en)*. Only a block form the worker cannot write (a line or label that would change meaning) is not applied; the editor then says so above the blocks. The live checks make this rare.
+- ***Annuleren*** throws the changes away without a question, as in the mock.
+- **GD-36:** choosing another song, the library's title, another song's bin, *Openen*, *Nieuw*, *Sluiten* and *Downloaden* leave the editor.
+  - With changes, they first ask *Je bent een lied aan het bewerken*, naming the song: apply (primary), throw away (with a notice), or keep editing.
+  - Without changes they just leave. Search, filters, the language, *Controle* and the key buttons do not leave the editor.
+- **GD-42:** the leave guard listens while the editor is open and asks only when it has changes (`leave-guard.js` `listenWhen`).
+- **`core/blocks.js`:** lyric lines straight after lyric lines would join one implicit verse, so a block moved there is written with a blank line before it.
+- **Deviations from the mock:**
+  - the section text is a plain text field, as the mock's editor showed raw ChordPro too (`[G]` inline);
+  - the kind list holds verse, chorus and bridge only: turning a section into a repeat would drop its text, so repeats are added, not converted;
+  - the drag handle and the help line about dragging come with M5.3e.
+- **Tested:**
+  - `tests/unit/editor.test.mjs`, 5 tests: typing filter, `#` lines, parts and lines, moving past metadata, applying in the session, read-only;
+  - `blocks.test.mjs`, 1 more (moved implicit verses); `leave-guard.test.mjs`, 1 more.
+  - `node --test`: 351 of 351. Container test: 81 of 81.
+- **In the browser pane (Chromium), on `valid-unsigned`:**
+  - *Fire in the Night* opened as 7 blocks;
+  - braces taken out with the hint; a `#` line flagged;
+  - the bridge moved up with focus kept; a new chorus added and typed in;
+  - *Toepassen* showed the song in its new order with *Wijzigingen toegepast*, the library *gewijzigd*;
+  - GD-36: no question without changes; *Verder bewerken*, *weggooien* (notice, then the click) and *toepassen* (then the click); *Annuleren* without a question.
+- **Next:** M5.3b, the *Code (ChordPro)* mode.
 
 ### M6 — Open, save and sign (M)
 

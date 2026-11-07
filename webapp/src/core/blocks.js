@@ -5,16 +5,19 @@
 //   toBlocks(text)  → { blocks }      fromBlocks({ blocks }) → text (canonical, FDS EDT-57)
 //
 // A block is one of
-//   { type: 'section', kind: 'verse' | 'chorus' | 'bridge', label, lines, implicit }   editable (GD-19)
+//   { type: 'section', kind: 'verse' | 'chorus' | 'bridge', label, lines, implicit }   editable (GD-19);
+//       lines are lyric lines (strings, '' a blank line) and locked lines in their place ({ locked: line })
 //   { type: 'repeat', label }                                                         {chorus} (7.2)
 //   { type: 'meta', name, value }                                                     a metadata line (6.1; the left bar, GD-05)
 //   { type: 'locked', lines }                                                         everything else, kept byte-exact (GD-19)
 // and carries blank (the blank lines before it) and, when it came from the text, orig: how it was read.
 // A block that still equals orig is written back as its original lines, so a song that is only
 // switched between the modes comes back byte for byte (GD-38); a changed block is written canonically.
-// An environment holds an editable section only when it has nothing but lyric and blank lines; an
-// environment with a {comment}, a # note or anything else inside is locked as a whole, and the
-// ChordPro code mode (GD-38) edits it.
+// Inside a verse, chorus or bridge, a {comment}, a # note, an unknown directive or any other line that
+// is not lyric or blank is a locked line in its place: the section stays editable around it, and the
+// line is written back as it was (the owner, 2026-11-07). Only a broken structure (an environment not
+// closed by its own end) and tab, grid, ABC and unknown environments are locked as a whole; the
+// ChordPro code mode (GD-38) edits those.
 
 import { METADATA_DIRECTIVES, readLine } from './chordpro.js';
 
@@ -103,9 +106,9 @@ export function toBlocks(text) {
       let j = i + 1;
       while (j < lines.length && !(info[j].type === 'directive' && /^(start|end)_of_/.test(info[j].name))) j += 1;
       const closes = j < lines.length && info[j].name === `end_of_${kind}`;
-      const clean = closes && SECTION_KINDS.has(kind) && info.slice(i + 1, j).every((x) => x.type === 'content' || x.type === 'blank');
-      if (clean) {
-        const ls = lines.slice(i + 1, j);
+      if (closes && SECTION_KINDS.has(kind)) {
+        // between start and end there is no other start or end (the scan stopped at the first)
+        const ls = lines.slice(i + 1, j).map((x, k) => (['content', 'blank'].includes(info[i + 1 + k].type) ? x : { locked: x }));
         const b = { type: 'section', kind, label: r.value || null, lines: ls, implicit: false };
         b.orig = sectionOf({ ...b, lines: ls.slice() });
         push(b, lines.slice(i, j + 1));
@@ -136,16 +139,24 @@ export function toBlocks(text) {
 }
 
 function sectionLines(b) {
-  const lines = b.lines.map(trimEnd);
-  for (const [n, line] of lines.entries()) {
+  // a locked line can only be one the section had when it was read: kept or left out, never made up
+  const available = (b.orig ? b.orig.lines : []).filter((x) => typeof x !== 'string').map((x) => x.locked);
+  const lines = b.lines.map((line, n) => {
+    if (typeof line !== 'string') {
+      const k = line && typeof line.locked === 'string' ? available.indexOf(line.locked) : -1;
+      if (k < 0) throw new Error(`fromBlocks: line ${n + 1} of a ${b.kind}: a locked line that was not in the song`);
+      available.splice(k, 1);
+      return line.locked;                                 // GD-19: as it was
+    }
     const p = lyricLineProblem(line);
     if (p) throw new Error(`fromBlocks: line ${n + 1} of a ${b.kind}: ${p}`);
-  }
+    return trimEnd(line);
+  });
   if (b.label !== null && b.label !== undefined && valueProblem(b.label)) throw new Error(`fromBlocks: label: ${valueProblem(b.label)}`);
   while (lines.length && lines[0] === '') lines.shift();
   while (lines.length && lines[lines.length - 1] === '') lines.pop();
-  // 7.3: an implicit verse stays implicit only as it was: a verse without label or blank lines
-  if (b.implicit && b.kind === 'verse' && !b.label && lines.length && !lines.includes('')) return lines;
+  // 7.3: an implicit verse stays implicit only as it was: a verse without label, blank or locked lines
+  if (b.implicit && b.kind === 'verse' && !b.label && lines.length && b.lines.every((x) => typeof x === 'string' && x.trim() !== '')) return lines;
   return [`{start_of_${b.kind}${b.label ? `: ${b.label}` : ''}}`, ...lines, `{end_of_${b.kind}}`];
 }
 
@@ -184,7 +195,10 @@ export function fromBlocks({ blocks }) {
   for (const b of blocks) {
     const lines = written(b);
     if (!lines.length) continue;
-    const blank = b.blank ?? (b.type === 'meta' || !out.length ? 0 : 1);
+    let blank = b.blank ?? (b.type === 'meta' || !out.length ? 0 : 1);
+    // 7.3: lyric lines straight after lyric lines would join one implicit verse; a moved block keeps apart
+    // (text read by toBlocks never has this: its runs of lyric lines are one block)
+    if (blank === 0 && out.length && readLine(out[out.length - 1]).type === 'content' && readLine(lines[0]).type === 'content') blank = 1;
     for (let k = 0; k < blank; k++) out.push('');
     out.push(...lines);
   }

@@ -72,10 +72,11 @@ function worstBySong(findings) {
 }
 
 /**
- * createSongList({ lang, readOnly, onSelect(id), onDelete(id) }) → { node, update(state, selectedId),
- * filter(), visibleIds(), reveal(id) }. *Bewerken* waits for the song editor (M5.3).
+ * createSongList({ lang, readOnly, onSelect(id), onEdit(id), onDelete(id) }) → { node, update(state, selectedId),
+ * filter(), visibleIds(), reveal(id) }. *Bewerken* opens the song editor (M5.3); a song that is not text
+ * (SNG-01, SNG-18) is edited only in the code mode.
  */
-export function createSongList({ lang, readOnly, onSelect, onDelete }) {
+export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete }) {
   let filter = { ...DEFAULT_FILTER, languages: [], tags: [] };
   let songs = [];
   let findings = [];
@@ -121,8 +122,10 @@ export function createSongList({ lang, readOnly, onSelect, onDelete }) {
   function row(song, worst) {
     const title = song.title || t(lang, 'noTitle');
     const sub = [languageName(lang, song.language), song.lyricist].filter(Boolean).join(' · ');
-    const edit = el('button', { type: 'button', class: 'btn btn-outline btn-small', disabled: true,
-      title: `${t(lang, 'edit')}: ${t(lang, 'tileSoon')}` }, [t(lang, 'edit')]);
+    const canEdit = !readOnly && onEdit && song.editable !== false;
+    const edit = el('button', { type: 'button', class: 'btn btn-outline btn-small', disabled: !canEdit,
+      title: canEdit || readOnly ? t(lang, 'edit') : `${t(lang, 'edit')}: ${t(lang, 'tileSoon')}` }, [t(lang, 'edit')]);
+    if (canEdit) listen(edit, 'click', (event) => { event.stopPropagation(); onEdit(song.id); });
     const bin = el('button', { type: 'button', class: 'iconbtn binbtn', disabled: readOnly, title: t(lang, 'deleteSong'),
       'aria-label': `${t(lang, 'deleteSong')}: ${title}` }, [icon('delete')]);
     if (!readOnly) listen(bin, 'click', (event) => { event.stopPropagation(); onDelete(song.id, title); });

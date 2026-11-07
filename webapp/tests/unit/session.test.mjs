@@ -80,9 +80,9 @@ test('songSummary reads in the worker what the song list needs (GD-13); a song t
     ['a', '{title: Alpha}\n{sorttitle: Alpha, The}\n{meta: id a}\n{meta: language nl}\n{lyricist: Iemand}\n{meta: tag welpen}\n{meta: tag canon}\n{meta: tag welpen}\n[G]la [D]li\n'],
     ['b', null], ['c', 'la\n']]) };
   assert.deepEqual(songSummary(lib), [
-    { id: 'a', title: 'Alpha', sortTitle: 'Alpha, The', language: 'nl', lyricist: 'Iemand', tags: ['welpen', 'canon'], words: 'la li' },
-    { id: 'b', title: null, sortTitle: null, language: null, lyricist: null, tags: [], words: '' },
-    { id: 'c', title: null, sortTitle: null, language: null, lyricist: null, tags: [], words: 'la' }]);
+    { id: 'a', title: 'Alpha', sortTitle: 'Alpha, The', language: 'nl', lyricist: 'Iemand', tags: ['welpen', 'canon'], words: 'la li', editable: true },
+    { id: 'b', title: null, sortTitle: null, language: null, lyricist: null, tags: [], words: '', editable: false },
+    { id: 'c', title: null, sortTitle: null, language: null, lyricist: null, tags: [], words: 'la', editable: true }]);
 });
 
 test('EDT-32, GD-16: deleting a song removes it from the library and from every set, and marks the library changed', async () => {

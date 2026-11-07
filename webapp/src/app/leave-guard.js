@@ -5,16 +5,21 @@
 // is there only while it is needed, so a page with nothing to lose stays eligible for the
 // back-forward cache.
 
-/** createLeaveGuard({ target, atRisk }) → { sync() }: call sync() after every change of the session. */
-export function createLeaveGuard({ target = globalThis, atRisk }) {
+/**
+ * createLeaveGuard({ target, atRisk, listenWhen }) → { sync() }: call sync() after every change of the
+ * session. listenWhen (atRisk by default) says when to listen; atRisk decides at the moment of leaving,
+ * for work whose state the guard does not see change (typing in the song editor).
+ */
+export function createLeaveGuard({ target = globalThis, atRisk, listenWhen = atRisk }) {
   let on = false;
   const ask = (event) => {
+    if (!atRisk()) return;
     event.preventDefault();
     event.returnValue = '';                               // older browsers need it set to ask at all
   };
   return {
     sync() {
-      const need = Boolean(atRisk());
+      const need = Boolean(listenWhen());
       if (need === on) return;
       on = need;
       if (need) target.addEventListener('beforeunload', ask);

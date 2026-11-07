@@ -43,21 +43,43 @@ const SONG = [
   '',
 ].join('\n');
 
-test('M2.3: a song as blocks: metadata, implicit verse, sections, a locked chorus with a comment, repeat, locked tab', () => {
+test('M2.3: a song as blocks: metadata, implicit verse, sections, a chorus with a remark inside, repeat, locked tab', () => {
   const { blocks } = toBlocks(SONG);
   assert.deepEqual(blocks.map((b) => [b.type, b.kind || b.name || '', b.label ?? '', b.blank]), [
     ['meta', 'title', '', 0], ['meta', 'id', '', 0], ['meta', 'language', '', 0], ['meta', 'tag', '', 0],
     ['locked', '', '', 1],                                 // the # note
     ['section', 'verse', '', 0],                           // implicit, straight after the note
     ['section', 'verse', '', 1],
-    ['locked', '', '', 1],                                 // an environment with {c: …} inside is locked as a whole
+    ['section', 'chorus', 'Refrein', 1],                   // editable, with its remark locked in place
     ['repeat', '', '', 0],
     ['locked', '', '', 0]]);
   assert.deepEqual(blocks[5].lines, ['Vader Jacob, Vader Jacob,', 'slaapt gij nog?']);
   assert.equal(blocks[5].implicit, true);
   assert.deepEqual(blocks[6].lines, ['[G]Alle klokken luiden,', '', '[D]bim bam bom']);
-  assert.deepEqual(blocks[7].lines, ['{start_of_chorus:Refrein}', 'la la', '{c: zachter}', 'li li', '{end_of_chorus}']);
+  assert.deepEqual(blocks[7].lines, ['la la', { locked: '{c: zachter}' }, 'li li']);
+  assert.deepEqual(blocks[9].lines, ['{sot}', 'e|--0--|', '{eot}']);
   assert.equal(fromBlocks({ blocks }), SONG);
+});
+
+test('GD-19 (the owner, 2026-11-07): a section stays editable around a remark, which keeps its place and its bytes', () => {
+  const form = toBlocks(SONG);
+  const chorus = form.blocks[7];
+  chorus.lines = ['la la la', chorus.lines[1], 'li li', 'lo lo'];
+  const out = fromBlocks(form);
+  assert.ok(out.includes('{start_of_chorus: Refrein}\nla la la\n{c: zachter}\nli li\nlo lo\n{end_of_chorus}'));
+  assert.equal(out, canonical(out));
+  const view = songView(out).find((s) => s.kind === 'chorus' && !s.repeat);
+  assert.deepEqual(view.lines.map((l) => (l.remark ?? l.segments.map((x) => x.text).join(''))), ['la la la', 'zachter', 'li li', 'lo lo']);
+  chorus.lines = ['la la', 'li li'];                       // the remark may be left out
+  assert.ok(fromBlocks(form).includes('{start_of_chorus: Refrein}\nla la\nli li\n{end_of_chorus}'));
+  chorus.lines = ['la la', { locked: '{end_of_chorus}' }, 'li li'];   // but never made up
+  assert.throws(() => fromBlocks(form), /a locked line that was not in the song/);
+  chorus.lines = ['la la', { locked: '{c: zachter}' }, { locked: '{c: zachter}' }];   // nor doubled
+  assert.throws(() => fromBlocks(form), /a locked line that was not in the song/);
+  const notes = toBlocks('{sov}\nla\n# noot\n{x_onbekend: 1}\n{oops\nli\n{eov}\n');
+  assert.deepEqual(notes.blocks[0].lines, ['la', { locked: '# noot' }, { locked: '{x_onbekend: 1}' }, { locked: '{oops' }, 'li']);
+  const broken = toBlocks('{sov}\nla\n{soc}\nli\n{eoc}\n');   // a verse not closed by its own end stays locked
+  assert.deepEqual(broken.blocks.map((b) => b.type), ['locked', 'section']);
 });
 
 test('GD-38, EDT-57: every song of the test libraries comes back byte for byte, also after crossing to another thread', async () => {
@@ -160,10 +182,11 @@ test('SR-35: random songs from awkward lines come back byte for byte, and a bloc
     assert.equal(fromBlocks(form), text, JSON.stringify(text));
     const section = form.blocks.find((b) => b.type === 'section');
     if (section) {
-      section.lines = [...section.lines.filter((x) => !lyricLineProblem(x)), 'nieuw'];
+      section.lines = [...section.lines.filter((x) => typeof x !== 'string' || !lyricLineProblem(x)), 'nieuw'];
       const out = fromBlocks(form);
       assert.equal(out, canonical(out));
       for (const b of form.blocks.filter((x) => x.type === 'locked')) assert.ok(out.includes(b.lines.join('\n')), JSON.stringify(text));
+      for (const l of section.lines.filter((x) => typeof x !== 'string')) assert.ok(out.split('\n').includes(l.locked), JSON.stringify(text));
     }
   }
 });
@@ -174,4 +197,13 @@ test('the worker turns a song into blocks and back, and answers a block it canno
   assert.equal((await handleMessage({ id: 2, op: 'unblocks', payload: { form } })).result.text, SONG);
   form.blocks[6].lines = ['{c: geen tekst}'];
   assert.match((await handleMessage({ id: 3, op: 'unblocks', payload: { form } })).result.problem, /is a directive/);
+});
+
+test('GD-33, 7.3: two implicit verses moved next to each other stay two verses', () => {
+  const form = toBlocks('{title: X}\n# noot\nEen\n\nTwee\n');
+  const [title, note, one, two] = form.blocks;
+  assert.equal(one.blank, 0);                               // straight after the note
+  const out = fromBlocks({ blocks: [title, note, two, one] });
+  assert.equal(out, '{title: X}\n# noot\n\nTwee\n\nEen\n');
+  assert.deepEqual(songView(out).map((s) => s.number), [1, 2]);
 });

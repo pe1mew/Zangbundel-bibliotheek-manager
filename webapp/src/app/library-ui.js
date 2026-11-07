@@ -132,6 +132,17 @@ export function keyFailedDialog(lang, result) {
   return openDialog({ title: t(lang, 'keyFailedTitle'), closeLabel: t(lang, 'close') }, [el('p', {}, [text])]);
 }
 
+/**
+ * GD-36: an action that would leave the song editor with changes asks what to do with them, naming the
+ * song: apply them (primary), throw them away, or keep editing (the close button, Escape, the backdrop).
+ */
+export function leaveEditorDialog(lang, title, { onApply, onDiscard }) {
+  return openDialog({ title: t(lang, 'guardTitle'), closeLabel: t(lang, 'guardKeep'), actions: [
+    { label: t(lang, 'guardDiscard', { t: title }), onClick: (close) => { close(); onDiscard(); } },
+    { label: t(lang, 'guardApply', { t: title }), primary: true, onClick: (close) => { close(); onApply(); } },
+  ] }, [el('p', {}, [t(lang, 'guardText', { t: title })]), el('p', { class: 'muted small' }, [t(lang, 'guardThen')])]);
+}
+
 /** GD-16, EDT-32, M-62: deleting a song, after this question; it leaves every set as well. */
 export function deleteSongConfirm(lang, title, onYes) {
   return openDialog({ title: t(lang, 'deleteSong'), closeLabel: t(lang, 'cancel'),

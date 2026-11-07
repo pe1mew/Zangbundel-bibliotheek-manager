@@ -24,7 +24,8 @@ import { createCryptoClient } from './crypto-client.js';
 import { createSession } from './session.js';
 import { createSongList, neighbourAfterDelete } from './songlist.js';
 import { libraryHomeNode, songDataNode, songViewNode } from './songview.js';
-import { closeConfirm, convertedDialog, copyDialog, deleteSongConfirm, downloadDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
+import { createSongEditor } from './editor.js';
+import { closeConfirm, convertedDialog, copyDialog, deleteSongConfirm, downloadDialog, leaveEditorDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
   keyReplaceConfirm, keySaveDialog, manifestConfirm, newLibraryDialog, openFailedDialog, pickFile, saveFailedDialog,
   savedDialog } from './library-ui.js';
 import { KEY_MIME, LIBRARY_MIME, offerDownload } from './download.js';
@@ -239,11 +240,67 @@ function start() {
   // GD-16, EDT-32: the bin asks M-62; afterwards the neighbouring song is selected, or none
   const onDeleteSong = (id, title) => deleteSongConfirm(language.get(), title, async () => {
     const next = neighbourAfterDelete(songList ? songList.visibleIds() : [], id);
+    if (editing && editing.id === id) editing = null;     // deleted from its own editor
     if (await session.deleteSong(id)) select(next);
   });
+
+  // ---- M5.3a: the song editor in Blokken mode (GD-06, GD-07, GD-09, GD-19, GD-20, GD-33, GD-36)
+  let editing = null;                                     // { id, title, token, editor }
+  let editTokens = 0;
+  const stopEditing = () => { editing = null; render(); };
+  // GD-09, GD-20: Toepassen writes the blocks back in the worker and always applies; the song then shows
+  const applyEdit = async () => {
+    if (!editing) return true;
+    const { id, editor } = editing;
+    const lang = language.get();
+    const r = await session.unblocks(editor.form());
+    if (r.problem) {
+      editor.showProblem(t(lang, 'applyProblem'));       // a form the worker cannot write: nothing applied
+      return false;
+    }
+    await session.updateSong(id, r.text);
+    editing = null;
+    selected = id;
+    const errors = (session.get().findings || []).filter((f) => f.where === id && (f.severity === 'Error' || f.severity === 'Fatal')).length;
+    toast(errors ? t(lang, 'appliedWithErrors', { n: errors }) : t(lang, 'applied'));
+    render();
+    return true;
+  };
+  const startEdit = async (id) => {
+    if (session.isReadOnly() || (editing && editing.id === id)) return;
+    const [form, details] = await Promise.all([session.songBlocks(id), session.songDetails(id)]);
+    if (!form) return;                                    // not text: the code mode only (M5.3b)
+    const lang = language.get();
+    const title = (details && details.meta && details.meta.title) || t(lang, 'noTitle');
+    selected = id;
+    editing = { id, title, token: ++editTokens, editor: createSongEditor({ lang, form, title,
+      onApply: () => applyEdit(), onCancel: stopEditing, onDelete: () => onDeleteSong(id, title) }) };
+    render();
+  };
+  // GD-36: an action that leaves the editor asks first when there is something to apply or throw away
+  const leaving = (next) => (...args) => {
+    if (!editing) return next(...args);
+    if (!editing.editor.changed()) {
+      editing = null;
+      return next(...args);
+    }
+    const { title } = editing;
+    return leaveEditorDialog(language.get(), title, {
+      onApply: async () => { if (await applyEdit()) next(...args); },
+      onDiscard: () => {
+        editing = null;
+        toast(t(language.get(), 'discarded', { t: title }));
+        render();
+        next(...args);
+      },
+    });
+  };
+  const choose = leaving(select);
+  const chooseEdit = leaving(startEdit);
   let form = null;
   let shown = { id: null, text: undefined, details: null };   // the selected song's view, from the worker
   let lastCentre;
+  let guard = null;
   const render = () => {
     const lang = language.get();
     const state = session.get();
@@ -265,14 +322,16 @@ function start() {
       session.songDetails(selected).then(done, () => done(null));
     }
     // the centre is redrawn only when what it shows changes, so the reader keeps their place in a song
+    if (editing && (!state.library || !state.library.songs.has(editing.id) || readOnly)) editing = null;   // gone, or the key forgotten
     const centreKey = JSON.stringify([screen, lang, readOnly, state.authorFingerprint, Boolean(state.library), state.busy,
-      state.library ? [state.library.title, state.songs.length] : null, selected, shown.details ? shown.text : null]);
+      state.library ? [state.library.title, state.songs.length] : null, selected, shown.details ? shown.text : null, editing ? editing.token : 0]);
     if (centreKey !== lastCentre) {
       lastCentre = centreKey;
       const content = !state.library ? home(lang, { onOpen, onNew, onDownload: () => onDownload(), hasLibrary: false, busy: state.busy })
-        : !selected ? libraryHomeNode(lang, state)
-          : shown.details ? songViewNode(lang, selected, shown.details, { readOnly, onDelete: onDeleteSong })
-            : el('p', { class: 'empty' }, ['…']);
+        : editing ? editing.editor.node                    // the same editor node: typing is never lost to a redraw
+          : !selected ? libraryHomeNode(lang, state)
+            : shown.details ? songViewNode(lang, selected, shown.details, { readOnly, onDelete: leaving(onDeleteSong), onEdit: chooseEdit })
+              : el('p', { class: 'empty' }, ['…']);
       replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); })
         : el('div', {}, [readOnlyBar(lang, state), content]));
     }
@@ -281,10 +340,10 @@ function start() {
     const listKey = state.library ? `${state.generation}|${lang}|${readOnly}` : null;
     if (listKey !== rightKey) {
       rightKey = listKey;
-      songList = state.library ? createSongList({ lang, readOnly, onSelect: select, onDelete: onDeleteSong }) : null;
+      songList = state.library ? createSongList({ lang, readOnly, onSelect: choose, onEdit: chooseEdit, onDelete: leaving(onDeleteSong) }) : null;
       replace(layout.right, head, songList ? songList.node : el('p', { class: 'empty' }, [t(lang, 'noLibrary')]));
     }
-    replace(head, ...libHead(lang, state, () => select(null)));
+    replace(head, ...libHead(lang, state, () => choose(null)));
     if (songList) songList.update(state, selected);
     // GD-05: a selected song's data, read-only until the song editor (M5.3); GD-22: otherwise the library's
     // fields, built once per library and language, then only updated (library-form.js)
@@ -302,16 +361,24 @@ function start() {
     if (form) form.update(state);
     replace(layout.bottom, ...bottomBar({ lang, onLanguage: () => language.next(),
       onAndroid: () => androidDialog(language.get()), onAbout: () => aboutDialog(language.get()),
-      onOpen, onNew, onClose, onCheck, onDownload: () => onDownload(), onLoadKey, onMakeKey, onDownloadKey, onForgetKey,
+      onOpen: leaving(onOpen), onNew: leaving(onNew), onClose: leaving(onClose), onCheck, onDownload: leaving(() => onDownload()),
+      onEdit: () => { if (selected) chooseEdit(selected); },
+      canEdit: Boolean(selected && !editing && !readOnly && state.songs.some((s) => s.id === selected && s.editable !== false)),
+      onLoadKey, onMakeKey, onDownloadKey, onForgetKey,
       key: state.key, hasLibrary: Boolean(state.library), busy: state.busy,
       findings: state.library ? state.findings || [] : null }));
     replace(narrow, narrowPage(lang));
+    if (guard) guard.sync();
   };
   replace(root, banner, layout.app, narrow);
   language.onChange(render);                              // GD-17: at once, without losing work
   session.onChange(render);
   // GD-42: leaving the page with changes not yet downloaded, or a new key not yet downloaded, asks first
-  const guard = createLeaveGuard({ atRisk: () => { const st = session.get(); return st.dirty || (st.key && st.key.needsExport); } });
+  // and so does an open song editor with changes not yet applied (GD-36): it is listened for while the editor is open
+  guard = createLeaveGuard({
+    atRisk: () => { const st = session.get(); return st.dirty || Boolean(st.key && st.key.needsExport) || Boolean(editing && editing.editor.changed()); },
+    listenWhen: () => { const st = session.get(); return st.dirty || Boolean(st.key && st.key.needsExport) || Boolean(editing); },
+  });
   session.onChange(() => guard.sync());
   render();
 }

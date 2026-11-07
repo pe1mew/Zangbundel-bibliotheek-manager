@@ -29,3 +29,17 @@ test('GD-42: the browser asks before leaving only while work would be lost, and 
   guard.sync();
   assert.deepEqual([guard.active, leave(target)], [false, false]);
 });
+
+test('GD-36, GD-42: an open editor is listened for, but leaving asks only once it has changes', () => {
+  const target = new EventTarget();
+  let open = true;
+  let changed = false;
+  const guard = createLeaveGuard({ target, atRisk: () => open && changed, listenWhen: () => open });
+  guard.sync();
+  assert.deepEqual([guard.active, leave(target)], [true, false]);   // listening, nothing to lose yet
+  changed = true;                                     // typing: no session change, no sync
+  assert.equal(leave(target), true);
+  open = false;
+  guard.sync();
+  assert.deepEqual([guard.active, leave(target)], [false, false]);
+});

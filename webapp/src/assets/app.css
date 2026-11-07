@@ -342,3 +342,50 @@ svg.sev-ok { fill: var(--fire-orange); }
 .field .value.none { color: var(--secondary); font-style: italic; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { border: 1px solid var(--grey); color: var(--secondary); border-radius: 999px; padding: 2px 10px; font-size: 13px; }
+
+/* M5.3a: the song editor in Blokken mode (GD-06, GD-07, GD-19, GD-33), as the mock */
+.edit { max-width: 760px; margin: 0 auto; padding: 24px 32px 24px; overflow-wrap: anywhere; }
+.edithead { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.edithead h2 { margin: 0; }
+.sections { display: flex; flex-direction: column; gap: 12px; margin: 16px 0; }
+.section { background: var(--sheet); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px 12px; }
+.section.chorus { border-left: 4px solid var(--fire-orange); padding-left: 9px; }
+.section.bridge { border-left: 4px solid var(--sky-blue); padding-left: 9px; }
+.section.repeat { border-left: 4px dashed var(--fire-orange); padding-left: 9px; }
+.section.locked { border-style: dashed; background: transparent; }
+.secbar { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
+.secbar select {
+  background: transparent; color: var(--white); border: 1px solid var(--line); border-radius: 8px;
+  min-height: 36px; padding: 0 8px; font: inherit; font-weight: 600; margin-right: 6px;
+}
+.secbar select option { background: var(--sheet); }
+.secbar .grow { flex: 1; }
+.kindlbl { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; margin-right: 6px; }
+.kindlbl.locked { color: var(--secondary); font-weight: normal; font-size: 14px; }
+.labelin {
+  min-height: 36px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: transparent;
+  color: var(--white); font: inherit; font-size: 14px; width: 200px;
+}
+.labelin:focus { outline: none; border-color: var(--fire-orange); }
+.editor {
+  display: block; width: 100%; min-height: 72px; padding: 10px 12px; border-radius: 8px; background: var(--bg);
+  border: 1px solid transparent; color: var(--white); font: inherit; font-size: 18px; line-height: 1.55; resize: vertical;
+}
+.editor:focus { outline: none; border-color: var(--fire-orange); }
+.editor + .editor, .lockedline + .editor, .editor + .lockedline { margin-top: 6px; }
+.section.chorus .editor { font-weight: 600; }
+.lockedline { display: flex; align-items: center; gap: 4px; }
+.lockedline pre, .lockedtext {
+  flex: 1; margin: 0; padding: 6px 12px; background: var(--bg); border-radius: 8px; color: var(--secondary);
+  white-space: pre-wrap; font: 14px/1.5 ui-monospace, Consolas, monospace;
+}
+.lockedtext { margin: 0 0 4px; }
+.repeatinfo { padding: 8px 12px; font-style: italic; }
+.hint { color: var(--fire-orange-light); font-size: 13px; margin-top: 6px; display: flex; gap: 4px; align-items: flex-start; }
+.hint svg { width: 16px; height: 16px; flex: none; }
+.addrow { display: flex; gap: 12px; flex-wrap: wrap; }
+.editfoot {
+  position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: 12px;
+  padding: 14px 32px; background: linear-gradient(transparent, var(--bg) 30%);
+}
+.editfoot .delsong { margin-right: auto; }

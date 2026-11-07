@@ -149,5 +149,10 @@
     - main.js: centre redrawn only on a key change (centreKey); `shown` holds the selected song's details; the left bar shows song data when a song is selected, else the cached form.
     - The browser pane caps its tabs (about 9): close old test tabs before a new check.
   - M2.3 done (uncommitted): `core/blocks.js` toBlocks/fromBlocks (unchanged block → its raw lines; changed → canonical), lyricLineProblem, valueProblem, metaValues, setMeta; `chordpro.js` readLine; worker ops `blocks`/`unblocks`.
-    - An environment with anything but lyric/blank lines (e.g. {c: …} inside) is one locked block; the Code mode edits it.
-  - Next: M5.3 song editor (Blokken and Code modes, GD-06 to GD-09, GD-11, GD-18, GD-19, GD-33, GD-36, GD-38); then M5.5 sets.
+    - Owner 2026-11-07 (GD-19, webappGUI 0.20): inside a section, other lines are `{ locked: line }` in place; the section stays editable. A locked line may be dropped, never changed, doubled or made up (checked against orig).
+  - M5.3 in five steps: a Blokken + apply/cancel + GD-36; b Code mode; c left-bar song fields; d Lied toevoegen; e drag.
+  - M5.3a done (uncommitted, unstaged: the GD-19 follow-up was still staged).
+    - `editor.js` createSongEditor({lang, form, title, onApply, onCancel, onDelete}) → {node, form(), changed(), showProblem()}.
+    - main.js: `editing`, `startEdit`, `applyEdit`, `leaving(fn)` wraps every action that leaves the editor (GD-36).
+    - session.updateSong/songBlocks/unblocks; song summary has `editable`.
+  - Next: M5.3b Code (ChordPro) mode (GD-18, GD-38).
