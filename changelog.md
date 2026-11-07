@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+- **Stale *Komt in een volgende testversie*:** the *Bibliotheek bewerken* tile no longer says it, and *Bewerken* on a song that is not text gives the real reason. Seen in the first trial release on the test instance.
+
 ### Added
 - **Controle's *Ga naar*** (EDT-41): a message now takes you where it can be fixed.
   - **Song lines:** a song's line opens in the code mode with that line selected.

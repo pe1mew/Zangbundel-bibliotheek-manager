@@ -52,7 +52,8 @@ export function songViewNode(lang, id, details, { readOnly, onDelete, onEdit }) 
     [icon('delete'), t(lang, 'delete')]);
   const canEdit = !readOnly && onEdit && details.sections !== null;
   const edit = el('button', { type: 'button', class: 'btn btn-outline', disabled: !canEdit,
-    title: canEdit || readOnly ? t(lang, 'edit') : `${t(lang, 'edit')}: ${t(lang, 'tileSoon')}`, on: canEdit ? { click: () => onEdit(id) } : undefined },
+    title: canEdit || readOnly ? t(lang, 'edit') : `${t(lang, 'edit')}: ${t(lang, details.sections === null ? 'songNotText' : 'tileSoon')}`,
+    on: canEdit ? { click: () => onEdit(id) } : undefined },
   [icon('edit'), t(lang, 'edit')]);
   return el('div', { class: 'view' }, [
     el('div', { class: 'viewhead' }, [

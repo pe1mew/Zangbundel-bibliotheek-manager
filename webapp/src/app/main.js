@@ -72,16 +72,15 @@ function tile(name, title, sub, { onClick, why } = {}) {
   ]);
 }
 
-/** GD-03: the home screen's primary actions in the centre. */
+/** GD-03: the home screen's primary actions in the centre, shown while no library is open. */
 function home(lang, { onOpen, onNew, onDownload, hasLibrary, busy }) {
-  const soon = t(lang, 'tileSoon');
   return el('div', { class: 'home' }, [
     el('h1', {}, [t(lang, 'homeTitle')]),
     el('p', { class: 'muted' }, [t(lang, 'homeLead')]),
     el('div', { class: 'tiles' }, [
       tile('open', t(lang, 'tileOpen'), busy ? t(lang, 'opening') : t(lang, 'tileOpenSub'), { onClick: busy ? null : onOpen }),
       tile('add', t(lang, 'tileNew'), t(lang, 'tileNewSub'), { onClick: busy ? null : onNew }),
-      tile('edit', t(lang, 'tileEdit'), t(lang, 'tileNeedLib'), { why: soon }),
+      tile('edit', t(lang, 'tileEdit'), t(lang, 'tileNeedLib')),   // editing needs a library: the reason is the subtitle
       tile('download', t(lang, 'tileDownload'), t(lang, hasLibrary ? 'dlTitle' : 'tileNeedLib'), { onClick: hasLibrary && !busy ? onDownload : null }),
     ]),
     el('p', { class: 'note' }, [t(lang, 'privacy')]),

@@ -284,6 +284,7 @@ zbm-release list
 - **Checked from outside:** `check_headers.py zangbundel.nl` gave 25 of 25 (SC-01).
 - **`check_headers.py test.zangbundel.nl --auth <tester>:<password> --app`**, run by the owner: 16 of 16. `--app` is needed because the test instance serves SR-20's full CSP, also for the holding page.
 
+- **The manager's first trial (2026-11-07):** `manager-0.2.0-dev.1`, a trial build from commit `07558a9`, activated on the test instance with `activate --trial` at 21:10. The upload's name comes from the upload's own output, or from `sudo ls -la /srv/zangbundel-staging/incoming/`; the placeholder `upload-<…>.tar` in the commands above must be replaced by it.
 - **Clearing staging.** Delete processed uploads from the staging directory. `zbm-receive` takes one upload at a time. It refuses an upload when 20 uploads are already waiting, when staging would hold more than 200 MB with this one, or when what arrives is not an uncompressed tar with its end marker.
 
 ## 8. Integrity check and monitoring (M0.6, M0.9, SR-06, SR-62, SR-73)

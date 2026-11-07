@@ -140,7 +140,8 @@ export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onA
     const sub = [languageName(lang, song.language), song.lyricist].filter(Boolean).join(' · ');
     const canEdit = !readOnly && onEdit && song.editable !== false;
     const edit = el('button', { type: 'button', class: 'btn btn-outline btn-small', disabled: !canEdit,
-      title: canEdit || readOnly ? t(lang, 'edit') : `${t(lang, 'edit')}: ${t(lang, 'tileSoon')}` }, [t(lang, 'edit')]);
+      // a song that is not text cannot be edited (SNG-01, SNG-18); without onEdit the editor is not there
+      title: canEdit || readOnly ? t(lang, 'edit') : `${t(lang, 'edit')}: ${t(lang, song.editable === false ? 'songNotText' : 'tileSoon')}` }, [t(lang, 'edit')]);
     if (canEdit) listen(edit, 'click', (event) => { event.stopPropagation(); onEdit(song.id); });
     const bin = el('button', { type: 'button', class: 'iconbtn binbtn', disabled: readOnly, title: t(lang, 'deleteSong'),
       'aria-label': `${t(lang, 'deleteSong')}: ${title}` }, [icon('delete')]);

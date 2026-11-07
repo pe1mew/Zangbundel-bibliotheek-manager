@@ -624,6 +624,11 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - with a change in the editor, GD-36 asked first, *toepassen* applied, then the line was shown;
   - SET-03 opened *Demo*;
   - MAN-07 and MAN-08 of a new library focused the licence and the maintainer's name.
+- **Trial release on the test instance (2026-11-07):**
+  - `manager-0.2.0-dev.1` was built from commit `07558a9` with `--allow-dirty`, twice, byte-identical (SR-10), and checked under the test instance's CSP (both workers, the crypto self-test, the banner, a clean console).
+  - The owner signed it with the release key, uploaded it with the deploy key (706,560 bytes) and activated it with `zbm-release activate --trial test.zangbundel.nl`. `live` has pointed to it since 21:10; `test-holding-0.1.0` stays as the release to switch back to.
+  - The owner's first look was in Firefox.
+  - It showed one stale text: the *Bibliotheek bewerken* tile still said *Komt in een volgende testversie*. Fixed after the release: that tile now only says a library is needed, and *Bewerken* on a song that is not text gives that as its reason. Both go into the next trial build.
 - **Next: the M5 exit with the owner** on the test instance, each GD of M5 against its text, dragging a block to an edge included (its auto-scroll was not seen here); then M6's exit (a library made and signed here through the independent checker and the phone).
 
 ### M6 — Open, save and sign (M)

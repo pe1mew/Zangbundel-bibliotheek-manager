@@ -167,4 +167,6 @@
     - A hidden browser pane draws no animation frames: requestAnimationFrame never fires, so anything per-frame cannot be checked there (ask the owner to show the pane).
   - M5.3e committed. M5.5 done (uncommitted): `sets.js` (pure ops, createSetList, setViewNode), `drag.js` (startDrag, edgeSpeed; the editor uses it), session.updateSets; main: rightTab, openSet, tabs.
   - M5.5 committed. *Ga naar* done (uncommitted): `goto.js` targetOf; main goToFinding (wrapped in leaving); editor.showLine/focusField.
+  - *Ga naar* committed. Trial `manager-0.2.0-dev.1` (from 07558a9) live on test.zangbundel.nl since 2026-11-07 21:10; the owner looks in Firefox. Stale *Komt in een volgende testversie* fixed after it (next trial).
+    - Owner commands: sign in Git Bash, upload with the deploy key, activate with `ssh -t rfsee.net "sudo zbm-release activate --trial test.zangbundel.nl <upload>"`; the staging dir needs sudo to list.
   - Next: the M5 exit look with the owner (drag to an edge for auto-scroll), M6 exit, then M7 (hardening, SC-05 other browsers, SC-06 automated storage test).
