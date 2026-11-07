@@ -189,8 +189,19 @@ certbot renew --dry-run
 Next, the CAA account binding (SR-03):
 
 1. Run `certbot show_account`. It prints the account URL, `https://acme-v02.api.letsencrypt.org/acme/acct/<id>`.
-2. At Openprovider, change the `issue` record to `0 issue "letsencrypt.org; accounturi=https://acme-v02.api.letsencrypt.org/acme/acct/<id>"`.
-3. Run `certbot renew --dry-run` once more: it must still succeed with the bound CAA.
+2. At Openprovider, change the `issue` record to `0 issue "letsencrypt.org;accounturi=https://acme-v02.api.letsencrypt.org/acme/acct/<id>"`.
+   - **No space after the `;`:** Openprovider refuses the form with a space ("Invalid CAA-record").
+   - **The bare `0 issue "letsencrypt.org"` must go:** while it stays, it allows every Let's Encrypt account, and the binding does nothing.
+3. Add a second `issue` record for certbot's **staging** account. `certbot renew --dry-run` runs against Let's Encrypt's staging server, which checks CAA too, under its own account. Get its URL with `certbot show_account --server https://acme-staging-v02.api.letsencrypt.org/directory`, then add `0 issue "letsencrypt.org;accounturi=https://acme-staging-v02.api.letsencrypt.org/acme/acct/<staging id>"`.
+4. Check that all three name servers serve both records: `dig +short CAA zangbundel.nl @ns1.openprovider.nl`, and the same for `ns2.openprovider.be` and `ns3.openprovider.eu`. Openprovider signs and publishes a change with a delay.
+5. Run `certbot renew --dry-run --cert-name zangbundel.nl` and `--cert-name test.zangbundel.nl`: both must succeed with the bound CAA.
+
+*2026-11-07:* both certificates issued (`sudo bash ~/zbm/install-step5.sh`, written from this step):
+- ECDSA keys from the production server, through the existing account `acct/112577467`;
+- the webroot method, with `renew_hook = systemctl reload nginx`;
+- renewed by the host's `certbot.timer`. Its other deploy hook, `chirpstack.sh`, acts only on the `rfsee.net` certificate.
+
+Both CAA bindings are live on all three name servers, DNSSEC-validated: production `acct/112577467` and staging `acct/24760018`. With them, `certbot renew --dry-run` succeeded for both certificates. **Step 5 done.**
 
 ## 6. Enable both sites (M0.4, M0.5, SR-80)
 

@@ -363,7 +363,8 @@ The test instance (`test.zangbundel.nl`) uses the same file with `root /srv/zang
 ### 7.2 DNS records (SR-03, SR-05, SR-07)
 
 ```
-zangbundel.nl.        CAA  0 issue     "letsencrypt.org; accounturi=https://acme-v02.api.letsencrypt.org/acme/acct/<id>"
+zangbundel.nl.        CAA  0 issue     "letsencrypt.org;accounturi=https://acme-v02.api.letsencrypt.org/acme/acct/112577467"
+zangbundel.nl.        CAA  0 issue     "letsencrypt.org;accounturi=https://acme-staging-v02.api.letsencrypt.org/acme/acct/24760018"
 zangbundel.nl.        CAA  0 issuewild ";"
 zangbundel.nl.        CAA  0 iodef     "mailto:<security contact>"
 ; the domain sends and receives no mail (SR-07, SQ-06 decided); no MX record, as the DNS
@@ -373,7 +374,7 @@ _dmarc.zangbundel.nl. TXT  "v=DMARC1; p=reject; adkim=s; aspf=s"
 *._domainkey.zangbundel.nl. TXT "v=DKIM1; p="
 ```
 
-*Set on 2026-11-07:* the A records of `zangbundel.nl` and `test.zangbundel.nl` point at contabo6 (169.58.68.107); no AAAA while contabo6 has no working IPv6. The old MX (`10 mail.zangbundel.nl`) and the parked records `mail` (A), `ftp`, `webmail` and `www` (CNAME) are deleted. The CAA `accounturi` is added once the certificates exist (runbook step 5). No null MX and no transfer lock: the provider and the `.nl` registry offer neither (SR-05, SR-07). Two-factor authentication is on at the registrar and DNS accounts.
+*Set on 2026-11-07:* the A records of `zangbundel.nl` and `test.zangbundel.nl` point at contabo6 (169.58.68.107); no AAAA while contabo6 has no working IPv6. The old MX (`10 mail.zangbundel.nl`) and the parked records `mail` (A), `ftp`, `webmail` and `www` (CNAME) are deleted. The CAA `accounturi` binds issuance to certbot's own Let's Encrypt accounts. The production account issues the certificates. The staging account is there because `certbot renew --dry-run` uses Let's Encrypt's staging server, which checks CAA as well. Both were set on 2026-11-07, without a space after the `;`, which Openprovider refuses. No null MX and no transfer lock: the provider and the `.nl` registry offer neither (SR-05, SR-07). Two-factor authentication is on at the registrar and DNS accounts.
 
 ### 7.3 Application structure (SR-30, SR-32, SR-40 to SR-43)
 

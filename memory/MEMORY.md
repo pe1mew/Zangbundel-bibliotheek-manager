@@ -78,4 +78,6 @@
     - The owner's shell is often cmd.exe, where `~` doesn't work.
     - `passwd -l` locks the account for sshd here (no UsePAM), keys included: use `usermod -p '*'`.
     - I can't type passwords or passphrases: open a terminal tab (`run_in_terminal`) for the owner to type in. Pasting there may not work; cmd with right-click does.
-  - Next: git tag signing (step 3 item 3), then step 5 (certbot).
+  - Step 5: certificates issued (ECDSA, webroot, account acct/112577467). CAA is bound to production acct/112577467 and staging acct/24760018; Openprovider accepts `accounturi` only without a space after `;`. The staging record is needed because `renew --dry-run` uses staging. Check CAA with `dig @ns1/2/3.openprovider…` from contabo6: local nslookup can't do CAA, and DoH dns.google works.
+  - Step 5 done: renewal dry run succeeded for both, with CAA bound.
+  - Next: step 6 (enable the 443 sites, htpasswd for testers); git tag signing (step 3 item 3) before the first real release.
