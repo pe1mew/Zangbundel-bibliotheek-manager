@@ -118,6 +118,22 @@ export function createSession({ client, crypto = null, now = () => new Date() })
     },
 
     /**
+     * EDT-32, GD-16: delete a song (the caller asked M-62 first); it leaves every set as well. A
+     * read-only library is not changed (EDT-23). Returns true when the song was deleted.
+     */
+    async deleteSong(id) {
+      const lib = state.library;
+      if (!lib || isReadOnly() || !lib.songs.has(id)) return false;
+      const library = { ...lib, songs: new Map(lib.songs), rawSongs: new Map(lib.rawSongs || []),
+        sets: lib.sets.map((s) => ({ ...s, songs: s.songs.filter((x) => x !== id) })) };
+      library.songs.delete(id);
+      library.rawSongs.delete(id);
+      set({ library, songs: state.songs.filter((s) => s.id !== id), dirty: true });
+      await recheck();
+      return true;
+    },
+
+    /**
      * EDT-60, EDT-62, SG-11: load a key file into the crypto worker. With a signed library open, the key
      * must be its author's (M-30). The File goes to the worker unread: the page never holds the key
      * file's bytes (SR-40). Returns { ok: true, key } or { ok: false, message, reason }.

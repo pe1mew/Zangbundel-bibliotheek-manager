@@ -140,4 +140,8 @@
   - M5.4 done (uncommitted): `library-form.js` (createLibraryForm → {node, update(state)}; fieldsOf maps MAN-02 detail/MAN-07/MAN-08 to fields), `session.updateLibrary(patch)`, `state.generation`, worker `check` with `keyed`.
     - main.js rebuilds the left form only when generation|lang|readOnly changes; otherwise form.update(state). Keep that pattern for every editable area (M5.1 to M5.5).
     - Owner 2026-11-07: one contact field *E-mail of website*, as in the mock (scheme → url, else email; a second contact stays, shown as *Ook: …*). *Andere licentie* and the full-text field are not in the mock yet.
-  - Next: M5.1 song list; then M5.2 view, M2.3 block form before M5.3, M5.5 sets.
+  - M5.1 done (uncommitted): `songlist.js` (filterSongs, chipsOf, neighbourAfterDelete, createSongList → {node, update(state, selected), visibleIds, reveal}); `session.deleteSong(id)`; songSummary gives sortTitle, language, lyricist, tags, words.
+    - main.js: the right bar = a head redrawn each render + the song list built per generation|lang|readOnly; never move a node that may hold focus.
+    - *Openen*/*Nieuw* now ask M-60 with undownloaded changes (afterClose). Open question for the owner: warn on closing the tab (beforeunload)?
+    - Python heredoc patches turn '\\n' in JS into a real newline: use the Edit tool for JS string literals.
+  - Next: M5.2 song view; then M2.3 block form before M5.3, M5.5 sets.

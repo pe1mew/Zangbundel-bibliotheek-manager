@@ -37,6 +37,7 @@ h2 { font-size: 22px; }
 h3 { font-size: 13px; color: var(--secondary); text-transform: uppercase; letter-spacing: .06em; }
 .muted { color: var(--secondary); }
 .empty { padding: 24px 20px; margin: 0; color: var(--secondary); }
+[hidden] { display: none !important; }   /* an element with its own display (flex, grid) still hides */
 
 /* The test instance's fixed banner (SR-81) */
 .testbanner {
@@ -68,8 +69,50 @@ h3 { font-size: 13px; color: var(--secondary); text-transform: uppercase; letter
 svg.inl { width: 18px; height: 18px; fill: var(--secondary); flex: none; }
 .listhead { padding: 14px 20px 0; margin: 0; }
 .songlist { list-style: none; margin: 0; padding: 8px 0; }
-.song { padding: 10px 20px; border-left: 4px solid transparent; overflow-wrap: anywhere; }
-.song .t { font-size: 16px; }
+.song {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center;
+  padding: 10px 16px 10px 20px; border-left: 4px solid transparent; overflow-wrap: anywhere; cursor: pointer;
+}
+.song:hover { background: rgba(255, 255, 255, .06); }
+.song.selected { background: var(--night-blue); border-left-color: var(--fire-orange); }
+.song:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: -3px; }
+.song .t { font-size: 16px; display: flex; align-items: center; gap: 6px; }
+.song .t svg.sev { width: 18px; height: 18px; flex: none; }
+.song .s { grid-column: 1; color: var(--secondary); font-size: 13px; }
+.song .actions { grid-column: 2; grid-row: 1 / span 2; display: flex; gap: 2px; align-items: center; }
+.songlist li.empty { cursor: default; }
+.binbtn:hover:not(:disabled) { color: var(--fire-orange); }
+/* GD-13: search, sort and filter chips, as the app's songbook */
+.sbtools { padding: 4px 20px 8px; border-bottom: 1px solid var(--line); }
+.search {
+  width: 100%; min-height: 48px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--grey);
+  background: var(--bg); color: var(--white); font: inherit;
+}
+.search:focus { outline: none; border: 2px solid var(--fire-orange); padding: 7px 13px; }
+.search::placeholder { color: var(--secondary); }
+.tbrow { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.tbrow .switch { flex: 1; }
+.switch { position: relative; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 15px; }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.switch .track { position: relative; width: 44px; height: 26px; border-radius: 13px; background: var(--divider); border: 2px solid var(--grey); flex: none; }
+.switch .track::after { content: ""; position: absolute; top: 4px; left: 4px; width: 14px; height: 14px; border-radius: 50%; background: var(--grey); }
+.switch input:checked + .track { background: var(--fire-orange); border-color: var(--fire-orange); }
+.switch input:checked + .track::after { left: 20px; top: 2px; width: 18px; height: 18px; background: var(--white); }
+.switch input:focus-visible + .track { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
+.chiprow { display: flex; gap: 8px; overflow-x: auto; padding: 6px 0 4px; scrollbar-width: thin; }
+.fchip {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid var(--grey); background: none; color: var(--white); cursor: pointer; font: inherit; font-size: 14px;
+}
+.fchip:hover { border-color: var(--secondary); }
+.fchip.on { background: var(--divider); border-color: var(--fire-orange); color: var(--fire-orange); padding-left: 8px; }
+.fchip svg { width: 18px; height: 18px; fill: currentColor; }
+.fchip:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
+.clearwrap:empty { display: none; }
+.clearwrap { margin-top: 2px; }
+.linklike { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.linklike:hover { text-decoration: underline; }
+.linklike:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
 .field { margin-bottom: 14px; }
 .field label { display: block; font-size: 13px; color: var(--secondary); margin-bottom: 4px; }
 .field input, .field textarea, .field select {

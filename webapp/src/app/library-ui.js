@@ -132,6 +132,14 @@ export function keyFailedDialog(lang, result) {
   return openDialog({ title: t(lang, 'keyFailedTitle'), closeLabel: t(lang, 'close') }, [el('p', {}, [text])]);
 }
 
+/** GD-16, EDT-32, M-62: deleting a song, after this question; it leaves every set as well. */
+export function deleteSongConfirm(lang, title, onYes) {
+  return openDialog({ title: t(lang, 'deleteSong'), closeLabel: t(lang, 'cancel'),
+    actions: [{ label: t(lang, 'delete'), primary: true, onClick: (close) => { close(); onYes(); } }] }, [
+    el('p', {}, [t(lang, 'M62', { name: title })]),
+  ]);
+}
+
 /** GD-14: a key in memory is replaced only after a question; one not yet downloaded would be lost. */
 export function keyReplaceConfirm(lang, key, onYes) {
   return openDialog({ title: t(lang, 'keyReplaceTitle'), closeLabel: t(lang, 'cancel'),

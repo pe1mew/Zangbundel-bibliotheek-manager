@@ -21,7 +21,8 @@ import { checkDialog } from './check.js';
 import { createLibraryClient } from './library-client.js';
 import { createCryptoClient } from './crypto-client.js';
 import { createSession } from './session.js';
-import { closeConfirm, convertedDialog, copyDialog, downloadDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
+import { createSongList, neighbourAfterDelete } from './songlist.js';
+import { closeConfirm, convertedDialog, copyDialog, deleteSongConfirm, downloadDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
   keyReplaceConfirm, keySaveDialog, manifestConfirm, newLibraryDialog, openFailedDialog, pickFile, saveFailedDialog,
   savedDialog } from './library-ui.js';
 import { KEY_MIME, LIBRARY_MIME, offerDownload } from './download.js';
@@ -82,26 +83,19 @@ function home(lang, { onOpen, onNew, onDownload, hasLibrary, busy }) {
   ]);
 }
 
-/** The right bar: the library's head and its songs by title (the full song list of GD-13 is M5.1). */
-function rightBar(lang, state) {
+/** The right bar's head (GD-22, GD-24): the library's title, which shows its fields, and its state. */
+function libHead(lang, state, onLibrary) {
   const lib = state.library;
-  if (!lib) {
-    return [el('div', { class: 'libhead' }, [el('h3', {}, [t(lang, 'songs')])]), el('p', { class: 'empty' }, [t(lang, 'noLibrary')])];
-  }
+  if (!lib) return [el('h3', {}, [t(lang, 'songs')])];
   const status = [
     lib.isNew ? t(lang, 'newUnsaved') : t(lang, 'versionN', { v: lib.version }),
+    state.dirty ? t(lang, 'changed') : null,
     lib.author ? t(lang, 'signedBy', { name: lib.author.name }) : t(lang, 'unsigned'),
-  ].join(' · ');
-  const songs = [...state.songs].sort((a, b) => (a.title || a.id).localeCompare(b.title || b.id, lang));
+  ].filter(Boolean).join(' · ');
   return [
-    el('div', { class: 'libhead' }, [
-      el('div', { class: 'title' }, [lib.author ? icon('lock', 'inl') : null, lib.title]),
-      el('div', { class: 'muted small' }, [status]),
-    ]),
-    el('h3', { class: 'listhead' }, [`${t(lang, 'songs')} (${songs.length})`]),
-    songs.length
-      ? el('ul', { class: 'songlist' }, songs.map((s) => el('li', { class: 'song' }, [el('span', { class: 't' }, [s.title || t(lang, 'noTitle')])])))
-      : el('p', { class: 'empty' }, [t(lang, 'libEmpty')]),
+    el('button', { type: 'button', class: 'title linklike', title: t(lang, 'libInfo'), on: { click: onLibrary } },
+      [lib.author ? icon('lock', 'inl') : null, lib.title]),
+    el('div', { class: 'muted small' }, [status]),
   ];
 }
 
@@ -130,7 +124,9 @@ function start() {
   let screen = 'splash';
 
   // ---- the session's actions (FDS 7.1 to 7.3)
-  const onOpen = () => pickFile(async (file) => {
+  // EDT-03, M-60: opening or starting another library ends this one, so changes not yet downloaded are asked about first
+  const afterClose = (next) => () => (session.get().dirty ? closeConfirm(language.get(), next) : next());
+  const onOpen = afterClose(() => pickFile(async (file) => {
     let r;
     try {
       r = await session.open(file);
@@ -139,8 +135,8 @@ function start() {
     }
     if (!r.ok) openFailedDialog(language.get(), file.name, r.findings);
     else if (r.converted) convertedDialog(language.get(), r.converted);
-  });
-  const onNew = () => newLibraryDialog(language.get(), (title, description) => session.create(title, description));
+  }));
+  const onNew = afterClose(() => newLibraryDialog(language.get(), (title, description) => session.create(title, description)));
   const onClose = () => (session.get().dirty ? closeConfirm(language.get(), () => session.close()) : session.close());
   const onCheck = () => checkDialog(language.get(), session.get().findings || [], () => {});   // Ga naar: the targets come with M5
   // GD-14, EDT-60, EDT-62: a key file goes to the crypto worker; the page never holds the private key
@@ -232,6 +228,17 @@ function start() {
   ]) : null);
 
   let leftKey;
+  let rightKey;
+  let songList = null;
+  let selected = null;                                    // the selected song's ID (GD-13); the centre shows it from M5.2
+  let selectedLibrary = null;
+  const head = el('div', { class: 'libhead' }, []);
+  const select = (id) => { selected = id; render(); };
+  // GD-16, EDT-32: the bin asks M-62; afterwards the neighbouring song is selected, or none
+  const onDeleteSong = (id, title) => deleteSongConfirm(language.get(), title, async () => {
+    const next = neighbourAfterDelete(songList ? songList.visibleIds() : [], id);
+    if (await session.deleteSong(id)) select(next);
+  });
   let form = null;
   const render = () => {
     const lang = language.get();
@@ -241,9 +248,22 @@ function start() {
     layout.setSplash(screen === 'splash');
     replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); })
       : el('div', {}, [readOnlyBar(lang, state), home(lang, { onOpen, onNew, onDownload: () => onDownload(), hasLibrary: Boolean(state.library), busy: state.busy })]));
-    replace(layout.right, ...rightBar(lang, state));
-    // GD-22: the library's fields, built once per library and language, then only updated (library-form.js)
     const readOnly = session.isReadOnly();
+    // the selection goes with another library, or with its song
+    const libraryId = state.library ? state.library.libraryId : null;
+    if (libraryId !== selectedLibrary || (selected && !state.songs.some((s) => s.id === selected))) selected = null;
+    selectedLibrary = libraryId;
+    // GD-13: the song list, built once per library, language and read-only state; its node stays in place
+    // so the search field keeps its focus while the list follows the typing
+    const listKey = state.library ? `${state.generation}|${lang}|${readOnly}` : null;
+    if (listKey !== rightKey) {
+      rightKey = listKey;
+      songList = state.library ? createSongList({ lang, readOnly, onSelect: select, onDelete: onDeleteSong }) : null;
+      replace(layout.right, head, songList ? songList.node : el('p', { class: 'empty' }, [t(lang, 'noLibrary')]));
+    }
+    replace(head, ...libHead(lang, state, () => select(null)));
+    if (songList) songList.update(state, selected);
+    // GD-22: the library's fields, built once per library and language, then only updated (library-form.js)
     const formKey = state.library ? `${state.generation}|${lang}|${readOnly}` : null;
     if (formKey !== leftKey) {
       leftKey = formKey;

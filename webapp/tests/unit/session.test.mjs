@@ -75,9 +75,34 @@ test('EDT-10 to EDT-12, EDT-42: a new library is empty, and its findings ask for
   assert.equal(s.get().findings, null);
 });
 
-test('songSummary reads titles in the worker; a song that is not text has no title', () => {
-  const lib = { songs: new Map([['a', '{title: Alpha}\n{meta: id a}\nla\n'], ['b', null], ['c', 'la\n']]) };
-  assert.deepEqual(songSummary(lib), [{ id: 'a', title: 'Alpha' }, { id: 'b', title: null }, { id: 'c', title: null }]);
+test('songSummary reads in the worker what the song list needs (GD-13); a song that is not text has none of it', () => {
+  const lib = { songs: new Map([
+    ['a', '{title: Alpha}\n{sorttitle: Alpha, The}\n{meta: id a}\n{meta: language nl}\n{lyricist: Iemand}\n{meta: tag welpen}\n{meta: tag canon}\n{meta: tag welpen}\n[G]la [D]li\n'],
+    ['b', null], ['c', 'la\n']]) };
+  assert.deepEqual(songSummary(lib), [
+    { id: 'a', title: 'Alpha', sortTitle: 'Alpha, The', language: 'nl', lyricist: 'Iemand', tags: ['welpen', 'canon'], words: 'la li' },
+    { id: 'b', title: null, sortTitle: null, language: null, lyricist: null, tags: [], words: '' },
+    { id: 'c', title: null, sortTitle: null, language: null, lyricist: null, tags: [], words: 'la' }]);
+});
+
+test('EDT-32, GD-16: deleting a song removes it from the library and from every set, and marks the library changed', async () => {
+  const s = createSession({ client, now: () => NOW });
+  await s.open(file(corpus('valid-unsigned')));
+  const lib = s.get().library;
+  assert.ok(lib.sets.some((x) => x.songs.includes('vader-jacob')));
+  assert.equal(await s.deleteSong('vader-jacob'), true);
+  const after = s.get();
+  assert.equal(after.library.songs.has('vader-jacob'), false);
+  assert.ok(after.library.sets.every((x) => !x.songs.includes('vader-jacob')));
+  assert.equal(after.songs.some((x) => x.id === 'vader-jacob'), false);
+  assert.equal(after.dirty, true);
+  assert.equal(lib.songs.has('vader-jacob'), true);               // the opened library object is not changed
+  assert.equal(await s.deleteSong('vader-jacob'), false);
+  const p = await s.preview();
+  assert.deepEqual([p.changed, p.version], [true, 2]);
+  const saved = await s.save({ changed: true });
+  assert.equal(saved.ok, true);
+  assert.equal(s.get().library.songs.has('vader-jacob'), false);
 });
 
 test('EDT-51: an unchanged library downloads byte for byte as opened, under its own version and name', async () => {

@@ -418,7 +418,34 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - the one contact field: `http://` refused with M-39, `https://` accepted, then replaced by an e-mail address;
   - storage empty, console clean.
 - **Not in M5.4:** the labels of tags (EDT-30), because where they are edited is open (GQ-20); clicking the library's title in the right bar to return to these fields comes with the song list (M5.1).
-- **Next:** M5.1 song list; M5.3 needs the M2.3 block form first.
+
+**M5.1 done.**
+- **`app/songlist.js`:** the song list in the right bar, as the app's songbook (GD-13; app `SongbookFilter.kt`).
+  - Search: every typed word in the title, without case or accents; *Ook in de tekst* looks in the lyrics instead.
+  - A–Z / Z–A by sort title or title; ties by song ID, so the order is stable.
+  - Chips: the languages (only when more than one) and the tags; within a group any, between groups all.
+  - *Wis filters* only when something differs from the default; *Geen liederen gevonden.* when nothing matches.
+  - Each row: the song's worst Error or Warning as a mark, its language and lyricist, *Bewerken* (waits for M5.3) and the bin.
+  - The filter belongs to the screen: the list is built once per library, language and read-only state, its node stays in place so the search field keeps focus, and another library starts with the default filter.
+  - `reveal(id)` clears a filter that hides a song, for GD-25 once songs are applied in M5.3.
+- **Selecting:** a click or Enter selects a song and marks it; clicking the library's title deselects it (GD-22). The centre and left bar show the selected song from M5.2.
+- **Deleting (GD-16, EDT-32):** the bin asks M-62, then `session.deleteSong(id)` removes the song from the library and from every set; the next song in the list is selected, else the one before, else none. Read-only libraries delete nothing.
+- **The worker's song summary** now also gives sort title, language, lyricist, tags and the lyrics as shown (`words`), so the page never parses a song (SR-30).
+- **Found while testing:** *Openen* and *Nieuw* replaced a library with changes not yet downloaded without asking; they now ask M-60 first, as *Sluiten* does (EDT-03). Unreachable before M5, because nothing could change a library.
+- **CSS:** `[hidden]` now hides elements that set their own `display`.
+- **Tested:**
+  - `tests/unit/songlist.test.mjs`, 9 tests: folding, title and text search, order, chips, *Wis filters*, the neighbour after deleting, the list itself, `reveal`, read-only;
+  - `session.test.mjs`: the richer summary, and deleting a song from the library and its sets.
+  - `node --test`: 324 of 324. Container test: 81 of 81.
+- **In the browser pane (Chromium), on `valid-unsigned`:**
+  - search with focus kept, *Ook in de tekst*, *Wis filters*, A–Z/Z–A, chips combined;
+  - deleting *Lorem Ipsum!* after M-62: *Vader Jacob* selected next, the library *gewijzigd*, and the set *Demo* now reported empty;
+  - *Openen* and *Nieuw* asking M-60 only with changes, *Annuleren* keeping them;
+  - `valid-signed`: bins disabled; storage empty, console clean.
+- **Open:**
+  - the Sets tab of the right bar comes with M5.5;
+  - closing the browser tab with changes not yet downloaded gives no warning; EDT-03 may ask for one (a question for the owner).
+- **Next:** M5.2 song view; M5.3 needs the M2.3 block form first.
 
 ### M6 — Open, save and sign (M)
 

@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Added
+- **M5.1: the song list** (`design/implementationPlan.md`).
+  - **Finding songs:** search, *Ook in de tekst*, A–Z/Z–A, and language and tag chips, as in the app's songbook; *Wis filters*.
+  - **Rows:** each shows the song's worst finding, its language and lyricist.
+  - **Selecting and deleting:** a click selects a song; the bin deletes it after M-62, also from every set.
+  - **Code:** `app/songlist.js`; the worker's song summary now also gives sort title, language, lyricist, tags and lyrics.
+  - **Tests:** `songlist.test.mjs`; `node --test` 324 of 324. Checked in Chromium.
+
+### Fixed
+- ***Openen* and *Nieuw* with changes not yet downloaded** now ask M-60 first, as *Sluiten* does (EDT-03).
 - **M5.4: the library's fields** (`design/implementationPlan.md`).
   - **The left bar** shows title, description, licence and maintainer while a library is open; a new library can now be completed and downloaded.
   - **Licence:** five common licences with their summary, any other SPDX identifier, and an optional full text.
