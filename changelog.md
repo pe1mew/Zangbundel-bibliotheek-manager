@@ -83,6 +83,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - `design/securityAssessment.md` draft 0.1: a security and privacy assessment of the web app's design. It names the assets, attackers and 20 findings (among them: the site's code as the root of trust, the shared host with end-of-life PHP sites, CVE-2026-45820 in `fflate` before 0.8.3, the unaudited `@noble/ed25519` v3, DOM injection from library content, missing security headers, no CAA, registrar lock, SPF or DMARC on the new domain), and specifies 67 binding requirements (SR-01 to SR-93), the nginx, DNS, application and release implementation, a release gate of 13 checks, accepted risks and eight open questions. webappTDS draft 0.6 makes it binding (TD-18).
 
 ### Changed
+- **contabo6 set up through runbook step 4** (M0.4 to M0.7, apart from git tag signing). Files, users and the port-80 vhost are installed; the release key is the only trusted signer; the deploy key reaches only `zbm-receive`, tested from outside. `webapp/tools/release-key.pub` added.
+  - **Runbook fix:** the deploy user's password field is now `*`, set with `usermod -p '*'`, instead of `passwd -l`. sshd on contabo6 refused the locked account, keys included (securityAssessment 7.4).
 - **DNS set (M0.1, M0.2) with two accepted deviations** (`design/securityAssessment.md` draft 0.13).
   - **No MX record:** Openprovider refuses the null MX, so the domain publishes no MX, and port 25 on contabo6 is closed (SR-07).
   - **No transfer lock:** `.nl` has none, so two-factor authentication on the registrar account protects the domain (SR-05).

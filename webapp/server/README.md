@@ -7,7 +7,7 @@ Tested on 2026-11-06 in an Ubuntu 24.04 container with its nginx 1.24.0, Python 
 - builds the placeholder from a signed git tag and the holding page as a trial build, then signs both;
 - runs `webapp/tests/test_build.py` (25 unsafe pages or modules refused, one valid page built), `test_bundle.py`, `test_vendor.py`, `test_engine_bundle.py` and `node --test webapp/tests/`;
 - builds the manager (`webapp/src`) twice as a trial and compares the bytes, activates it on the test instance, runs SC-01 with `--app` and the hourly check, and checks the served bundle against its SRI hash;
-- installs the nginx, script and logrotate files of steps 4 and 6 (not the systemd units, sshd, authorized_keys or `passwd -l`);
+- installs the nginx, script and logrotate files of steps 4 and 6 (not the systemd units, sshd, authorized_keys or the deploy user's password field);
 - uploads through the forced command and activates as root;
 - tries nine kinds of bad upload, two misplaced trial builds, eight upload limits of `zbm-receive` (size, cut short twice, compressed, run as root, 20 waiting, 200 MB waiting, 200 MB passed) and parallel uploads;
 - activates with root umask 002 and 077;
@@ -85,6 +85,10 @@ ssh-keygen -t ed25519 -C "zangbundel release key" -f ~/.ssh/zangbundel-release
 ssh-keygen -t ed25519 -C "zangbundel deploy" -f ~/.ssh/zangbundel-deploy
 ```
 
+*Done 2026-11-07:* both keys made on the owner's computer, both with a passphrase. The first pair had been made on contabo6 by mistake and was shredded there unused. `webapp/tools/release-key.pub` is the release key's public half. Git tag signing (item 3) is still to do.
+
+Run these on **your own computer**, not on the server: the server must never hold either private key. In the Windows command prompt `~` does not work; use Git Bash, or `%USERPROFILE%\.ssh\…`.
+
 1. Give the release key a passphrase. Keep a copy of `~/.ssh/zangbundel-release` offline, for example on a USB stick in a drawer: without it, no new release can be activated.
 2. Copy `~/.ssh/zangbundel-release.pub` to `webapp/tools/release-key.pub` and commit it. `sign-release.sh` checks every signature against that file.
 3. Let git sign tags with an SSH key, if it does not already. Your usual key works; the allowed-signers file lets `git verify-tag` check the signature:
@@ -126,11 +130,11 @@ test -s ~/zbm/release-key.pub && printf 'release@zangbundel.nl namespaces="zangb
 useradd --system --no-create-home --shell /usr/sbin/nologin zbm-verify
 ```
 
-**The deploy user (SR-74).** It has no password and can run only `zbm-receive`. It keeps `/bin/bash` as its shell because sshd runs a forced command through the user's shell; with `nologin` the forced command would not run. What denies it a shell is `command=` in `authorized_keys`: whatever the client asks, sshd runs `zbm-receive`. `restrict` takes away the terminal and forwarding, and the locked password rules out password logins (securityAssessment 7.4).
+**The deploy user (SR-74).** It has no password and can run only `zbm-receive`. It keeps `/bin/bash` as its shell because sshd runs a forced command through the user's shell; with `nologin` the forced command would not run. What denies it a shell is `command=` in `authorized_keys`: whatever the client asks, sshd runs `zbm-receive`. `restrict` takes away the terminal and forwarding. The password field is `*`, which no password matches, so password logins are ruled out (securityAssessment 7.4). Not `passwd -l`: that writes `!`, and sshd then refuses the account altogether, keys included (`account is locked`), as found on contabo6 on 2026-11-07.
 
 ```bash
 useradd --system --create-home --shell /bin/bash zbm-deploy
-passwd -l zbm-deploy
+usermod -p '*' zbm-deploy
 chown zbm-deploy:zbm-deploy /srv/zangbundel-staging/incoming && chmod 0750 /srv/zangbundel-staging/incoming
 install -d -m 0700 -o zbm-deploy -g zbm-deploy /home/zbm-deploy/.ssh
 ```
@@ -160,10 +164,11 @@ nginx -t && systemctl reload nginx
   - `/.well-known/acme-challenge/` is served from `/var/www/acme`;
   - `Server: nginx` shows no version;
   - the log keeps anonymised addresses only.
-- **Still open, after step 3:**
-  - `/etc/zangbundel/allowed_signers`;
-  - the deploy key in `authorized_keys`;
-  - `zbm-deploy` added to `AllowUsers remko` in `/etc/ssh/sshd_config`.
+- **The key parts, done the same day after step 3** (`sudo bash ~/zbm/install-step4-keys.sh`):
+  - `/etc/zangbundel/allowed_signers` holds the release key only;
+  - the deploy key is in `authorized_keys`;
+  - `/etc/ssh/sshd_config` now reads `AllowUsers remko zbm-deploy`, with a backup in `sshd_config.bak-zbm`.
+- **Tested from the owner's computer:** `ssh -n -i …/zangbundel-deploy zbm-deploy@rfsee.net id` answers `refused: nothing received` and runs no `id`. sshd logs `Accepted publickey for zbm-deploy`; `remko` still logs in.
 
 ## 5. Certificates (M0.3, SR-01, SR-03)
 

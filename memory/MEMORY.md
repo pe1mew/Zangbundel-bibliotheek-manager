@@ -72,4 +72,10 @@
   - sshd has `AllowUsers remko`, so zbm-deploy must be added in step 3/4.
   - contabo6 now has IPv6 `2a02:c207:2346:2578::1`.
   - The local Windows resolver cached the old `127.0.0.1` for zangbundel.nl (one-day TTL): test with `curl --resolve`.
-  - Next: the owner's step 3 (keys, git tag signing), then step 5 (certbot).
+  - Step 3 keys done: release and deploy key on the owner's PC with passphrases (`C:\Users\drasv\.ssh\zangbundel-*`); `webapp/tools/release-key.pub` staged. allowed_signers, authorized_keys and AllowUsers are in place; the deploy test gave `refused: nothing received`.
+  - Lessons from this:
+    - The owner ran the first keygen on the server by accident: say *which machine* for every command.
+    - The owner's shell is often cmd.exe, where `~` doesn't work.
+    - `passwd -l` locks the account for sshd here (no UsePAM), keys included: use `usermod -p '*'`.
+    - I can't type passwords or passphrases: open a terminal tab (`run_in_terminal`) for the owner to type in. Pasting there may not work; cmd with right-click does.
+  - Next: git tag signing (step 3 item 3), then step 5 (certbot).
