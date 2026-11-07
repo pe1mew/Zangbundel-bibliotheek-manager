@@ -12,8 +12,9 @@ const BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LICENSE_ID = /^[A-Za-z0-9][A-Za-z0-9.+-]*$/;
 // A set name is a setlist title (FDS 4.1, song format 13.2): a directive value on one line, so no
-// control characters, no braces, no spaces at either end (a directive value is trimmed), NFC.
-const SET_NAME_BAD = /[\u0000-\u001f\u007f-\u009f{}]|^\s|\s$/;
+// control characters, no braces, no spaces at either end (a directive value is trimmed of spaces and
+// tabs, song format 5.3 v0.24; a tab is a control character here), NFC.
+const SET_NAME_BAD = /[\u0000-\u001f\u007f-\u009f{}]|^ | $/;
 
 const len = (s) => [...s].length;
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);

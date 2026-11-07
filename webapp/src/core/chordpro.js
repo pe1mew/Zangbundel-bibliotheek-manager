@@ -36,8 +36,9 @@ function trimEndBlank(s) {
   return s.slice(0, i);
 }
 
-/** Spaces and tabs off both ends: a blank line and a directive line are judged after this (5.2). */
-function trimBlank(s) {
+/** Spaces and tabs off both ends, never other whitespace such as NBSP or U+FEFF (5.2, 5.3; song format v0.24):
+ *  blank and directive lines are judged after this, and directive names, values and the meta split use it. */
+export function trimBlank(s) {
   let i = 0;
   while (i < s.length && (s[i] === ' ' || s[i] === '\t')) i++;
   return trimEndBlank(s.slice(i));
@@ -99,7 +100,16 @@ function displayText(line, problems) {
       out += ch;
     }
   }
-  return trimEndBlank(out.replace(/\t/g, ' '));
+  return trimEndSpace(out.replace(/\t/g, ' '));
+}
+
+/** 9.1 (song format v0.25): the display text loses trailing spaces and characters of the Unicode categories
+ *  Zs, Zl and Zp, so a no-break space too (unlike the trimming of 5 and 6). Linear in the line (SR-33). */
+const TRAILING_SPACE = /[\p{Zs}\p{Zl}\p{Zp}]/u;
+function trimEndSpace(s) {
+  let i = s.length;
+  while (i > 0 && TRAILING_SPACE.test(s[i - 1])) i--;    // every Z character is in the BMP: one code unit
+  return s.slice(0, i);
 }
 
 /**
@@ -119,7 +129,8 @@ export function parseSong(text) {
 
   for (const raw of text.split('\n')) {
     const line = trimBlank(raw);
-    if (line === '' || line.startsWith('#')) {
+    // 5.2 (v0.25): a file comment's first character is '#', with no trimming; '  # x' is a lyric line
+    if (line === '' || raw.startsWith('#')) {
       continue;
     }
     const starts = line.startsWith('{');
@@ -134,16 +145,16 @@ export function parseSong(text) {
     if (starts) {
       const body = line.slice(1, -1);
       const colon = body.indexOf(':');
-      let name = (colon < 0 ? body : body.slice(0, colon)).trim().toLowerCase();
-      const value = colon < 0 ? '' : body.slice(colon + 1).trim();
+      let name = trimBlank(colon < 0 ? body : body.slice(0, colon)).toLowerCase();
+      const value = colon < 0 ? '' : trimBlank(body.slice(colon + 1));
       name = ALIASES[name] || name;
       if (name === 'meta') {
-        const m = /^(\S+)\s*(.*)$/.exec(value);
+        const m = /^([^ \t]+)[ \t]*(.*)$/.exec(value);              // 5.3: split at the first run of spaces or tabs
         const mname = m ? m[1].toLowerCase() : '';
         if (!META_NAMES.has(mname)) {
           unknown.add(`meta ${mname}`);
         }
-        put(mname, m ? m[2].trim() : '');
+        put(mname, m ? trimBlank(m[2]) : '');
       } else if (METADATA_DIRECTIVES.has(name)) {
         put(name, value);
       } else if (name.startsWith('start_of_')) {

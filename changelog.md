@@ -6,7 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+- **Whitespace is spaces and tabs only** (FDS draft 0.9, O-11; song format v0.24, approved by the owner). The engine no longer trims a no-break space or U+FEFF from directive names, values, the `meta` split or setlist lines, and a set name may begin or end with one. `tests/unit/whitespace.test.mjs` adds 4 tests.
+- **Comments and display text as the app reads them** (song format v0.25, approved by the owner). An indented `#` line is a lyric line, and the display text drops trailing Unicode spaces, the no-break space included, so the line list matches app 0.4.0. The app's vectors `comment-indented` and `nbsp-display` are tested; `node --test` 238 of 238, container 81 of 81, the long fuzz 0 failures.
+
 ### Added
+- **M2.7: conversion** (`design/implementationPlan.md` draft 0.15). `webapp/src/core/convert.js` opens a ZIP without `manifest.json` as a new, unsigned library (EDT-21).
+  - **Release archives and snapshots** keep their song IDs, title, description, licence and maintainer; setlists become sets, and entries of other libraries are reported (EDT-26).
+  - **Plain ZIPs** of `<set>/<song>/<file>.cho` folders become sets, with a song of identical text stored once (EDT-25).
+  - **Song IDs** are proposed from the title and made unique (EDT-36); other files are left out and listed (M-42).
+  - **Tests:** `tests/unit/convert.test.mjs`, 5 tests; `node --test` 231 of 231; container 81 of 81.
+  - **Fuzzing:** `fuzz.mjs` now counts the inputs it opened through conversion; the long run converted 101 of 20,000, with 0 failures.
 - **M2.8: the library worker** (`design/implementationPlan.md` draft 0.14). Every library byte is now read in a Web Worker, which returns structured data only (SR-30).
   - **`src/workers/library-handler.js` and `library-worker.js`:** validate, open, save, copy and new.
   - **`src/app/library-client.js`** starts the worker through the Trusted Types policy `zbm-worker` (`src/app/trusted.js`, TD-23). After 20 s it ends the worker with PKG-02 (M-02), and the next request starts a new one (SR-31).

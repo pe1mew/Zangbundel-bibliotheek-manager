@@ -148,7 +148,7 @@ function checkFindings(result) {
   return null;
 }
 
-/** Run the fuzzer; returns { iterations, failures, maxMs, maxRssMB, byMutator, byCode }. */
+/** Run the fuzzer; returns { iterations, failures, converted, maxMs, maxRssMB, byMutator, byCode }. */
 export async function runFuzz({ iterations = 20000, seed = 1, limitMs = 2000, log = () => {} } = {}) {
   const corpus = loadCorpus();
   const r = prng(seed);
@@ -158,6 +158,7 @@ export async function runFuzz({ iterations = 20000, seed = 1, limitMs = 2000, lo
   const byCode = {};
   let maxMs = 0;
   let maxRss = 0;
+  let converted = 0;                                     // inputs without a manifest, opened through convert.js (M2.7)
   for (let i = 0; i < iterations; i++) {
     const mutator = pick(r, names);
     let input;
@@ -176,6 +177,7 @@ export async function runFuzz({ iterations = 20000, seed = 1, limitMs = 2000, lo
       if (first) byCode[first.code] = (byCode[first.code] || 0) + 1;
       const o = await openLibrary(input);
       problem = problem || checkFindings(o);
+      if (o.converted) converted++;
       if (!problem && o.library) {
         const s = await saveLibrary(o.library, { changed: true, now: new Date('2026-11-07T00:00:00Z') });
         problem = s.refused && !s.reason ? 'refused without a reason' : null;
@@ -195,7 +197,7 @@ export async function runFuzz({ iterations = 20000, seed = 1, limitMs = 2000, lo
     if (i % 500 === 0) maxRss = Math.max(maxRss, process.memoryUsage().rss);
   }
   maxRss = Math.max(maxRss, process.memoryUsage().rss);
-  return { iterations, failures, maxMs: Math.round(maxMs), maxRssMB: Math.round(maxRss / 1048576), byMutator, byCode };
+  return { iterations, failures, converted, maxMs: Math.round(maxMs), maxRssMB: Math.round(maxRss / 1048576), byMutator, byCode };
 }
 
 /** ChordPro alone: random token text must parse, in time that grows with the input, not faster. */

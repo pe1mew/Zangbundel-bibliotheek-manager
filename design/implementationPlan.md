@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.14 |
-| **Date** | 2026-11-06 |
+| **Status** | Draft 0.15 |
+| **Date** | 2026-11-07 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.12, `test-libraries/` (56 cases) |
 
 ---
@@ -241,7 +241,15 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - **Long run** (`node webapp/tests/fuzz.mjs --iterations 20000 --seed 1`, 2026-11-07): 20,000 libraries and 2,000 random songs, 0 failures; slowest input 577 ms, memory at most 296 MB, about 40 different first findings reached.
   - **Short run:** every `node --test` runs 400 libraries and 300 songs.
   - **The fuzzer finds real defects:** on the pre-review code it found the save that threw instead of refusing (111 hits in 6,000).
-- **To do:** M2.3's block form and its round trip (GD-18, GD-19, locked blocks byte-exact) and conversion (M2.7).
+- **M2.7 done (EDT-21, EDT-25, EDT-26, EDT-36).** `src/core/convert.js` turns a ZIP without `manifest.json` into a new, unsigned library; `openLibrary` calls it and validates the result, so the screens get the converted library, its findings and a report for M-41 and M-42.
+  - **Release archive or snapshot** (`zangbundel-archive.json` or `zangbundel.json`): the songs under `songs/` keep their IDs; title, description, licence (with the licence file as `license.text`) and maintainer come from `zangbundel.json`; a setlist becomes a set with the entries that name this library's songs, and the other entries are reported.
+  - **Folders of song files:** every `.cho` becomes a song; `<set>/<song>/<file>.cho` places it in the set, in order of the song folders; identical text is stored once.
+  - **Song IDs:** a valid `{meta: id}` is kept, then (in a repository) the file name, else one is proposed from the title (EDT-36) and made unique with `-2`, `-3`; the ID is written into the song. Files that are not songs are left out and listed.
+  - **Readings beyond the FDS:** a setlist's set is named by its `{title}`, else its file name; a description equal to the title is dropped; a song that is not UTF-8 is taken over as found, so the save names SNG-01; songs outside `songs/` in a repository are left out.
+  - **Tested in `tests/unit/convert.test.mjs`:** the corpus snapshot (`manifest-missing`, saved cleanly), a release archive built in the test, plain folders with a shared song, a proposed and a colliding ID, a left-out file, and a non-UTF-8 song. The fuzzer opens every mutated ZIP that lost its manifest through conversion and reports how many: the long run (seed 1, 2026-11-07) converted 101 of 20,000 inputs, with 0 failures, slowest input 531 ms, at most 299 MB.
+- **Whitespace as song format v0.24** (FDS draft 0.9, O-11): directive names and values, the `meta` split, setlist lines and the set-name check trim or test spaces and tabs only, no longer JavaScript's `trim()` and `\s`, which also remove a no-break space and U+FEFF. Four regression tests in `tests/unit/whitespace.test.mjs` fail on the code before.
+- **Comments and display text as song format v0.25** (FDS draft 0.9, O-11): a comment is a line whose first character is `#`, so `  # x` is a lyric line; the display text drops trailing spaces and Unicode Zs, Zl and Zp, so a no-break space too. The app's vectors `comment-indented` and `nbsp-display` give its line lists and canonical hashes (`tests/unit/whitespace.test.mjs`). W014, the validator's warning for an indented `#`, is not shown: the owner chose no new Editor rule.
+- **To do:** M2.3's block form and its round trip (GD-18, GD-19, locked blocks byte-exact); it may move to M5, where the editor needs it.
 
 ### M3 — Keys and signing (M)
 
@@ -399,3 +407,4 @@ The placeholder and the manager have separate release directories and separate m
 | Draft 0.12 | 2026-11-06 | M2: writing and saving done (deterministic ZIP, view writer, `library.js` with EDT-50 to EDT-58 and EDT-71); left: block form, conversion, worker, fuzzing. |
 | Draft 0.13 | 2026-11-07 | M2 reviewed: findings fixed and listed under M2; the §9.3 test described as far as it goes. |
 | Draft 0.14 | 2026-11-07 | M2.8 (library worker, client, `zbm-worker` policy, 20 s limit) and M2.9 (fuzzing, SC-11: 20,000 inputs, 0 failures) done. |
+| Draft 0.15 | 2026-11-07 | M2.7 (conversion of release archives, snapshots and plain ZIPs) done; left in M2: the block form. |

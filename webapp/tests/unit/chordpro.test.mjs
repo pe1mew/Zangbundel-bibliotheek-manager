@@ -85,7 +85,7 @@ test('5.2: a directive has no other unescaped brace; an escaped closing brace do
 
 test('SNG-01: C1 control characters; blank lines are judged on spaces and tabs only', () => {
   assert.equal(canonicalize(enc.encode('tekst\u009b31m\n')).controlChars, true);
-  assert.equal(song('{title: T}\n \n').lines.length, 1);          // a no-break space is content, not blank
+  assert.equal(song('{title: T}\n \n').lines.length, 0);          // NBSP: content, not blank (5.2), but the display text drops it (9.1, v0.25)
 });
 
 test('7.2: {chorus: label} with two choruses of that label takes the most recent', () => {

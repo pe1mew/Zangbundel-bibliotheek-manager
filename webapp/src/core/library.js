@@ -2,7 +2,7 @@
 // A library as the Editor holds it in memory, and saving it (FDS 7.2, 7.3, 7.6, 7.8). Pure, apart
 // from the platform's crypto.subtle (hashes) and crypto.randomUUID (new library IDs).
 //
-//   openLibrary(bytes)            → { findings, library | null, reason }
+//   openLibrary(bytes)            → { findings, library | null, reason, converted? }
 //   newLibrary({ title, … })      → library (EDT-10 to EDT-12)
 //   copyLibrary(library, { now }) → library (EDT-71)
 //   saveLibrary(library, { changed, now, changes, signer }) → { bytes | null, findings, refused, reason, unchanged, dropped }
@@ -18,6 +18,7 @@ import { canonicalize } from './chordpro.js';
 import { base64Bytes } from './manifest.js';
 import { compareOrdinal, nameProblem } from './names.js';
 import { viewFiles } from './view.js';
+import { convertZip } from './convert.js';
 
 const KNOWN_FIELDS = new Set(['formatVersion', 'libraryId', 'version', 'title', 'description', 'created', 'modified',
   'changes', 'license', 'maintainer', 'author', 'sets', 'files']);
@@ -74,8 +75,16 @@ export async function openLibrary(bytes, options = {}) {
     return { findings: r.findings, library: null, reason: 'fatal' };
   }
   const m = r.manifest;
+  if ((m === null || m === undefined) && !r.manifestBytes) {
+    // EDT-21: no manifest.json — taken over as a new library (EDT-25, EDT-26); the rules of section 6
+    // are then applied to the library as it would be saved (licence and maintainer may still be missing).
+    const { library, report } = convertZip(bytes, { now: options.now, libraryId: options.libraryId, title: options.title });
+    const built = await buildLibrary(library, { now: options.now });
+    const after = await validateLibrary(built.bytes);
+    return { findings: after.findings, library, reason: null, converted: report, originalFindings: r.findings };
+  }
   if (m === null || m === undefined) {
-    return { findings: r.findings, library: null, reason: r.files && !r.manifestBytes ? 'no-manifest' : 'manifest-unreadable' };
+    return { findings: r.findings, library: null, reason: 'manifest-unreadable' };
   }
   const songs = new Map();
   const rawSongs = new Map();                           // songs that are not valid text, kept byte for byte
