@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.13 |
+| **Status** | Draft 0.14 |
 | **Date** | 2026-11-07 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -282,7 +282,7 @@ The owner's answers to the open questions, and two further requests made during 
 
 **GD-34 — Bar widths, folding and the language are remembered on this computer.** *(Resolves GQ-16.)* They are kept in the browser's local storage, on that computer only, and restored on the next visit (EDT-82). Nothing about a library or a key is kept there (EDT-02, EDT-64). If local storage is not available, the manager starts with the defaults.
 
-**GD-35 — Store badges say *binnenkort* until the app is there; the manager's manual is on its GitHub wiki.** *(Resolves GQ-19.)* In the Android panel (GD-15), a badge is shown greyed with *binnenkort* (*coming soon*) and no link while the app is not public in that store; the GitHub APK link works now. The manager's manual lives on this repository's GitHub wiki (`github.com/pe1mew/Zangbundel-bibliotheek-manager/wiki`), like the app's.
+**GD-35 — Store badges say *binnenkort* until the app is there; the manager's manual is on its GitHub wiki.** *(Resolves GQ-19.)* In the Android panel (GD-15), a badge is shown greyed with *binnenkort* (*coming soon*) and no link while the app is not public in that store, except the Google Play badge, which is left out until the app is listed there: Google's badge guidelines allow it only unaltered (*amended 2026-11-07* by the owner, on the placeholder first); the GitHub APK link works now. The manager's manual lives on this repository's GitHub wiki (`github.com/pe1mew/Zangbundel-bibliotheek-manager/wiki`), like the app's.
 
 **GD-36 — An action elsewhere while a song is being edited asks what to do with the changes, and names the song.** *(Owner, 2026-11-06, feedback on the mock.)* The short message *Pas eerst toe of annuleer* did not say what would be applied or cancelled. Instead, a click outside the song editor that would leave it (a song or set in the right bar, adding a song to a set, *Downloaden*, *Openen*, *Nieuw*, *Sluiten*) opens a dialog *Je bent een lied aan het bewerken*: *Je wijzigingen in "<titel>" zijn nog niet toegepast. Wat wil je ermee doen voordat je verdergaat?*, with three buttons:
 
@@ -356,3 +356,4 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.11 | 2026-11-06 | The owner's feedback on the mock: the two editing modes are a named segmented control, *Blokken* and *Code (ChordPro)* (GD-38), instead of the switch of GD-18. |
 | Draft 0.12 | 2026-11-06 | From the security assessment's SQ-08: *Sleutel vergeten* (GD-39) and forgetting the key after 30 minutes without input (GD-40); the mock follows. |
 | Draft 0.13 | 2026-11-07 | FDS draft 0.10 adds tag labels to the library (EDT-30, D-44): where they are edited is open (GQ-20). |
+| Draft 0.14 | 2026-11-07 | GD-35 amended by the owner: the Google Play badge is left out until the app is listed. Google's badge guidelines ask for the badge unaltered, so it cannot be shown greyed. The F-Droid badge stays greyed with *binnenkort*. |

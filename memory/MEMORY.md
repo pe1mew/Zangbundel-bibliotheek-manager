@@ -81,4 +81,7 @@
   - Step 5: certificates issued (ECDSA, webroot, account acct/112577467). CAA is bound to production acct/112577467 and staging acct/24760018; Openprovider accepts `accounturi` only without a space after `;`. The staging record is needed because `renew --dry-run` uses staging. Check CAA with `dig @ns1/2/3.openprovider…` from contabo6: local nslookup can't do CAA, and DoH dns.google works.
   - Step 5 done: renewal dry run succeeded for both, with CAA bound.
   - Step 6 done: both 443 vhosts enabled, tester account in /etc/nginx/zangbundel-test.htpasswd; checked from outside (YE1 certs to 2027-02-05, TLS 1.0/1.1 refused, headers, 401, robots). Both answer 404 until step 7.
-  - Next: step 7 (first releases) needs git tag signing for the placeholder; the test holding page can go as a trial build.
+  - Git tag signing: dedicated key `C:\Users\drasv\.ssh\git-signing` (SHA256:yuXtv8xl…), set as user.signingkey, with gpg.format ssh and allowed_signers (CRLF, written by PowerShell). The owner's test tag verified: `Good "git" signature … SHA256:yuXtv8xl…`; CRLF in allowed_signers is fine. NOT panther_ed25519: its comment marks it as Claude Code's.
+  - The owner's terminal is PowerShell (`$env:USERPROFILE`), sometimes cmd (`%USERPROFILE%`).
+  - Owner's decision 2026-11-07: the Google Play badge is left out of the placeholder until the app is listed (Google's guidelines allow it only unaltered); F-Droid stays greyed (webappGUI 0.14, GD-35 amended). The mock still greys both.
+  - Next: step 7. Placeholder from a signed tag (the owner tags and pushes); test holding page as a trial build.

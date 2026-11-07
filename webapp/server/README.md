@@ -85,7 +85,7 @@ ssh-keygen -t ed25519 -C "zangbundel release key" -f ~/.ssh/zangbundel-release
 ssh-keygen -t ed25519 -C "zangbundel deploy" -f ~/.ssh/zangbundel-deploy
 ```
 
-*Done 2026-11-07:* both keys made on the owner's computer, both with a passphrase. The first pair had been made on contabo6 by mistake and was shredded there unused. `webapp/tools/release-key.pub` is the release key's public half. Git tag signing (item 3) is still to do.
+*Done 2026-11-07:* both keys made on the owner's computer, both with a passphrase. The first pair had been made on contabo6 by mistake and was shredded there unused. `webapp/tools/release-key.pub` is the release key's public half. Git tag signing (item 3) was set up the same day with a key of its own, `~/.ssh/git-signing` (Ed25519, with a passphrase, fingerprint `SHA256:yuXtv8xlEFXND6v0m+ZUfloqhpVc49x/e5DXb2++WVA`), used for nothing else. It is not a key an agent uses: a signed tag is the owner's own release decision (SR-10, SR-90). In PowerShell, write `$env:USERPROFILE` instead of `~`.
 
 Run these on **your own computer**, not on the server: the server must never hold either private key. In the Windows command prompt `~` does not work; use Git Bash, or `%USERPROFILE%\.ssh\…`.
 
