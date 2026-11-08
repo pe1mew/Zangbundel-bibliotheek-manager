@@ -106,7 +106,7 @@ node webapp/tests/fuzz.mjs --iterations 20000      # the long fuzz (SR-35, SC-11
 python webapp/tools/vendor.py check                # vendored files against VENDOR.md (vendor.py add needs npm and the network)
 
 # Trial build of the web app (the version must equal webapp/src/app/version.js; needs node on PATH for its syntax check)
-python webapp/tools/build.py build --src webapp/src --name manager --version 0.2.0-dev.3 --allow-dirty --force
+python webapp/tools/build.py build --src webapp/src --name manager --version 0.2.0-dev.4 --allow-dirty --force
 
 # SC-01 header check against a host (see webapp/server/README.md for --connect/--insecure/--auth)
 python webapp/tools/check_headers.py zangbundel.nl

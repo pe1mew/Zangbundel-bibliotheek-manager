@@ -772,6 +772,10 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - The CSS change went into the owner's commit `404a3ff`, together with the `zbm-release` fix.
   - `test_build.py` passes, and the build rewrites the photo's reference to its hashed name.
   - **Not seen:** the photo's stillness on screen. The browser pane was hidden and drew too few frames to compare. The owner's look in the next trial is the check.
+
+**Fourth trial (2026-11-08), being prepared:** `manager-0.2.0-dev.4`, with the fixed photograph.
+- **Version:** `version.js` raised to `0.2.0-dev.4`, to be built from the owner's commit of it.
+- **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened; the centre's background is `fixed`; *Over* gave `0.2.0-dev.4`; *Sleutel maken* made a key. The console was clean.
 - **Version:** `version.js` raised to `0.2.0-dev.3`, to be built from the owner's commit of it.
 - **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened with the left tabs and eight ⓘ; *Over* gave `0.2.0-dev.3`; *Sleutel maken* made a key. The console was clean.
 - **F12, done:** the way back to the library's fields was hidden, since only the library's title in the right bar led there. The owner chose tabs in the left bar (option b).
