@@ -792,6 +792,10 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - **Tested:** a new test in `songlist.test.mjs`. `node --test` passes 396 of 396, and `test_build.py` is OK.
   - **In the browser pane (Chromium), the Drasva library at 1400 × 850:** it showed 414 pens, orange (`rgb(255, 138, 61)`) beside grey bins. The first opened its song's editor.
   - A first build showed the pens grey: the `.iconbtn` rule came later in `app.css`, so `.iconbtn.editbtn` now wins. It is not yet in a trial.
+
+**Sixth trial (2026-11-08), being prepared:** `manager-0.2.0-dev.6`, with the lock (GD-24) and the pen (GD-13).
+- **Version:** `version.js` raised to `0.2.0-dev.6`, to be built from the owner's commit of it.
+- **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened; *Over* gave `0.2.0-dev.6`; *Sleutel maken* made a key. The console was clean.
 - **Built** into `dist/` from the owner's commit `3970492`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.
 - **Version:** `version.js` raised to `0.2.0-dev.5`, to be built from the owner's commit of it.
 - **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened; the photograph's height is the window's less the bottom bar (`auto 710.4px` at 786 px); *Over* gave `0.2.0-dev.5`; *Sleutel maken* made a key. The console was clean.
