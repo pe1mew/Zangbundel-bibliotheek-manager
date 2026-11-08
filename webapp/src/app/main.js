@@ -88,8 +88,11 @@ function home(lang, { onOpen, onNew, onDownload, hasLibrary, busy }) {
   ]);
 }
 
-/** The right bar's head (GD-22, GD-24): the library's title, which shows its fields, and its state. */
-function libHead(lang, state, onLibrary) {
+/**
+ * The right bar's head (GD-22, GD-24): the library's title, which shows its fields, and its state. The lock shows only
+ * while the library is read-only (its key not loaded); signed with the key loaded, the state line says it is signed.
+ */
+function libHead(lang, state, onLibrary, readOnly) {
   const lib = state.library;
   if (!lib) return [el('h3', {}, [t(lang, 'songs')])];
   const status = [
@@ -99,7 +102,7 @@ function libHead(lang, state, onLibrary) {
   ].filter(Boolean).join(' · ');
   return [
     el('button', { type: 'button', class: 'title linklike', title: t(lang, 'libInfo'), on: { click: onLibrary } },
-      [lib.author ? icon('lock', 'inl') : null, lib.title]),
+      [readOnly ? icon('lock', 'inl') : null, lib.title]),
     el('div', { class: 'muted small' }, [status]),
   ];
 }
@@ -496,7 +499,7 @@ function start() {
       pane = el('div', { class: 'tabpane', role: 'tabpanel' }, []);
       replace(layout.right, head, ...(state.library ? [tabs, pane] : [el('p', { class: 'empty' }, [t(lang, 'noLibrary')])]));
     }
-    replace(head, ...libHead(lang, state, () => choose(null)));
+    replace(head, ...libHead(lang, state, () => choose(null), readOnly));
     if (tabs) {
       for (const b of tabs.children) {
         const name = b.getAttribute('data-tab');

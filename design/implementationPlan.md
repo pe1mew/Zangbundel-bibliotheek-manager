@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.29, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.30, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
 
 ---
 
@@ -781,7 +781,13 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - **At 1400 × 850, with both bars folded and the box hidden (a build of the current source):** the photograph runs from 330 to 1070 px (centre 700), and the book's bottom is at about 735 px, above the bar at 774. The screenshot matches the owner's sketch, and the owner accepted it.
   - The build rewrites the reference; `test_build.py` is OK. webappGUI draft 0.29. It is not yet in a trial.
 
-**Fifth trial (2026-11-08), being prepared:** `manager-0.2.0-dev.5`, with the centred photograph.
+**Fifth trial (2026-11-08):** `manager-0.2.0-dev.5`, with the centred photograph.
+- **Live:** activated by the owner. `live` points to `releases/manager-0.2.0-dev.5`, checked on contabo6.
+- **The owner's look at dev.5: a lock with the key loaded.** The right bar's head showed a lock beside the title of every signed library, also with its key loaded, when it can be edited. The owner found it confusing.
+  - The lock now shows only while the library is read-only (`libHead`'s `readOnly`, as the mock's `readOnly()`). GD-24 amended in webappGUI draft 0.30.
+  - **In the browser pane (Chromium), a build under the test instance's CSP, `valid-signed`:** without the key it showed the lock and the read-only bar. After *Sleutel laden* with the RFC 8032 test key, neither showed, and the state line still said *ondertekend door RFC 8032 test key*.
+  - `node --test` passes 395 of 395; `test_build.py` and `test_bundle.py` are OK. It is not yet in a trial.
+- **Built** into `dist/` from the owner's commit `3970492`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.
 - **Version:** `version.js` raised to `0.2.0-dev.5`, to be built from the owner's commit of it.
 - **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened; the photograph's height is the window's less the bottom bar (`auto 710.4px` at 786 px); *Over* gave `0.2.0-dev.5`; *Sleutel maken* made a key. The console was clean.
 - **Live:** signed and uploaded by the owner (`upload-20261108T194455Z-2627810.tar`, SHA-256 `a551c3da…`, the same as the signed pack) and activated with `--trial`. Checked on contabo6: `live` points to `releases/manager-0.2.0-dev.4`, whose manifest names `96b403e` with `source_dirty: false`. dev.1 to dev.3 and `test-holding-0.1.0` stay installed to switch back to.

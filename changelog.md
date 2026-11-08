@@ -38,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - **Implementation plan draft 0.18:** M5.6 lists the owner's ten observations from the first trial release (F1 to F10), with their causes, the work and three decisions, all accepted by the owner: SNG-10 compares title, subtitle and language (R1); an ⓘ per song-data field (R2); Hugo for the wiki (R3). M7.6 moves the manual to a wiki on `zangbundel.nl`, in every interface language.
 
 ### Fixed
+- **The lock beside a signed library's title** showed also with its key loaded, when the library can be edited. It now shows only while the library is read-only (webappGUI draft 0.30, GD-24).
 - **The centre's photograph no longer moves with the side bars:** it is fixed to the window, centred in it, and as high as the window above the bottom bar, so the children's book stays in view (webappGUI drafts 0.28 and 0.29, GD-30; the owner's third and fourth looks).
 - **`zbm-release` and a mistyped upload name:** it now refuses plainly and lists the uploads waiting in staging, where it used to stop with a Python traceback. The same goes for a file that is not a tar and for a path that is not a regular file. securityAssessment draft 0.15 (SR-91); container test 85 of 85. It takes effect once it is installed on the server.
 - **A song's head in a narrow centre:** at 1024 px with both bars open the title broke one letter per line, because *Verwijderen* and *Bewerken* took the room. The buttons now go under the title when it does not fit.

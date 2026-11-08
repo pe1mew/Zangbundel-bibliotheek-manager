@@ -238,7 +238,7 @@ function renderRight() {
   const L = S.lib;
   r.innerHTML = `
     <div class="libhead">
-      <button class="title linklike" data-act="libinfo" title="${esc(t('libInfo'))}">${L.signed ? icon('lock', 'inl') : ''}${esc(L.title)}</button>
+      <button class="title linklike" data-act="libinfo" title="${esc(t('libInfo'))}">${readOnly() ? icon('lock', 'inl') : ''}${esc(L.title)}</button>
       <div class="muted small">${L.version ? t('versionN', { v: L.version }) : t('newUnsaved')}${S.dirty ? ' · ' + t('changed') : ''} ·
         ${L.signed ? esc(t('signedBy', { name: L.signed.name })) + ' · <span class="songid">' + L.signed.fp + '</span>' : t('unsigned')}</div>
     </div>

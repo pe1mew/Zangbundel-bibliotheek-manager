@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.29 |
+| **Status** | Draft 0.30 |
 | **Date** | 2026-11-08 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -288,6 +288,8 @@ The owner's answers to the open questions, and two further requests made during 
 
 **GD-24 — Signing is a tick box in the download dialog; a signed library asks for its key.** *(Resolves GQ-18.)* While a key is in memory (GD-14), the download dialog has *Ondertekenen als <naam> · <vingerafdruk>* (EDT-60, EDT-53); for a library that is already signed with that key, it is ticked and cannot be unticked (EDT-63). A signed library shows a lock and the author in the right bar's header. Opened without its key, it is read-only (EDT-23): a bar above the centre area says *Alleen lezen: ondertekend door <naam> · <vingerafdruk>. Laad de sleutel om te wijzigen*, with *Sleutel laden*; a key that does not match is refused with M-30.
 
+*Amended 2026-11-08 (the owner's look at dev.5):* the lock beside the library's title means *read-only*. It shows only while a signed library is open without its key. With the key loaded, the library can be edited, so there is no lock; the state line under the title still says *ondertekend door …*. Before this, the lock showed for every signed library, which the owner found confusing.
+
 **GD-25 — A new song is never hidden by the filter.** *(Resolves GQ-17.)* When a song is applied that the current search or filter hides, the filter is cleared, with the message *Filters gewist om het nieuwe lied te tonen*.
 
 **GD-26 — The product name is *Zangbundel bibliotheek-manager*.** *(Resolves GQ-06.)* English *Zangbundel library manager*, German *Zangbundel Bibliotheksverwaltung*, following the app's glossary (EDT-83).
@@ -416,6 +418,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.30 | 2026-11-08 | GD-24 amended: the lock beside the library's title shows only while the library is read-only, not for a signed library whose key is loaded. |
 | Draft 0.29 | 2026-11-08 | GD-30 refined from the owner's sketch: the photograph is centred in the window and as high as the window above the bottom bar, the children's open book in view. |
 | Draft 0.28 | 2026-11-08 | GD-30 amended (the owner's third look): the centre's photograph is fixed to the window and centred, so the side bars never move it. |
 | Draft 0.27 | 2026-11-08 | GD-44 amended (F11): the library's fields have their ⓘ and explanation too, so every field of the left bar explains itself. Added to the mock first and checked there. |
