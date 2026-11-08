@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.30, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.31, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
 
 ---
 
@@ -787,6 +787,11 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - The lock now shows only while the library is read-only (`libHead`'s `readOnly`, as the mock's `readOnly()`). GD-24 amended in webappGUI draft 0.30.
   - **In the browser pane (Chromium), a build under the test instance's CSP, `valid-signed`:** without the key it showed the lock and the read-only bar. After *Sleutel laden* with the RFC 8032 test key, neither showed, and the state line still said *ondertekend door RFC 8032 test key*.
   - `node --test` passes 395 of 395; `test_build.py` and `test_bundle.py` are OK. It is not yet in a trial.
+- **The owner's look at dev.5: *Bewerken* in a song row becomes a pen.**
+  - In `songlist.js` it is an `iconbtn editbtn` with the `edit` icon. Its `aria-label` and tooltip are *Bewerken: \<title\>*, and a song that is not text says why in its tooltip. It is orange as the button was; the mock got it first. GD-13 amended in webappGUI draft 0.31.
+  - **Tested:** a new test in `songlist.test.mjs`. `node --test` passes 396 of 396, and `test_build.py` is OK.
+  - **In the browser pane (Chromium), the Drasva library at 1400 × 850:** it showed 414 pens, orange (`rgb(255, 138, 61)`) beside grey bins. The first opened its song's editor.
+  - A first build showed the pens grey: the `.iconbtn` rule came later in `app.css`, so `.iconbtn.editbtn` now wins. It is not yet in a trial.
 - **Built** into `dist/` from the owner's commit `3970492`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.
 - **Version:** `version.js` raised to `0.2.0-dev.5`, to be built from the owner's commit of it.
 - **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened; the photograph's height is the window's less the bottom bar (`auto 710.4px` at 786 px); *Over* gave `0.2.0-dev.5`; *Sleutel maken* made a key. The console was clean.

@@ -246,6 +246,9 @@ h3 { font-size: 16px; color: var(--secondary); text-transform: uppercase; letter
 .song .s { grid-column: 1; color: var(--secondary); font-size: 13px; }
 .song .actions { grid-column: 2; grid-row: 1 / span 2; display: flex; gap: 2px; align-items: center; }
 .binbtn:hover { color: var(--fire-orange); }
+/* the owner's look at dev.5: Bewerken in a song row is a pen, in the orange of the button it replaces */
+.editbtn { color: var(--fire-orange); }
+.editbtn:disabled { color: var(--secondary); opacity: .5; cursor: not-allowed; }
 .song .warn { color: var(--fire-orange-light); font-size: 13px; }
 .listfoot { padding: 12px 20px 24px; }
 

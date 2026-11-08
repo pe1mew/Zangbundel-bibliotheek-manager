@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.30 |
+| **Status** | Draft 0.31 |
 | **Date** | 2026-11-08 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -150,7 +150,7 @@ Whether the widths and folded state are remembered for the next visit is GQ-16.
 
 **GD-13 — The song list: a click shows the song; search, sort and filters as in the app.** *(Owner, 2026-11-06, feedback on the mock.)*
 
-- **No *Bekijken* button.** A click on a song row selects it and shows it in the centre area in view mode. Each row keeps one button, *Bewerken*, which opens the song in edit mode.
+- **No *Bekijken* button.** A click on a song row selects it and shows it in the centre area in view mode. Each row keeps one button, *Bewerken*, which opens the song in edit mode. *Amended 2026-11-08 (the owner's look at dev.5):* it is a pen icon in orange, beside the bin, named *Bewerken: \<title\>* by its tooltip and for screen readers. The song view's own *Bewerken* keeps its text.
 - **Search and filters above the list, the same as the app's songbook** (app guiDesign D-52; built in the app as `ui/songbook/SongbookScreen.kt` and `library/SongbookFilter.kt`):
 
 | Control (Dutch UI) | Behaviour, as in the app |
@@ -418,6 +418,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.31 | 2026-11-08 | GD-13 amended: *Bewerken* in a song row is a pen icon. |
 | Draft 0.30 | 2026-11-08 | GD-24 amended: the lock beside the library's title shows only while the library is read-only, not for a signed library whose key is loaded. |
 | Draft 0.29 | 2026-11-08 | GD-30 refined from the owner's sketch: the photograph is centred in the window and as high as the window above the bottom bar, the children's open book in view. |
 | Draft 0.28 | 2026-11-08 | GD-30 amended (the owner's third look): the centre's photograph is fixed to the window and centred, so the side bars never move it. |

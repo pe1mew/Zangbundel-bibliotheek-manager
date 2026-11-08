@@ -182,3 +182,20 @@ test('EDT-23: a read-only list deletes nothing; an empty library says so instead
   assert.equal(tools.hidden, true);
   assert.match(text(empty.node), /Deze bibliotheek heeft nog geen liedjes\./);
 });
+
+test('GD-13 (the owner’s look at dev.5): Bewerken in a row is a pen, named with the song; it opens the editor', () => {
+  const edited = [];
+  const list = createSongList({ lang: 'nl', readOnly: false, onSelect() {}, onEdit: (id) => edited.push(id), onDelete() {} });
+  list.update({ songs: SONGS, findings: [] }, null);
+  const pens = [...walk(list.node)].filter((n) => (n.attrs.class || '').includes('editbtn'));
+  assert.equal(pens.length, SONGS.length);
+  const pen = pens.find((n) => n.attrs['aria-label'] === 'Bewerken: Vader Jacob');
+  assert.ok(pen && pen.children.length === 1 && pen.children[0].tag === 'svg', 'an icon, no text');
+  pen.listeners.click({ stopPropagation() {} });
+  assert.deepEqual(edited, ['vader-jacob']);
+  const notText = createSongList({ lang: 'nl', readOnly: false, onSelect() {}, onEdit() {}, onDelete() {} });
+  notText.update({ songs: [S('kapot', 'Kapot', { editable: false })], findings: [] }, null);
+  const off = [...walk(notText.node)].find((n) => (n.attrs.class || '').includes('editbtn'));
+  assert.ok('disabled' in off.attrs);
+  assert.match(off.attrs.title, /^Bewerken: Kapot: /);
+});

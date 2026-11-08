@@ -322,7 +322,7 @@ function renderSongList() {
       <span class="t">${w ? `<span title="${esc(sevWord(w.sev) + ': ' + w.msg)}">${sevIcon(w.sev)}</span>` : ''}${esc(s.title || t('noTitle'))}</span>
       <span class="actions">
         ${set ? `<button class="iconbtn setbtn ${inSet ? 'on' : ''}" data-addtoset="${esc(s.id)}" title="${esc(t(inSet ? 'inSet' : 'addToSet', { set: set.name }))}" ${inSet || ro ? 'disabled' : ''}>${icon(inSet ? 'check' : 'add')}</button>` : ''}
-        <button class="btn btn-outline btn-small" data-edit="${esc(s.id)}" ${ro ? 'disabled' : ''}>${t('edit')}</button>
+        <button class="iconbtn editbtn" data-edit="${esc(s.id)}" title="${esc(t('edit') + ': ' + (s.title || t('noTitle')))}" aria-label="${esc(t('edit') + ': ' + (s.title || t('noTitle')))}" ${ro ? 'disabled' : ''}>${icon('edit')}</button>
         <button class="iconbtn binbtn" data-delsong="${esc(s.id)}" title="${esc(t('deleteSong'))}" ${ro ? 'disabled' : ''}>${icon('delete')}</button>
       </span>
       <span class="s">${esc(langName(s.language))}${s.lyricist ? ' · ' + esc(s.lyricist) : ''}</span>

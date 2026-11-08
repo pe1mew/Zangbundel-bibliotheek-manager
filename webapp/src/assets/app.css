@@ -94,6 +94,10 @@ svg.inl { width: 18px; height: 18px; fill: var(--secondary); flex: none; }
 .song .actions { grid-column: 2; grid-row: 1 / span 2; display: flex; gap: 2px; align-items: center; }
 .songlist li.empty { cursor: default; }
 .binbtn:hover:not(:disabled) { color: var(--fire-orange); }
+/* the owner's look at dev.5: Bewerken in a song row is a pen, in the orange of the button it replaces (GD-13) */
+.iconbtn.editbtn { color: var(--fire-orange); }
+.iconbtn.editbtn:hover:not(:disabled) { color: var(--fire-orange-light); }
+.iconbtn.editbtn:disabled { color: var(--secondary); opacity: .5; cursor: not-allowed; }
 /* GD-13: search, sort and filter chips, as the app's songbook */
 .sbtools { padding: 4px 20px 8px; border-bottom: 1px solid var(--line); }
 .search {
