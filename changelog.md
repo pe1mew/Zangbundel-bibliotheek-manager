@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **Reordering slides** (webappGUI draft 0.23, GD-08, GD-21, GD-33; the owner's M5 review, F5 and F7).
+  - **Dragging:** dragging a song in a set or a block in the editor makes the others slide aside, opening a gap where it will land. On release it slides into the gap; this replaces the drop line.
+  - **Buttons:** *Omhoog* and *Omlaag* slide the same way.
+  - **Reduced motion:** nothing slides when *reduce motion* is set.
+  - **Code:** `shiftPlan` and `slideMove` in `app/drag.js`. The mock got it first.
 - **The language button opens a menu** (webappGUI draft 0.22, GD-17; the owner's M5 review, F4).
   - **Before:** it went to the next language.
   - **Now:** it shows every language in its own name with the current one checked. A choice applies at once and closes the menu; Escape or a click outside closes it unchanged. This is as the mock already had it.

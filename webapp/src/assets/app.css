@@ -446,8 +446,10 @@ svg.sev-ok { fill: var(--fire-orange); }
 .section.dragging { position: relative; z-index: 3; opacity: .92; transform: translateY(var(--dy, 0px));
   box-shadow: 0 12px 28px rgba(0, 0, 0, .5); border-color: var(--fire-orange); }
 .section.dragging .handle { cursor: grabbing; }
-.section.dropbefore { box-shadow: 0 -3px 0 var(--sky-blue); }
-.section.dropafter { box-shadow: 0 3px 0 var(--sky-blue); }
+/* F5, F7: the cards a moved card passes slide aside to open its gap (--shift); it then slides into the gap (--dy) */
+.sorting > .section:not(.dragging):not(.settle) { transform: translateY(var(--shift, 0px)); transition: transform .15s ease; }
+.section.settle { position: relative; z-index: 3; transform: translateY(var(--dy, 0px)); transition: transform .15s ease; }
+@media (prefers-reduced-motion: reduce) { .sorting > .section, .section.settle { transition: none; } }
 .edithelp svg.inl { width: 16px; height: 16px; fill: currentColor; vertical-align: -3px; }
 
 /* M5.5: sets (GD-21), as the mock */

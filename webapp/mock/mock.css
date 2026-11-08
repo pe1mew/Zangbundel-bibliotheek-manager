@@ -297,7 +297,10 @@ h3 { font-size: 16px; color: var(--secondary); text-transform: uppercase; letter
 }
 .section.chorus { border-left: 4px solid var(--fire-orange); }
 .section.dragging { position: relative; z-index: 3; opacity: .92; box-shadow: 0 12px 28px rgba(0, 0, 0, .5); border-color: var(--fire-orange); }
-.section.dropbefore { box-shadow: 0 -3px 0 var(--sky-blue); }
+/* F5, F7: while sorting, the other cards slide to open the gap; the moved card slides into it */
+.sorting > .section:not(.dragging):not(.settle) { transition: transform .15s ease; }
+.section.settle { position: relative; z-index: 3; transition: transform .15s ease; }
+@media (prefers-reduced-motion: reduce) { .sorting > .section, .section.settle { transition: none; } }
 .secbar { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
 .handle { cursor: grab; color: var(--secondary); display: inline-flex; padding: 8px 4px; touch-action: none; }
 .section.dragging .handle { cursor: grabbing; }

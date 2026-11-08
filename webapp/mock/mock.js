@@ -569,6 +569,36 @@ function hint(i, msg) {
   h.textContent = msg; clearTimeout(h._t); h._t = setTimeout(() => { h.textContent = ''; }, 3500);
 }
 
+// ---- F5, F7 (the owner's M5 review): the cards slide; the same for dragging and for up/down (GD-21, GD-33) ----
+const STILL = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+// where each card stands while card `from` lands at place `to`, and how far that card moves: the cards it passes
+// make room by its height plus the gap
+function shiftPlan(heights, gap, from, to) {
+  const size = heights[from] + gap, shifts = heights.map(() => 0);
+  let dy = 0;
+  for (let i = from + 1; i <= to; i++) { shifts[i] = -size; dy += heights[i] + gap; }
+  for (let i = to; i < from; i++) { shifts[i] = size; dy -= heights[i] + gap; }
+  return { shifts, dy };
+}
+const cardGap = (cards) => (cards.length > 1 ? cards[1].getBoundingClientRect().top - cards[0].getBoundingClientRect().bottom : 0);
+function settle(list, card, dy, done) {
+  const finish = () => { list.classList.remove('sorting', 'settling'); done(); };
+  if (STILL()) { finish(); return; }
+  list.classList.add('sorting', 'settling');
+  card.classList.add('settle');
+  card.style.transform = `translateY(${dy}px)`;
+  setTimeout(finish, 170);
+}
+// up/down: the card and its neighbour change places by sliding, then the change is made
+function slideMove(list, itemSel, from, to, done) {
+  const cards = [...list.querySelectorAll(itemSel)];
+  if (!cards[from] || !cards[to] || list.classList.contains('settling')) { if (!list.classList.contains('settling')) done(); return; }
+  const plan = shiftPlan(cards.map((c) => c.offsetHeight), cardGap(cards), from, to);
+  list.classList.add('sorting');
+  cards.forEach((c, i) => { if (i !== from) c.style.transform = plan.shifts[i] ? `translateY(${plan.shifts[i]}px)` : ''; });
+  settle(list, cards[from], plan.dy, done);
+}
+
 // ---- Drag to reorder, with auto-scroll (GD-08, GD-11), for sections and set entries ----
 function makeSortable(list, itemSel, handleSel, onMove, rerender) {
   if (!list) return;
@@ -583,16 +613,17 @@ function makeSortable(list, itemSel, handleSel, onMove, rerender) {
       const box = list.getBoundingClientRect(), cr = card.getBoundingClientRect();
       const minDy = box.top - cr.top, maxDy = box.bottom - cr.bottom;
       let to = from, y = e.clientY, raf = 0;
-      const clear = () => cards.forEach((x) => { x.classList.remove('dropbefore'); x.style.boxShadow = ''; });
+      // F5, F7: the others slide apart where the card will land; their middles are taken once, in content coordinates
+      const others = cards.filter((c) => c !== card), gap = cardGap(cards), heights = cards.map((c) => c.offsetHeight);
+      const mids = others.map((c) => { const b = c.getBoundingClientRect(); return b.top + b.height / 2 + scroller.scrollTop; });
+      list.classList.add('sorting');
       const place = () => {
         card.style.transform = `translateY(${Math.max(minDy, Math.min(maxDy, y - startY + scroller.scrollTop - startScroll))}px)`;
-        const others = cards.filter((c) => c !== card);
-        let k = others.findIndex((c) => y < c.getBoundingClientRect().top + c.offsetHeight / 2);
+        let k = mids.findIndex((m) => y + scroller.scrollTop < m);
         if (k === -1) k = others.length;
-        to = k >= from ? k + 1 : k;
-        clear();
-        if (k < others.length) others[k].classList.add('dropbefore');
-        else if (others.length) others[others.length - 1].style.boxShadow = '0 3px 0 var(--sky-blue)';
+        to = k;                                             // the card's place in the new order
+        const plan = shiftPlan(heights, gap, from, to);
+        cards.forEach((c, i) => { if (c !== card) c.style.transform = plan.shifts[i] ? `translateY(${plan.shifts[i]}px)` : ''; });
       };
       const tick = () => {
         const r = scroller.getBoundingClientRect(), foot = document.querySelector('.editfoot');
@@ -608,12 +639,15 @@ function makeSortable(list, itemSel, handleSel, onMove, rerender) {
       const onUp = () => {
         cancelAnimationFrame(raf);
         h.removeEventListener('pointermove', onMoveP); h.removeEventListener('pointerup', onUp); h.removeEventListener('pointercancel', onUp);
-        const target = to > from ? to - 1 : to;
-        if (target !== from) onMove(from, target);
-        const keep = scroller.scrollTop;
-        const items = rerender();
-        scroller.scrollTop = keep;
-        if (items[target]) items[target].scrollIntoView({ block: 'nearest' });
+        const target = to;
+        // the card slides into its gap, then the list is drawn in its new order
+        settle(list, card, shiftPlan(heights, gap, from, target).dy, () => {
+          if (target !== from) onMove(from, target);
+          const keep = scroller.scrollTop;
+          const items = rerender();
+          scroller.scrollTop = keep;
+          if (items[target]) items[target].scrollIntoView({ block: 'nearest' });
+        });
       };
       h.addEventListener('pointermove', onMoveP); h.addEventListener('pointerup', onUp); h.addEventListener('pointercancel', onUp);
       raf = requestAnimationFrame(tick);
@@ -981,7 +1015,7 @@ document.addEventListener('click', (e) => {
     dialog(`<h2>${t('delSetTitle')}</h2><p>${esc(t('delText', { name: st.name }))}</p><p class="muted small">${t('delSetNote')} FDS M-62.</p>
       ${btns(cancelBtn(), `<button class="btn btn-primary" data-dlg="delset" data-id="${d.setdel}">${icon('delete')}${t('delete')}</button>`)}`); return; }
   if (d.addtoset) { S.lib.sets[S.openSet].songs.push(d.addtoset); S.dirty = true; S.view = 'set'; render(); return; }
-  if (d.entrymove) { const [i, dir] = d.entrymove.split(':').map(Number); const a = S.lib.sets[S.openSet].songs, j = i + dir; [a[i], a[j]] = [a[j], a[i]]; S.dirty = true; render(); return; }
+  if (d.entrymove) { const [i, dir] = d.entrymove.split(':').map(Number); slideMove($('setentries'), '.setentry', i, i + dir, () => { const a = S.lib.sets[S.openSet].songs, j = i + dir; [a[i], a[j]] = [a[j], a[i]]; S.dirty = true; render(); }); return; }
   if (d.entrydel !== undefined) { S.lib.sets[S.openSet].songs.splice(+d.entrydel, 1); S.dirty = true; render(); return; }
   if (d.up !== undefined) { move(+d.up, -1); return; }
   if (d.down !== undefined) { move(+d.down, 1); return; }
@@ -1082,7 +1116,7 @@ function dialogAction(d, tgt) {
 function move(i, dir) {
   const secs = S.draft.sections, j = i + dir;
   if (j < 0 || j >= secs.length) return;
-  [secs[i], secs[j]] = [secs[j], secs[i]]; renderCentre();
+  slideMove($('sections'), '.section', i, j, () => { [secs[i], secs[j]] = [secs[j], secs[i]]; renderCentre(); });
 }
 
 document.addEventListener('input', (e) => {

@@ -7,7 +7,7 @@
 // back (fromBlocks), refusing what would change meaning.
 
 import { el, icon, listen, setAttrs } from './dom.js';
-import { startDrag } from './drag.js';
+import { slideMove, startDrag } from './drag.js';
 import { t, tParts } from './i18n.js';
 import { messageFor, severityGroup, severityIcon } from './check.js';
 import { createSongFields } from './songfields.js';
@@ -202,7 +202,13 @@ export function createSongEditor({ lang, id, isNew = false, text: original, form
       on: disabled ? undefined : { click } }, [icon(name)]);
     // the block's place is looked up when a button is used: a metadata field written from the left bar
     // (M5.3c) adds or removes lines above it without drawing the blocks again
-    const move = (dir) => () => { form = moveBlock(form, form.blocks.indexOf(block), dir); draw(block, dir); };
+    // F7: the block and its neighbour slide past each other first (drag.js), then the form changes
+    const move = (dir) => (e) => {
+      const card = e.currentTarget.closest('.section');
+      const change = () => { form = moveBlock(form, form.blocks.indexOf(block), dir); draw(block, dir); };
+      if (card && card.parentElement === sections) slideMove(sections, card, [...sections.children].indexOf(card) + dir, change);
+      else change();
+    };
     // GD-08: the handle is for the pointer; the keyboard has Omhoog and Omlaag (GD-33)
     const handle = el('span', { class: 'handle', title: t(lang, 'dragTitle'), 'aria-hidden': 'true' }, [icon('drag')]);
     if (shown.length > 1) listen(handle, 'pointerdown', (e) => dragBlock(e, block, handle));

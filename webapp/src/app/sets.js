@@ -9,7 +9,7 @@ import { el, icon, listen } from './dom.js';
 import { t } from './i18n.js';
 import { severityIcon, messageFor } from './check.js';
 import { languageName } from './songlist.js';
-import { startDrag } from './drag.js';
+import { slideMove, startDrag } from './drag.js';
 
 export const SET_NAME_MAX = 60;                          // FDS 4.1: as a setlist title (song format §13)
 const NAME_BAD = /[\u0000-\u001f\u007f-\u009f{}]/;       // MAN-02: no line break, brace or control character
@@ -103,8 +103,9 @@ export function setViewNode(lang, { set, songs, readOnly, onRename, onRemove, on
       el('span', { class: 'grow' }, song
         ? [el('b', {}, [song.title || t(lang, 'noTitle')]), ' ', el('span', { class: 'muted small' }, [languageName(lang, song.language)])]
         : [severityIcon('error'), ' ', messageFor(lang, { code: 'SET-01', severity: 'Error', params: { set: set.name, song: id } })]),
-      iconButton('up', t(lang, 'up'), readOnly || k === 0, () => onMoveEntry(k, k - 1)),
-      iconButton('down', t(lang, 'down'), readOnly || k === set.songs.length - 1, () => onMoveEntry(k, k + 1)),
+      // F5: the song and its neighbour slide past each other first (drag.js)
+      iconButton('up', t(lang, 'up'), readOnly || k === 0, () => slideMove(entries, card, k - 1, () => onMoveEntry(k, k - 1))),
+      iconButton('down', t(lang, 'down'), readOnly || k === set.songs.length - 1, () => slideMove(entries, card, k + 1, () => onMoveEntry(k, k + 1))),
       iconButton('delete', t(lang, 'removeFromSet'), readOnly, () => onRemove(k)),
     ])]);
     if (!readOnly && set.songs.length > 1) {

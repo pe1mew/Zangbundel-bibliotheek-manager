@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.22 |
+| **Status** | Draft 0.23 |
 | **Date** | 2026-11-08 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -194,6 +194,8 @@ Links open in a new browser tab. The owner asked for "the same images as on the 
 
 **GD-08 — Sections are reordered by dragging.** *(Owner, 2026-11-05.)* Sections are moved up and down by dragging them with the mouse. A keyboard alternative is GQ-15.
 
+*Amended 2026-11-08 (the owner's M5 review, F7):* while a section is dragged, the sections it passes slide aside to open a gap where it will land. On release it slides into that gap. This replaces the line that marked the drop place.
+
 **GD-11 — The song scrolls along while a section is dragged.** *(Owner, 2026-11-06, feedback on the mock.)* While a verse or chorus is dragged, the dragged block follows the pointer, and when the pointer comes near the top or bottom of the centre area (within 72 px, above the *Toepassen* bar), the song scrolls in that direction, faster the closer the pointer is to the edge. The dragged block stays in view. Scrolling stops at the start and end of the song, and the block cannot be dragged outside the song. A line shows where the block will land; on release it lands there and stays in view.
 
 ### 3.4 Applying changes
@@ -271,6 +273,8 @@ The owner's answers to the open questions, and two further requests made during 
 
 **GD-21 — Sets are a tab in the right bar.** *(Resolves GQ-11.)* The right bar has two tabs, *Liedjes* and *Sets*, like the app's *Setlist* and *Zangbundel* tabs. *Sets* lists the sets (add, rename, delete with M-62, drag to reorder; EDT-31). Opening a set shows its songs in order in the centre area, with drag and up/down reordering as in the section editor (GD-08, GD-11) and a bin per entry that removes the song from the set only. Songs are added to the open set from the *Liedjes* tab with a *+ Set* button on each row while a set is open. A song can be in several sets (D-22).
 
+*Amended 2026-11-08 (F5):* a set's songs move as the sections do (GD-08, GD-33): the others slide aside to open the gap, and the moved song slides into it.
+
 **GD-22 — The library's own fields are in the left bar when no song is selected.** *(Resolves GQ-10.)* With no song selected, the left bar shows the library's title, description, licence and maintainer (EDT-13, EDT-14, EDT-30), editable there. Clicking the library's title at the top of the right bar deselects the song and shows them. The language choice is in the bottom bar (GD-17).
 
 **GD-23 — *Downloaden* keeps the library open; *Sluiten* is separate.** *(Resolves GQ-09.)* The bottom bar's *Sluiten en downloaden* becomes *Downloaden*: it saves the `.zbl` and the user keeps working. Each download after a change raises the version (EDT-51). Its dialog offers *Opslaan als kopie* (EDT-70 to EDT-73) as well. A separate *Sluiten* ends the session, asking first when there are changes not yet downloaded (M-60, EDT-03).
@@ -294,6 +298,8 @@ The owner's answers to the open questions, and two further requests made during 
 **GD-32 — Desktop and laptop only.** *(Resolves GQ-05.)* The manager is designed for a window of at least 980 px wide. In a narrower window it shows only the message *De bibliotheek-manager heeft een groter scherm nodig: gebruik een computer of maak het venster breder*, with the Android-app links of GD-15.
 
 **GD-33 — Sections also move with up and down buttons.** *(Resolves GQ-15.)* Each section keeps its *Omhoog* and *Omlaag* buttons next to the drag handle, reachable with Tab and usable with Enter, as the keyboard alternative to dragging (GD-08).
+
+*Amended 2026-11-08 (F5, F7):* a section, or a song of a set, moved with *Omhoog* or *Omlaag* slides past its neighbour before the order changes. Focus stays on the button. With the system's *reduce motion* setting nothing slides.
 
 **GD-41 — The centre area keeps at least 360 px.** *(Resolves GQ-21; the owner, 2026-11-07.)*
 - **Dragging and the arrow keys (GD-10):** a bar's edge stops where the centre would get narrower than 360 px, next to the other bar as it is shown.
@@ -387,6 +393,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.23 | 2026-11-08 | GD-08, GD-21 and GD-33 amended (F5, F7): dragging opens a gap where the card lands, and the card slides into it; *Omhoog* and *Omlaag* slide too. Added to the mock first and checked there. |
 | Draft 0.22 | 2026-11-08 | GD-17 amended (F4): the language button opens a menu, as the mock already had. GD-13 amended (F1): the chip row's triangles replace its scrollbar, added to the mock first and checked there. |
 | Draft 0.21 | 2026-11-08 | GD-20 and GD-13 amended after the owner's M5 review (F2): *Ga naar* on SNG-10 filters the song list to its songs with a chip *Zelfde titel*; a structure message on a song folder opens that song; a song not in the library leads to the library's home. The chip has the look of a chosen filter chip, so the mock is unchanged. |
 | Draft 0.20 | 2026-11-07 | GD-19 clarified by the owner: a locked line inside a section keeps its place there, and the section stays editable around it. |
