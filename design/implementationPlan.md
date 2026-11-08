@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.27, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.28, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
 
 ---
 
@@ -766,6 +766,12 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - Four new cases in the container test: 85 of 85.
   - securityAssessment draft 0.15 rechecks it (SR-91).
   - It takes effect once the owner installs it on contabo6 (`webapp/server/README.md`). The installed version is still the one from commit `c5b2542` and before (`c1d9b523…`).
+
+**The owner's third look (2026-11-08), on `0.2.0-dev.3`:**
+- **The photograph moved with the right bar:** it was sized to the centre and anchored at its right. It is now `background-attachment: fixed` and centred, so it is placed against the window and the bars never move or rescale it (GD-30, webappGUI draft 0.28).
+  - The CSS change went into the owner's commit `404a3ff`, together with the `zbm-release` fix.
+  - `test_build.py` passes, and the build rewrites the photo's reference to its hashed name.
+  - **Not seen:** the photo's stillness on screen. The browser pane was hidden and drew too few frames to compare. The owner's look in the next trial is the check.
 - **Version:** `version.js` raised to `0.2.0-dev.3`, to be built from the owner's commit of it.
 - **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened with the left tabs and eight ⓘ; *Over* gave `0.2.0-dev.3`; *Sleutel maken* made a key. The console was clean.
 - **F12, done:** the way back to the library's fields was hidden, since only the library's title in the right bar led there. The owner chose tabs in the left bar (option b).
