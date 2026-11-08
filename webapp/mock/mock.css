@@ -310,7 +310,8 @@ h3 { font-size: 16px; color: var(--secondary); text-transform: uppercase; letter
 
 /* ---- Centre: view mode ---- */
 .view { max-width: 720px; margin: 0 auto; padding: 32px 40px 64px; }
-.viewhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.viewhead { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.viewhead > :first-child { flex: 1 1 12em; min-width: 0; }   /* a narrow centre: the buttons go under the title, never squeeze it */
 .viewhead h1 { font-size: 30px; }
 .lyrics { font-size: 20px; line-height: 1.6; }
 .lyrics .sec { margin: 0 0 22px; }
@@ -394,7 +395,7 @@ h3 { font-size: 16px; color: var(--secondary); text-transform: uppercase; letter
   font-weight: normal; text-transform: none; letter-spacing: 0;
 }
 body.nobadges .gq { display: none; }
-.headbtns { display: flex; gap: 8px; align-items: center; flex: none; }
+.headbtns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; flex: none; max-width: 100%; }
 
 /* ======== webappGUI draft 0.7 (GD-17 to GD-35) ======== */
 .bottom { overflow-x: auto; justify-content: safe center; }

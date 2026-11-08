@@ -90,10 +90,37 @@ export function fieldsOf(finding) {
 }
 
 /**
+ * F13 (the owner's M5 review): a library opened read-only (EDT-23) shows its fields as values, as the song's data does
+ * in view mode (songview.js songDataNode), instead of greyed-out inputs. Returns { node, update() } as the form does.
+ */
+function readOnlyLibrary(lang, library) {
+  const lic = library.license || {};
+  const mt = library.maintainer || {};
+  const none = t(lang, 'notFilled');
+  const field = (label, value, more) => el('div', { class: 'field' }, [
+    el('div', { class: 'flabel' }, [label]),
+    el('div', { class: value ? ['value', more].filter(Boolean).join(' ') : 'value none' }, [value || none]),
+  ]);
+  const node = el('div', { class: 'libform songdata' }, [
+    el('h3', {}, [t(lang, 'library')]),
+    field(t(lang, 'fTitle'), library.title),
+    field(t(lang, 'fDescription'), library.description, 'prewrap'),
+    field(t(lang, 'fLicense'), lic.id),
+    field(t(lang, 'fSummary'), lic.summary, 'prewrap'),
+    lic.text ? field(t(lang, 'fLicenseText'), lic.text, 'prewrap longtext') : null,
+    el('h3', {}, [t(lang, 'fMaintainer')]),
+    field(t(lang, 'fMaintName'), mt.name),
+    field(t(lang, 'fMaintContact'), [mt.email, mt.url].filter(Boolean).join(' · ')),
+  ]);
+  return { node, update() {} };
+}
+
+/**
  * createLibraryForm({ lang, library, readOnly, onChange(patch) }) → { node, update(state) }.
  * onChange gets { title } | { description } | { license } | { maintainer }; undefined removes a field.
  */
 export function createLibraryForm({ lang, library, readOnly, onChange }) {
+  if (readOnly) return readOnlyLibrary(lang, library);  // F13: shown as values, as the song's data
   const lic = library.license || null;
   const mt = library.maintainer || {};
   const choice = !lic || !lic.id ? '' : common(lic.id) ? lic.id : OTHER;

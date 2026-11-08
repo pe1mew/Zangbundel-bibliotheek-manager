@@ -244,6 +244,13 @@ function start() {
   let setList = null;
   let tabs = null;
   let pane = null;
+  // GD-22 (F12): the left bar's tabs *Liedgegevens* and *Bibliotheek*; another song goes back to its data
+  let leftTab = 'song';
+  let leftTabs = null;
+  let leftPane = null;
+  let leftShellKey;
+  let lastSongKey = null;
+  const showLeft = (name) => { leftTab = name; render(); };
   const select = (id) => { selected = id; openSet = null; render(); };
   // GD-16, EDT-32: the bin asks M-62; afterwards the neighbouring song is selected, or none
   const onDeleteSong = (id, title) => deleteSongConfirm(language.get(), title, async () => {
@@ -505,29 +512,55 @@ function start() {
     if (setList) setList.update(state, showsSet ? openSet : null);
     // GD-05: a selected song's data, read-only until the song editor (M5.3); GD-22: otherwise the library's
     // fields, built once per library and language, then only updated (library-form.js)
-    if (selected || editing) {
+    // F12: two tabs while a library is open; the song's only while a song is selected or edited
+    const songKey = editing ? `edit|${editing.token}` : selected ? `song|${selected}` : null;
+    if (songKey !== lastSongKey) {
+      lastSongKey = songKey;
+      if (songKey) leftTab = 'song';
+    }
+    const showSong = Boolean(songKey) && leftTab === 'song';
+    const shellKey = state.library ? `${state.generation}|${lang}` : null;
+    if (shellKey !== leftShellKey) {
+      leftShellKey = shellKey;
+      const ltab = (name, label) => el('button', { type: 'button', role: 'tab', class: 'tab', 'data-tab': name, on: { click: () => showLeft(name) } }, [label]);
+      leftTabs = state.library ? el('div', { class: 'tabs', role: 'tablist', 'aria-label': t(lang, 'leftTabs') },
+        [ltab('song', t(lang, 'songData')), ltab('library', t(lang, 'library'))]) : null;
+      leftPane = el('div', { class: 'tabpane', role: state.library ? 'tabpanel' : null }, []);
+      replace(layout.left, leftTabs, leftPane);
+      leftKey = undefined;                                // the pane is new: draw its content again
+    }
+    if (leftTabs) {
+      for (const b of leftTabs.children) {
+        const name = b.getAttribute('data-tab');
+        const on = name === (showSong ? 'song' : 'library');
+        setAttrs(b, { 'aria-selected': String(on), class: on ? 'tab on' : 'tab', disabled: name === 'song' && !songKey,
+          title: name === 'song' && !songKey ? t(lang, 'chooseSong') : null });
+      }
+    }
+    if (showSong) {
       leftKey = `song|${selected}`;
       form = null;
       if (editing && editing.editor.mode() === 'blocks') {
         // GD-05, EDT-34: the song's fields while editing in Blokken; the same node stays, so typing keeps its focus
         const fieldsNode = editing.editor.fieldsNode();
-        if (layout.left.firstChild !== fieldsNode) replace(layout.left, fieldsNode);
+        if (leftPane.firstChild !== fieldsNode) replace(leftPane, fieldsNode);
       } else {
-        replace(layout.left, editing
+        replace(leftPane, editing
           ? el('div', { class: 'libform' }, [el('h3', {}, [t(lang, 'songData')]), el('p', { class: 'muted' }, [t(lang, 'textModeLeft')])])
           : shown.details ? songDataNode(lang, selected, shown.details) : el('p', { class: 'empty' }, ['…']));
       }
     }
     const formKey = state.library ? `${state.generation}|${lang}|${readOnly}` : null;
-    if (!selected && !editing && formKey !== leftKey) {
+    if (!showSong && formKey !== leftKey) {
       leftKey = formKey;
       form = state.library ? createLibraryForm({ lang, library: state.library, readOnly, onChange: (patch) => session.updateLibrary(patch) }) : null;
-      replace(layout.left, form ? form.node : el('p', { class: 'empty' }, [t(lang, 'tileNeedLib')]));
+      replace(leftPane, form ? form.node : el('p', { class: 'empty' }, [t(lang, 'tileNeedLib')]));
     }
     if (form) form.update(state);
-    // F6: the strips of folded bars: left the song's data or the library's fields, right Liedjes and Sets
-    layout.setStrip('left', [state.library && !selected && !editing
-      ? { icon: 'library', label: t(lang, 'library') } : { icon: 'musicNote', label: t(lang, 'songData') }]);
+    // F6, F12: the strips of folded bars: left the song's data (while there is a song) and the library's fields
+    layout.setStrip('left', [
+      ...(songKey ? [{ icon: 'musicNote', label: t(lang, 'songData'), onClick: () => showLeft('song') }] : []),
+      { icon: 'library', label: t(lang, 'library'), onClick: state.library ? () => showLeft('library') : null }]);
     layout.setStrip('right', [{ icon: 'list', label: t(lang, 'songs'), onClick: state.library ? () => showTab('songs') : null },
       ...(state.library ? [{ icon: 'playlist', label: t(lang, 'sets'), onClick: () => showTab('sets') }] : [])]);
     replace(layout.bottom, ...bottomBar({ lang, onLanguage: (event) => toggleLanguageMenu(lang, event.currentTarget, (l) => language.set(l)),

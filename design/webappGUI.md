@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.25 |
+| **Status** | Draft 0.26 |
 | **Date** | 2026-11-08 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -277,6 +277,13 @@ The owner's answers to the open questions, and two further requests made during 
 
 **GD-22 — The library's own fields are in the left bar when no song is selected.** *(Resolves GQ-10.)* With no song selected, the left bar shows the library's title, description, licence and maintainer (EDT-13, EDT-14, EDT-30), editable there. Clicking the library's title at the top of the right bar deselects the song and shows them. The language choice is in the bottom bar (GD-17).
 
+*Amended 2026-11-08 (the owner's second look):*
+- **F12, two tabs:** the library's fields were reachable only through the library's title in the right bar, which the owner could not find. The left bar now has two tabs while a library is open, *Liedgegevens* and *Bibliotheek*, like the right bar's.
+  - **The song's tab:** only while a song is selected or edited. Choosing another song goes back to its data.
+  - **The library's tab:** reachable while a song is shown or edited, without leaving the editor. Changes typed in the song's fields stay.
+  - **The title in the right bar:** still deselects the song and shows the library.
+- **F13, a read-only library:** one opened read-only (GD-24, EDT-23) shows its fields as values, as the song's data does in view mode, instead of greyed-out inputs.
+
 **GD-23 — *Downloaden* keeps the library open; *Sluiten* is separate.** *(Resolves GQ-09.)* The bottom bar's *Sluiten en downloaden* becomes *Downloaden*: it saves the `.zbl` and the user keeps working. Each download after a change raises the version (EDT-51). Its dialog offers *Opslaan als kopie* (EDT-70 to EDT-73) as well. A separate *Sluiten* ends the session, asking first when there are changes not yet downloaded (M-60, EDT-03).
 
 **GD-24 — Signing is a tick box in the download dialog; a signed library asks for its key.** *(Resolves GQ-18.)* While a key is in memory (GD-14), the download dialog has *Ondertekenen als <naam> · <vingerafdruk>* (EDT-60, EDT-53); for a library that is already signed with that key, it is ticked and cannot be unticked (EDT-63). A signed library shows a lock and the author in the right bar's header. Opened without its key, it is read-only (EDT-23): a bar above the centre area says *Alleen lezen: ondertekend door <naam> · <vingerafdruk>. Laad de sleutel om te wijzigen*, with *Sleutel laden*; a key that does not match is refused with M-30.
@@ -317,6 +324,7 @@ The owner's answers to the open questions, and two further requests made during 
 - **The icons:** the right bar shows *Liedjes* and *Sets* (only *Liedjes* without a library). The left bar shows the part it would show: *Liedgegevens* while a song is selected or edited, otherwise *Bibliotheek*.
 - **A click:** opens the bar at that part, with the right bar on that tab. The bar stays open until it is folded again, and that is remembered (GD-34).
 - **The fold tab:** stays at the strip's inner edge.
+- **The left strip (amended 2026-11-08, F12):** it shows both *Liedgegevens* (while there is a song) and *Bibliotheek*, each opening its tab.
 
 **GD-44 — Each song-data field explains itself on request.** *(Owner, 2026-11-08, M5 review F8; R2.)*
 - **The button:** an ⓘ beside each label of the song's data, in view mode and in the editor's *Blokken* fields alike: title, language, words, music, copyright, licence, source, tags and song ID.
@@ -407,6 +415,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.26 | 2026-11-08 | GD-22 amended after the owner's second look: the left bar's tabs *Liedgegevens* and *Bibliotheek* (F12), and a read-only library shown as values (F13). GD-43: the left strip shows both. Added to the mock first and checked there. |
 | Draft 0.25 | 2026-11-08 | GD-44 (F8): an ⓘ beside each song-data field opens its explanation under it, in view mode and in the editor. Added to the mock first and checked there. |
 | Draft 0.24 | 2026-11-08 | GD-43 (F6): a folded bar keeps a strip of icons that open it at that part. GD-30 amended (F10): the splash photograph behind the centre, its screens on a box. Both added to the mock first and checked there. |
 | Draft 0.23 | 2026-11-08 | GD-08, GD-21 and GD-33 amended (F5, F7): dragging opens a gap where the card lands, and the card slides into it; *Omhoog* and *Omlaag* slide too. Added to the mock first and checked there. |

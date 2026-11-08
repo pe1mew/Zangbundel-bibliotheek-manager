@@ -126,15 +126,17 @@ test('GD-37: findings mark their fields with the FDS message; fixed, the mark go
   assert.match(textOf(contact), /Ook: https:\/\/example\.org/);
 });
 
-test('EDT-23: a read-only library shows its fields disabled and listens to none of them', () => {
-  const library = { title: 'Ondertekend', license: { id: 'CC0-1.0', summary: 'Vrij.' }, maintainer: { name: 'Akela', email: 'akela@example.org' } };
+test('EDT-23, F13: a read-only library shows its fields as values, as the song data does, with no inputs', () => {
+  const library = { title: 'Ondertekend', description: 'Regel 1\nRegel 2', license: { id: 'MIT', summary: 'Kort.', text: 'De hele tekst.' },
+    maintainer: { name: 'Akela', email: 'akela@example.org', url: 'https://example.org' } };
   const form = createLibraryForm({ lang: 'nl', library, readOnly: true, onChange() { throw new Error('no change expected'); } });
-  const fields = [...walk(form.node)].filter((x) => ['input', 'textarea', 'select'].includes(x.tag));
-  assert.ok(fields.length >= 8);
-  assert.ok(fields.every((x) => 'disabled' in x.attrs && Object.keys(x.listeners).length === 0));
-  assert.equal(byId(form.node, 'lib-mcontact').value, 'akela@example.org');
-  assert.equal(byId(form.node, 'lib-license-id').value, '');                 // a common licence: no own code
-  const other = createLibraryForm({ lang: 'nl', library: { ...library, license: { id: 'MIT', summary: 'Kort.' } }, readOnly: true, onChange() {} });
-  assert.equal(byId(other.node, 'lib-license-id').value, 'MIT');
-  assert.equal([...walk(other.node)].find((x) => x.tag === 'option' && 'selected' in x.attrs).attrs.value, 'other');
+  assert.equal([...walk(form.node)].filter((x) => ['input', 'textarea', 'select', 'button'].includes(x.tag)).length, 0);
+  const text = textOf(form.node);
+  for (const v of ['Ondertekend', 'Regel 1\nRegel 2', 'MIT', 'Kort.', 'De hele tekst.', 'Akela', 'akela@example.org · https://example.org']) {
+    assert.ok(text.includes(v), v);
+  }
+  form.update({ library, findings: [] });                                     // nothing to update
+  const bare = createLibraryForm({ lang: 'nl', library: { title: 'Kaal' }, readOnly: true, onChange() {} });
+  assert.match(textOf(bare.node), /niet ingevuld/);                           // an empty field says so
+  assert.ok(!textOf(bare.node).includes('Volledige licentietekst'));          // no licence text: no field for it
 });

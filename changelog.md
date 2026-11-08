@@ -6,15 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
-### Changed
-- **Version `0.2.0-dev.2`** for the second trial on the test instance (F1 to F8 and F10 of the owner's M5 review).
-
 ### Added
 - **Help for each song-data field** (webappGUI draft 0.25, GD-44; the owner's M5 review, F8).
   - **What it does:** an ⓘ beside each field opens a short explanation under it, in nl, en and de; a second click closes it. It works in view mode and in the editor.
   - **Code:** `app/fieldhelp.js`. The mock got it first.
 
 ### Changed
+- **The left bar has the tabs *Liedgegevens* and *Bibliotheek*** (webappGUI draft 0.26, GD-22; the owner's second look, F12). The library's fields are now one click away, also while a song is shown or edited. The left strip of a folded bar offers both.
+- **A read-only library shows its fields as values**, as a song's data does, not as greyed-out inputs (F13).
+- **Version `0.2.0-dev.2`** for the second trial on the test instance (F1 to F8 and F10 of the owner's M5 review).
 - **A folded side bar keeps a strip of icons** (webappGUI draft 0.24, GD-43; the owner's M5 review, F6).
   - **Right bar:** *Liedjes* and *Sets*. **Left bar:** the song's data or the library's fields.
   - **A click:** opens the bar at that part, and it stays open.
@@ -33,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - **Implementation plan draft 0.18:** M5.6 lists the owner's ten observations from the first trial release (F1 to F10), with their causes, the work and three decisions, all accepted by the owner: SNG-10 compares title, subtitle and language (R1); an ⓘ per song-data field (R2); Hugo for the wiki (R3). M7.6 moves the manual to a wiki on `zangbundel.nl`, in every interface language.
 
 ### Fixed
+- **A song's head in a narrow centre:** at 1024 px with both bars open the title broke one letter per line, because *Verwijderen* and *Bewerken* took the room. The buttons now go under the title when it does not fit.
 - **SNG-10, the duplicate-title warning (FDS draft 0.12, D-46):** songs are reported only when they share title, subtitle and language. Three *Alouette* songs in three languages are no longer a duplicate; the Drasva library goes from 11 such warnings to none. M-59 reworded; test library `song-title-duplicate` adjusted and `song-title-other-language` added (59 cases); the app repository told.
 - ***Ga naar* on the duplicate-title warning** did nothing. It now shows just those songs in the song list, with a chip *Zelfde titel* that takes the filter away, and unfolds the right bar if needed. A structure message on a song's folder opens that song (webappGUI draft 0.21, GD-13, GD-20).
 - **Stale *Komt in een volgende testversie*:** the *Bibliotheek bewerken* tile no longer says it, and *Bewerken* on a song that is not text gives the real reason. Seen in the first trial release on the test instance.

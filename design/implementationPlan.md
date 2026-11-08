@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.25, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.26, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (59 cases) |
 
 ---
 
@@ -747,6 +747,21 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - Lorem Ipsum had nine ⓘ in view mode and nine in the editor. The song ID's explanation, opened in view mode, stayed open in the editor.
   - The language explanation names the list's own *Andere taalcode…*.
 - **Left for F9:** each explanation's link to its wiki page.
+
+**The owner's second look (2026-11-08), on `0.2.0-dev.2`:**
+- **F11, help for the library's fields:** registered. It extends GD-44 to the whole left bar; it waits for the owner's go-ahead.
+- **F12, done:** the way back to the library's fields was hidden, since only the library's title in the right bar led there. The owner chose tabs in the left bar (option b).
+  - In `main.js`, the left bar has a `tablist` *Liedgegevens* / *Bibliotheek* over a `tabpanel`. The song's tab is disabled without a song, and another song switches back to it. The library's tab works while editing, and the *Blokken* fields node is kept, so typed changes stay.
+  - The left strip offers both icons.
+- **F13, done:** a read-only library was shown as greyed-out inputs. `library-form.js` now shows it as values (`readOnlyLibrary`), as `songDataNode` does.
+- **Fixed in passing:** a song's head in a narrow centre. `.viewhead` and `.headbtns` wrap, so the title keeps its width; at 1024 px the title had broken one letter per line.
+- **Documents:** the mock got F12, F13 and the wrap first and was checked in the pane. webappGUI draft 0.26.
+- **Tested:** `node --test` passes 394 of 394; the read-only test in `library-form.test.mjs` now expects values. `test_build.py` and `test_bundle.py` are OK. The container test (Node 18) passes 81 of 81. All checks ran after the last code change.
+- **In the browser pane (Chromium), a build under the test instance's CSP:**
+  - **`valid-unsigned`:** the song's tab was disabled without a song. The *Bibliotheek* tab worked with Lorem Ipsum shown and in the editor, where a title typed in *Blokken* survived switching to *Bibliotheek* and back. The left strip offered both icons.
+  - **`valid-signed`, read-only:** its library showed seven fields as values and no inputs.
+  - **The narrow centre:** at 1024 px with both bars, Lorem Ipsum's title was one line of 239 px, with both buttons inside the box.
+- **Not yet on the test instance:** F12, F13 and the wrap go into the next trial build.
 
 **Second trial (2026-11-08):** `manager-0.2.0-dev.2`, for the owner's look at F1 to F8 and F10.
 - **Built** into `dist/` from the owner's commit `c5b2542`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.

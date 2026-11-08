@@ -358,13 +358,21 @@ function renderLeft() {
     return;
   }
   l.className = 'left';
+  // F12 (GD-22): two tabs, Liedgegevens and Bibliotheek; the song's only while a song is shown or edited, and another song
+  // goes back to its data
+  const songKey = S.mode === 'edit' && S.draft ? 'edit:' + (S.draft.id || 'new') : S.view === 'song' && selSong() ? 'song:' + S.sel : null;
+  if (songKey !== S.lastSongKey) { S.lastSongKey = songKey; if (songKey) S.leftTab = 'song'; }
+  const showSong = Boolean(songKey) && S.leftTab !== 'library';
+  const tabs = `<div class="tabs" role="tablist" aria-label="${esc(t('leftTabs'))}">
+    <button role="tab" class="tab ${showSong ? 'on' : ''}" aria-selected="${showSong}" data-lefttab="song" ${songKey ? '' : `disabled title="${esc(t('chooseSong'))}"`}>${t('songData')}</button>
+    <button role="tab" class="tab ${showSong ? '' : 'on'}" aria-selected="${!showSong}" data-lefttab="library">${t('library')}</button></div>`;
+  if (!showSong) { l.innerHTML = tabs + leftLibrary(); return; }
   if (S.mode === 'edit' && S.draft) {
-    l.innerHTML = S.textMode ? `<div class="pad"><h3>${t('songData')}</h3><p class="muted">${t('textModeLeft')}</p></div>` : leftEdit(S.draft);
+    l.innerHTML = tabs + (S.textMode ? `<div class="pad"><h3>${t('songData')}</h3><p class="muted">${t('textModeLeft')}</p></div>` : leftEdit(S.draft));
     return;
   }
-  const s = S.view === 'song' ? selSong() : null;
-  if (!s) { l.innerHTML = leftLibrary(); return; }
-  l.innerHTML = `<div class="pad"><h3>${t('songData')}</h3>
+  const s = selSong();
+  l.innerHTML = tabs + `<div class="pad"><h3>${t('songData')}</h3>
     ${roField(t('fTitle'), s.title, null, 'title')}${roField(t('fLanguage'), s.language && langName(s.language), null, 'language')}
     ${roField(t('fLyricist'), s.lyricist, null, 'lyricist')}${roField(t('fComposer'), s.composer, null, 'composer')}
     ${roField(t('fCopyright'), s.copyright, null, 'copyright')}${roField(t('fLicense'), s.license, t('libLicense'), 'license')}
@@ -377,6 +385,14 @@ const roField = (label, v, none, help) => `<div class="field">${help ? labelRow(
 // GD-22: the library's own fields, editable, when no song is selected.
 function leftLibrary() {
   const L = S.lib, dis = readOnly() ? 'disabled' : '';
+  // F13 (the owner's M5 review): a library opened read-only shows its fields as values, as a song's data does
+  if (readOnly()) {
+    return `<div class="pad"><h3>${t('library')} ${gd('GD-22')}</h3>
+      ${roField(t('fTitle'), L.title)}${roField(t('fDescription'), L.description)}
+      ${roField(t('fLicense'), L.license.id)}${roField(t('fSummary'), L.license.summary)}
+      <h3 style="margin-top:18px">${t('fMaintainer')} ${gd('GD-37')}</h3>
+      ${roField(t('fMaintName'), L.maintainer.name)}${roField(t('fMaintContact'), L.maintainer.contact)}</div>`;
+  }
   const licErr = !L.license.id || !L.license.summary.trim();
   return `<div class="pad"><h3>${t('library')} ${gd('GD-22')}</h3>
     <div class="field"><label for="lib-title">${t('fTitle')} <span class="req">*</span></label><input id="lib-title" data-libfield="title" value="${esc(L.title)}" maxlength="80" ${dis}></div>
@@ -965,13 +981,14 @@ function showSplash() {
 
 const EDIT_SAFE = ['lang', 'about', 'android', 'check', 'keymake', 'keyload', 'keydl', 'apply', 'cancel', 'skip'];
 document.addEventListener('click', (e) => {
-  const tgt = e.target.closest('[data-act],[data-edit],[data-song],[data-dlg],[data-up],[data-down],[data-del],[data-addsec],[data-goto],[data-jump],[data-sort],[data-chip],[data-clear],[data-delsong],[data-tab],[data-setopen],[data-setmove],[data-setrename],[data-setdel],[data-addtoset],[data-entrymove],[data-entrydel],[data-setlang],[data-editmode],[data-chipstep],[data-strip],[data-help]');
+  const tgt = e.target.closest('[data-act],[data-edit],[data-song],[data-dlg],[data-up],[data-down],[data-del],[data-addsec],[data-goto],[data-jump],[data-sort],[data-chip],[data-clear],[data-delsong],[data-tab],[data-setopen],[data-setmove],[data-setrename],[data-setdel],[data-addtoset],[data-entrymove],[data-entrydel],[data-setlang],[data-editmode],[data-chipstep],[data-strip],[data-help],[data-lefttab]');
   if (!tgt) { if (!e.target.closest('#langmenu')) { const m = $('langmenu'); if (m) m.remove(); } return; }
   const d = tgt.dataset;
   if (d.jump) { jump(d.jump); return; }
   if (d.chipstep) { chipStep(tgt, Number(d.chipstep)); return; }
   if (d.help) { const on = !helpOpen.has(d.help); if (on) helpOpen.add(d.help); else helpOpen.delete(d.help); tgt.setAttribute('aria-expanded', String(on)); const p = $('help-' + d.help); if (p) p.hidden = !on; return; }
-  if (d.strip !== undefined) { const [side, tab] = d.strip.split(':'); BARS[side].folded = false; if (tab) S.tab = tab; saveBars(); render(); return; }
+  if (d.strip !== undefined) { const [side, tab] = d.strip.split(':'); BARS[side].folded = false; if (tab && side === 'right') S.tab = tab; if (tab && side === 'left') S.leftTab = tab; saveBars(); render(); return; }
+  if (d.lefttab) { S.leftTab = d.lefttab; renderLeft(); return; }
   if (d.setlang) { S.lang = d.setlang; store.set('lang', S.lang); closeDialog(); render(); return; }
   if (d.dlg) { dialogAction(d, tgt); return; }
   if (d.editmode) { setEditMode(d.editmode); return; }
@@ -1184,7 +1201,7 @@ const applyBars = () => { applyBar('left'); applyBar('right'); renderStrips(); }
 // F6: the icons of a folded bar's strip: left the song's data or the library's fields, right Liedjes and Sets
 function renderStrips() {
   const songShown = S.lib && (S.mode === 'edit' || (S.view === 'song' && selSong()));
-  const left = [songShown || !S.lib ? ['left:', 'musicNote', t('songData')] : ['left:', 'library', t('library')]];
+  const left = [...(songShown ? [['left:song', 'musicNote', t('songData')]] : []), ['left:library', 'library', t('library')]];
   const right = [['right:songs', 'list', t('songs')], ...(S.lib ? [['right:sets', 'playlist', t('sets')]] : [])];
   const btn = ([key, ic, label]) => `<button class="iconbtn" data-strip="${key}" title="${esc(label)}" aria-label="${esc(label)}">${icon(ic)}</button>`;
   $('strip-left').innerHTML = left.map(btn).join('');
