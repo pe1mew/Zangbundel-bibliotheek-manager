@@ -748,7 +748,8 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - The language explanation names the list's own *Andere taalcode…*.
 - **Left for F9:** each explanation's link to its wiki page.
 
-**Second trial (2026-11-08), being prepared:** `manager-0.2.0-dev.2`, for the owner's look at F1 to F8 and F10.
+**Second trial (2026-11-08):** `manager-0.2.0-dev.2`, for the owner's look at F1 to F8 and F10.
+- **Built** into `dist/` from the owner's commit `c5b2542`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.
 - **Version:** `version.js` raised to `0.2.0-dev.2`, to be built from the owner's commit of it.
 - **Dry run from the uncommitted bump:** two builds were byte-identical (SR-10). Under the test instance's own CSP (`connect-src 'none'`) the banner showed; a new library opened through the library worker; *Over* gave `0.2.0-dev.2`; *Sleutel maken* made a key through the crypto worker. The console was clean.
 
