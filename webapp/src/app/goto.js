@@ -5,6 +5,7 @@
 //   { kind: 'song', id, field }  the song in the editor's Blokken with that field focused (GD-05)
 //   { kind: 'song', id, line }   the song in the code mode at that line (GD-38, EDT-33)
 //   { kind: 'song', id }         the song itself
+//   { kind: 'songs', ids, title } the song list filtered to these songs (SNG-10, GD-13)
 //   { kind: 'set', name }        the set open in the centre (GD-21)
 //   { kind: 'library', field }   the library's fields, that one focused (GD-22), or none
 
@@ -16,6 +17,11 @@ const MISSING_FIELD = { fieldWho: 'lyricist', fieldCopyright: 'copyright', field
 /** Where finding f leads. */
 export function targetOf(f) {
   const p = f.params || {};
+  // SNG-10 names several songs (validate.js): the list shows just those, so the user can tell them apart
+  if (f.code === 'SNG-10' && Array.isArray(p.songs) && p.songs.length) return { kind: 'songs', ids: p.songs.map(String), title: p.title || '' };
+  // a structure finding about a song's folder (STR-05 to STR-08, STR-10, STR-11) leads to that song
+  const folder = /^STR-/.test(f.code) && typeof f.where === 'string' ? /^songs\/([^/]+)/.exec(f.where) : null;
+  if (folder) return { kind: 'song', id: folder[1] };
   if (/^SNG-/.test(f.code) && f.where !== undefined) {
     const id = String(f.where);
     if (f.code === 'SNG-02') return { kind: 'song', id, field: 'title' };

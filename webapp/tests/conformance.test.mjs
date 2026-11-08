@@ -29,8 +29,8 @@ const SEVERITIES = new Set(['Fatal', 'Error', 'Warning', 'Info']);
 const cases = readdirSync(CORPUS).filter((f) => f.endsWith('.expected.json')).map((f) => f.slice(0, -'.expected.json'.length)).sort();
 const engine = existsSync(ENGINE) ? await import(pathToFileURL(ENGINE).href) : null;
 
-test('the corpus has its 58 cases', () => {
-  assert.equal(cases.length, 58);
+test('the corpus has its 59 cases', () => {
+  assert.equal(cases.length, 59);
 });
 
 const family = (code) => code.split('-')[0];

@@ -25,6 +25,13 @@ test('EDT-41: a song finding leads to the field it is about, to its line, or to 
   assert.deepEqual(targetOf({ code: 'SNG-01', where: 'a', params: { song: 'a' } }), { kind: 'song', id: 'a' });
 });
 
+test('EDT-41: SNG-10 leads to the list of its songs; a structure finding on a song folder to that song', () => {
+  assert.deepEqual(targetOf({ code: 'SNG-10', where: 'a, b', params: { title: 'A', songs: ['a', 'b'] } }), { kind: 'songs', ids: ['a', 'b'], title: 'A' });
+  assert.deepEqual(targetOf({ code: 'STR-05', where: 'songs/a' }), { kind: 'song', id: 'a' });
+  assert.deepEqual(targetOf({ code: 'STR-08', where: 'songs/a/extra.txt' }), { kind: 'song', id: 'a' });
+  assert.deepEqual(targetOf({ code: 'STR-01', where: 'README.txt' }), { kind: 'library', field: null });
+});
+
 test('EDT-41: a set finding leads to its set; a library finding to its field, or to the library', () => {
   assert.deepEqual(targetOf({ code: 'SET-03', severity: 'Warning', where: 'Demo' }), { kind: 'set', name: 'Demo' });
   assert.deepEqual(targetOf({ code: 'MAN-07', severity: 'Error' }), { kind: 'library', field: 'license' });
@@ -39,13 +46,20 @@ test('EDT-41: every finding of the test libraries leads somewhere, and a song li
   const LIBS = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'test-libraries');
   let findings = 0;
   let lines = 0;
+  let same = 0;
   for (const name of readdirSync(LIBS).filter((n) => n.endsWith('.zbl')).sort()) {
     const bytes = new Uint8Array(readFileSync(join(LIBS, name)));
     const v = await validateLibrary(bytes);
     const r = await openLibrary(bytes).catch(() => ({}));
     for (const f of v.findings) {
       const target = targetOf(f);
-      assert.ok(['song', 'set', 'library'].includes(target.kind), `${name}: ${f.code}`);
+      assert.ok(['song', 'songs', 'set', 'library'].includes(target.kind), `${name}: ${f.code}`);
+      // a song it names is a song of the library, so *Ga naar* shows something (the owner's M5 review, F2)
+      if (r.library && target.kind === 'songs') {
+        assert.ok(target.ids.length > 1 && target.ids.every((id) => r.library.songs.has(id)), `${name}: ${f.code} ${target.ids}`);
+        same += 1;
+      }
+      if (r.library && target.kind === 'song' && /^SNG-/.test(f.code)) assert.ok(r.library.songs.has(target.id), `${name}: ${f.code} ${target.id}`);
       findings += 1;
       if (target.line && r.library && typeof r.library.songs.get(target.id) === 'string') {
         const count = r.library.songs.get(target.id).split('\n').length - 1;
@@ -54,5 +68,5 @@ test('EDT-41: every finding of the test libraries leads somewhere, and a song li
       }
     }
   }
-  assert.ok(findings > 50 && lines > 5, `${findings} findings, ${lines} with a line`);
+  assert.ok(findings > 50 && lines > 5 && same === 1, `${findings} findings, ${lines} with a line, ${same} SNG-10`);
 });

@@ -12,7 +12,7 @@ import { t } from './i18n.js';
 
 /**
  * Build the frame. getLang() gives the current interface language; store is local storage (tests).
- * Returns { app, left, centre, right, bottom, setSplash(on), relabel() }.
+ * Returns { app, left, centre, right, bottom, setSplash(on), relabel(), unfold(side) }.
  */
 export function createLayout({ getLang, store } = {}) {
   let bars = parseBars(load('zbm.bars', store));
@@ -115,5 +115,9 @@ export function createLayout({ getLang, store } = {}) {
     },
     /** Redraw the labels in the current language (GD-17). */
     relabel: draw,
+    /** Open a folded bar, so what is shown there can be seen (*Ga naar*, GD-20); remembered as a click on its tab. */
+    unfold(side) {
+      if (bars[side].folded) update(toggled(bars, side));
+    },
   };
 }

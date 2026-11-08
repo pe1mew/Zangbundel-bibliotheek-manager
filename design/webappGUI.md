@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.20 |
-| **Date** | 2026-11-07 |
+| **Status** | Draft 0.21 |
+| **Date** | 2026-11-08 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
 
@@ -159,6 +159,7 @@ Whether the widths and folded state are remembered for the next visit is GQ-16.
 | Switch *Ook in de tekst* | Off by default. On: the typed words are looked for in the lyrics instead of the title (the app's full-text search, FR-LIB-31 there). |
 | Sort button *A–Z* / *Z–A* | Toggles the order. Sorting uses the sort title when the song has one (`{sorttitle}`), otherwise the title, compared without case or accents. |
 | Filter chips | One row of chips, scrolling sideways: the languages of the library's songs (only when there is more than one) and its tags. Within a group any chosen chip matches; the groups all apply. A chosen chip shows a check mark. |
+| Chip *Zelfde titel: “…”* | *Added 2026-11-08 (GD-20).* Only while *Ga naar* on SNG-10 shows the songs that share a title, subtitle and language: the list holds just those songs, the chip is first in the row and shown chosen, and a click on it, or *Wis filters*, takes it away. It goes by itself when none of its songs is left. |
 | *Wis filters* | Shown only while search, switch, sort or a chip differs from the default; clears them all at once. |
 | No match | The list reads *Geen liederen gevonden.* |
 
@@ -255,6 +256,12 @@ The owner's answers to the open questions, and two further requests made during 
 *Clarified 2026-11-07 by the owner:* a locked line inside a verse, chorus or bridge (a `{comment}` such as *zachter*, a `#` note, an unknown directive) stays in its place within the section, and the section stays editable around it in *Blokken*; the locked line may be removed but is never changed. Only a broken structure (an environment not closed by its own end) and tab, grid, ABC and unknown environments are locked as a whole.
 
 **GD-20 — *Toepassen* always applies; problems are marked and listed.** *(Resolves GQ-12.)* *Toepassen* takes the song into the library also when it has an Error. A song with an Error or Warning gets the severity icon of GD-29 on its row in the song list. A button *Controle* in the bottom bar shows the number of Errors and Warnings and opens the validation panel (FDS EDT-40 to EDT-42): all messages grouped by severity, each with its location (set, song, line), and a click on one goes there. *Downloaden* stays blocked while any Error is present (EDT-50, M-63) and says so. This supersedes the refusal shown in the first mock.
+
+*Amended 2026-11-08 (the owner's M5 review, F2):* where a click on a message goes.
+- **A song:** a message about a song opens it, at its field or line where it names one.
+- **A song folder:** a structure message about a song's folder (`songs/<id>/…`) also opens that song.
+- **SNG-10:** this message names several songs. The *Liedjes* tab then shows just those songs, with the chip *Zelfde titel* of GD-13, and the right bar unfolds if it was folded.
+- **A song that is not in the library:** the library's home is shown instead, so a click always shows something.
 
 **GD-21 — Sets are a tab in the right bar.** *(Resolves GQ-11.)* The right bar has two tabs, *Liedjes* and *Sets*, like the app's *Setlist* and *Zangbundel* tabs. *Sets* lists the sets (add, rename, delete with M-62, drag to reorder; EDT-31). Opening a set shows its songs in order in the centre area, with drag and up/down reordering as in the section editor (GD-08, GD-11) and a bin per entry that removes the song from the set only. Songs are added to the open set from the *Liedjes* tab with a *+ Set* button on each row while a set is open. A song can be in several sets (D-22).
 
@@ -374,4 +381,5 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.21 | 2026-11-08 | GD-20 and GD-13 amended after the owner's M5 review (F2): *Ga naar* on SNG-10 filters the song list to its songs with a chip *Zelfde titel*; a structure message on a song folder opens that song; a song not in the library leads to the library's home. The chip has the look of a chosen filter chip, so the mock is unchanged. |
 | Draft 0.20 | 2026-11-07 | GD-19 clarified by the owner: a locked line inside a section keeps its place there, and the section stays editable around it. |

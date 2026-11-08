@@ -730,11 +730,21 @@ def rule_cases(base):
     song_case('song-no-lyrics', lorem[:body], 'SNG-09', 'Error',
               'lorem-ipsum with its comments and metadata only: the whole body after {duration} removed.',
               ['SNG-09'], skipped('S010', 'no lyric lines'))
-    song_case('song-title-duplicate', replace_once(lorem, b'{title: Lorem Ipsum!}', b'{title: vader jacob}'),
-              'SNG-10', 'Warning', 'lorem-ipsum is titled "vader jacob", the title of vader-jacob in other case: '
-              'the rule compares case-insensitively.', None,
+    as_vader = replace_once(replace_once(replace_once(lorem, b'{title: Lorem Ipsum!}', b'{title: vader jacob}'),
+                                         b'{subtitle: Demonstratielied op de wijs van Vader Jacob}\n', b''),
+                            b'{meta: language la}', b'{meta: language nl}')
+    song_case('song-title-duplicate', as_vader,
+              'SNG-10', 'Warning', 'lorem-ipsum is titled "vader jacob", the title of vader-jacob in other case, in '
+              'Dutch and without a subtitle, as vader-jacob: the rule compares title, subtitle and language, '
+              'case-insensitively (D-46).', None,
               f11('accepted as snapshot', ['A102'], 'Song format section 11 has no rule on titles that repeat.'))
     cases['song-title-duplicate'][1]['editor']['codes'][0]['where'] = 'lorem-ipsum, vader-jacob'
+    # D-46: the same title alone is no duplicate; lorem-ipsum keeps its Latin and its subtitle
+    files = dict(base, **{LOREM: replace_once(lorem, b'{title: Lorem Ipsum!}', b'{title: Vader Jacob}')})
+    cases['song-title-other-language'] = (unsigned(files), expect(
+        'lorem-ipsum is titled "Vader Jacob", the title of vader-jacob, but it is in Latin and has a subtitle: '
+        'not the same song, so no SNG-10 (D-46).', None, list(shared),
+        f11('accepted as snapshot', ['A102'], 'Song format section 11 has no rule on titles that repeat.')))
     song_case('song-no-language', replace_once(lorem, b'{meta: language la}\n', b''), 'SNG-11', 'Error',
               'The {meta: language} line of lorem-ipsum removed.', ['SNG-11'], skipped('S003', 'no language'))
     song_case('song-id-differs', replace_once(lorem, b'{meta: id lorem-ipsum}', b'{meta: id lorem-ipsum-oud}'),

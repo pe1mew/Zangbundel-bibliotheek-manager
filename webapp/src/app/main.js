@@ -388,8 +388,14 @@ function start() {
     const st = session.get();
     if (!st.library) return;
     const target = targetOf(f);
-    if (target.kind === 'song') {
-      if (!st.library.songs.has(target.id)) return;
+    if (target.kind === 'songs') {                        // SNG-10: the list shows just the songs that share the title
+      rightTab = 'songs';
+      layout.unfold('right');
+      select(null);
+      if (songList) songList.showOnly(target.ids, target.title);
+      return;
+    }
+    if (target.kind === 'song' && st.library.songs.has(target.id)) {
       rightTab = 'songs';
       const summary = st.songs.find((x) => x.id === target.id);
       const editable = !session.isReadOnly() && summary && summary.editable !== false;

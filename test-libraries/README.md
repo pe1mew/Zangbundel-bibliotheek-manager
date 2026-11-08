@@ -2,7 +2,7 @@
 
 Shared test libraries in the format of FDS draft 0.6, for FDS open item O-04. Every Editor implementation and the Songbook app must give each library the result in its `<case>.expected.json`.
 
-**Status:** 58 cases. Two valid libraries with sets (signed and unsigned), a valid library with tag labels (FDS draft 0.10, D-44) and at least one invalid case for every rule of FDS section 6 except PKG-09, for which see [Not covered](#not-covered). The unsigned copy of APP-06 (a `zangbundel.json` library with a package's id) is `manifest-missing`.
+**Status:** 59 cases. Two valid libraries with sets (signed and unsigned), a valid library with tag labels (FDS draft 0.10, D-44) and at least one invalid case for every rule of FDS section 6 except PKG-09, for which see [Not covered](#not-covered). The unsigned copy of APP-06 (a `zangbundel.json` library with a package's id) is `manifest-missing`.
 
 ## How the cases are made
 
@@ -84,7 +84,8 @@ App: the Songbook app's verdict (APP-01), with the rules that refuse it. Editor:
 | `song-environment-open` | SNG-06 | The last `{end_of_verse}` removed | Refused: SNG-06 | SNG-06 Error | Accepted; skipped (S007) |
 | `song-chord-unknown` | SNG-08 | The chord `[H]` | Accepted, W013 (Editor only) | SNG-08 Warning | Accepted as a snapshot |
 | `song-no-lyrics` | SNG-09 | Comments and metadata only | Refused: SNG-09 | SNG-09 Error | Accepted; skipped (S010) |
-| `song-title-duplicate` | SNG-10 | Titled `vader jacob`, as `vader-jacob` in other case | Accepted, W013 | SNG-10 Warning | Accepted as a snapshot |
+| `song-title-duplicate` | SNG-10 | Titled `vader jacob`, as `vader-jacob` in other case, in Dutch and without a subtitle, as `vader-jacob` | Accepted, W013 | SNG-10 Warning | Accepted as a snapshot |
+| `song-title-other-language` | SNG-10 | Titled `Vader Jacob`, but in Latin and with its subtitle: not the same song (D-46) | Accepted, W013 | — | Accepted as a snapshot |
 | `song-no-language` | SNG-11 | The `{meta: language}` line removed | Refused: SNG-11 | SNG-11 Error | Accepted; skipped (S003) |
 | `song-id-differs` | SNG-12 | `{meta: id lorem-ipsum-oud}` | Refused: SNG-12 (an Error in the app) | SNG-12 Info | Accepted; skipped (S004) |
 | `song-chorus-early` | SNG-13 | A `{chorus}` before the first chorus | Refused: SNG-13 | SNG-13 Error | Accepted; skipped (S008) |
@@ -177,6 +178,8 @@ Standard library only. The generator implements Ed25519 after RFC 8032 and check
 The FDS rules have no Editor implementation yet, and the Songbook app has not run the cases added in this version.
 
 **2026-11-07:** `tag-labels` and `tag-label-invalid` added (FDS draft 0.10, D-44). The generator rerun left the other 56 libraries and their expected results byte-identical. `check_test_libraries.py`: 58 cases, 0 failed. The manager's engine gives all 58 their expected findings (`webapp/tests/conformance.test.mjs`); on the engine before the change, `tag-label-invalid` lacks its MAN-02. The app has not run the two new cases.
+
+**2026-11-08:** SNG-10 compares title, subtitle and language (FDS draft 0.12, D-46). `song-title-duplicate` now also gives `lorem-ipsum` Dutch and no subtitle, so it still repeats `vader-jacob`; `song-title-other-language` added, the same title alone. The generator, run twice, left the other 57 libraries and their expected results byte-identical, and the two changed ones identical between runs. `check_test_libraries.py`: 59 cases, 0 failed. The manager's engine gives all 59 their expected findings. Not run: the library repository's `release.py verify` for the `format_1_1` verdicts of the two cases, and the app.
 
 ## The songs
 

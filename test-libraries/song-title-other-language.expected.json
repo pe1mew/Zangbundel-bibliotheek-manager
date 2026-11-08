@@ -1,0 +1,33 @@
+{
+  "description": "lorem-ipsum is titled \"Vader Jacob\", the title of vader-jacob, but it is in Latin and has a subtitle: not the same song, so no SNG-10 (D-46).",
+  "app": {
+    "verdict": "accepted",
+    "codes": [],
+    "signed": false,
+    "song_format_warnings": [
+      "W013"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102"
+    ],
+    "note": "Song format section 11 has no rule on titles that repeat."
+  },
+  "sha256": "477b6af1b97c136f9672b4c0ee16f07d4faf6cc81d23a0c5f523a99c7f981048"
+}

@@ -51,7 +51,7 @@ console.log(JSON.stringify({{ same, differ }}));
         sys.exit(1)
     import json
     out = json.loads(r.stdout.strip().splitlines()[-1])
-    ok = out['same'] == 58 and not out['differ']
+    ok = out['same'] == 59 and not out['differ']
     # The two workers and their clients, as the app will bundle them (TD-22): they bundle and parse.
     for entry in ('src/workers/library-worker.js', 'src/app/library-client.js',
                   'src/workers/crypto-worker.js', 'src/app/crypto-client.js'):
@@ -69,7 +69,7 @@ console.log(JSON.stringify({{ same, differ }}));
             print(('PASS ' if lean else 'FAIL ') + f'crypto worker holds no library code: {", ".join(names)}')
             ok = ok and lean
     print(('PASS ' if ok else 'FAIL ') + f"bundled engine ({len(sources) - 1} modules) gives the native findings on "
-          f"{out['same']} of 58 test libraries" + (f"; differs on {out['differ']}" if out['differ'] else ''))
+          f"{out['same']} of 59 test libraries" + (f"; differs on {out['differ']}" if out['differ'] else ''))
     sys.exit(0 if ok else 1)
 finally:
     shutil.rmtree(d, ignore_errors=True)

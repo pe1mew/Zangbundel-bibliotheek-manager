@@ -119,6 +119,32 @@ test('GD-25: reveal clears a filter that hides a song; a visible song needs noth
   assert.ok(list.visibleIds().includes('vuur'));
 });
 
+test('GD-20: showOnly lists just the songs of SNG-10, clears the other filters, and its chip takes it away', () => {
+  const list = createSongList({ lang: 'nl', readOnly: false, onSelect() {}, onDelete() {} });
+  list.update({ songs: SONGS, findings: [] }, null);
+  const search = [...walk(list.node)].find((n) => n.attrs.type === 'search');
+  search.value = 'vuur';
+  search.listeners.input();
+  list.showOnly(['vader-jacob', 'the-song'], 'Vader Jacob');
+  assert.deepEqual(list.visibleIds(), ['the-song', 'vader-jacob']);
+  assert.equal(search.value, '');
+  assert.equal(isDefaultFilter(list.filter()), false);
+  const chip = [...walk(list.node)].find((n) => n.attrs.class === 'fchip on');
+  assert.ok(chip && JSON.stringify(chip.children).includes('Zelfde titel'), 'the chip says what it shows');
+  chip.listeners.click();
+  assert.equal(isDefaultFilter(list.filter()), true);
+  assert.equal(list.visibleIds().length, SONGS.length);
+  // the filter goes when its songs are gone
+  list.showOnly(['weg'], 'Weg');
+  list.update({ songs: SONGS, findings: [] }, null);
+  assert.equal(list.filter().only, null);
+});
+
+test('GD-13: filterSongs with only keeps those songs, within the other filters', () => {
+  assert.deepEqual(ids(filterSongs(SONGS, f({ only: { ids: ['vader-jacob', 'vuur'], title: 'x' } }), 'nl')), ['vader-jacob', 'vuur']);
+  assert.deepEqual(ids(filterSongs(SONGS, f({ only: { ids: ['vader-jacob', 'vuur'], title: 'x' }, tags: ['kampvuur'] }), 'nl')), ['vuur']);
+});
+
 test('EDT-23: a read-only list deletes nothing; an empty library says so instead of a list', () => {
   const list = createSongList({ lang: 'nl', readOnly: true, onSelect() {}, onDelete() { throw new Error('no delete'); } });
   list.update({ songs: SONGS, findings: [] }, null);

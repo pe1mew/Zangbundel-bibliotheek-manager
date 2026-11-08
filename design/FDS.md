@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | Functional Design Specification (FDS) |
-| **Status** | Draft 0.11 |
-| **Date** | 2026-11-07 |
+| **Status** | Draft 0.12 |
+| **Date** | 2026-11-08 |
 | **Scope** | Library package format, Editor, Songbook app import |
 
 ---
@@ -399,7 +399,7 @@ The profile's song-level errors (S-codes) make the Songbook app skip the song in
 | SNG-07 | Directives and meta names are known to the profile. Unknown ones are ignored by the app. | Info | M-56 | I001 |
 | SNG-08 | Chord names are recognisable (root `A`–`G`, optional `#`/`b`, optional suffix, optional `/bass`). Editor only. | Warning | M-57 | — |
 | SNG-09 | The song contains at least one lyric line. | Error | M-58 | S010 |
-| SNG-10 | No two songs in the library have the same title (case-insensitive). | Warning | M-59 | — |
+| SNG-10 | No two songs in the library have the same title, subtitle and language (case-insensitive; no subtitle is the same subtitle; D-46). | Warning | M-59 | — |
 | SNG-11 | The song has a `{meta: language}` directive with a well-formed BCP 47 tag (song format §6.2). | Error | M-49 | S003 |
 | SNG-12 | The `{meta: id}` directive is present and equals the song ID (PF-14). | Editor: Info (corrected on save, EDT-36). App: Error. | M-48 | S003, S004 |
 | SNG-13 | `{chorus}` does not occur before any chorus is defined. | Error | M-47 | S008 |
@@ -660,7 +660,7 @@ The texts are given in English and are the reference for their translations; bot
 | M-56 | Line {line} of "{song}": "{directive}" is not known and will be ignored. Check the spelling. |
 | M-57 | Line {line} of "{song}": "{chord}" does not look like a chord. |
 | M-58 | The song "{song}" has no lyrics. |
-| M-59 | The library contains more than one song titled "{title}". |
+| M-59 | The library contains more than one song titled "{title}" with the same subtitle and language. |
 | M-60 | You have unsaved changes. Close anyway? |
 | M-61 | Some files do not match the manifest. Saving will record the current content. Continue? |
 | M-62 | Delete "{name}"? This cannot be undone in this session. |
@@ -761,6 +761,7 @@ These limitations are accepted and must be stated in the user documentation.
 | D-43 | The fixed terms are *signed by* and *not signed*, as in the app's glossary, which keeps a bare *signed* apart from *signed in* (EDT-83, APP-21, APP-22). |
 | D-44 | Tag labels travel in a package in the optional manifest field `tags` (§4.1), so tags and their labels work alike in every library format; the 1.1 view does not carry them, because every app that reads packages refuses an extra view field (VIEW-02). `formatVersion` stays 1: the field is optional and an app ignores unknown manifest fields. Decided by the owner on 2026-11-07, after first sunsetting tags and then retracting that: *"manager shall support labels to stay consistent over all"*; the format is written by the library session (the app repository's `design/proposals/2026-11-07-tag-labels-in-packages.md`, song format v0.26). |
 | D-45 | A signing key lives for one run of the Editor, not for one library session (EDT-02, EDT-64): it stays in memory through *Close* and *Save*, so signing several libraries needs the key loaded once, and is discarded when the Editor closes at the latest. Decided by the owner on 2026-11-07, while the web app's key group was built; the web app also forgets the key on request and after 30 minutes without input (securityAssessment SR-41, SR-46). |
+| D-46 | Two songs are the same song for SNG-10 only when title, subtitle and language are all the same, compared case-insensitively; a missing subtitle counts as the same subtitle. A library may hold a song in several languages, or in several versions told apart by their subtitles, under one title. The owner found three *Alouette* songs, in English, French and Dutch, reported as duplicates, and decided this on 2026-11-08. The comparison of title alone is withdrawn. The app shows no Warning (6.1), so its imports do not change. |
 
 Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangbundel-bibliotheek#1 (2026-11-04). Decisions D-22 to D-28 are the owner's (2026-11-04). Decisions D-29 and D-30 come from the app repository's proposal `design/proposals/2026-11-04-library-package-id-and-file-type.md`, approved by the owner; D-31 to D-33 are the owner's answers to the differences that proposal found between this specification and the app's FRD (2026-11-04). Decisions D-34 to D-39 come from the app repository's proposal `design/proposals/2026-11-06-backward-compatible-packages.md`, approved by the owner on 2026-11-06. D-40 answers a question from the app's implementation on the same day. D-41 to D-43 come from the app session on 2026-11-06: D-41 is the owner's decision on that session's assessment SP-39, and D-42 and D-43 follow from writing the app's import questions (GUI design D-88).
 
@@ -777,6 +778,7 @@ Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangb
 | Draft 0.5 | 2026-11-06 | Libraries that Songbook apps before this format can read, from the app repository's proposal approved by the owner (D-34 to D-39). New §3.7: the format 1.1 view (PF-40 to PF-46), generated by the Editor, listed in the manifest. Songs move under `songs/` (§3.2, PF-10, PF-12, STR-01, new STR-11). New §6.8: view rules VIEW-01 to VIEW-03 with messages M-36 to M-38. `maintainer` required: §4.1, EDT-14, new MAN-08, M-39. `title` at most 80 characters (§4.1, EDT-10). Licence: a generated `LICENSE` in the view. EDT-52 writes the view; APP-02 recognises a library with a view as this format; APP-22 adds W013 for unsigned libraries. Limitation 9; O-04 extended. Keys: new SG-05 (raw Ed25519 keys), SG-20 refers to it, the `author.publicKey` example corrected from an X.509 wrapper to the RFC 8032 test key (D-40). D-29, D-31 and D-32 superseded in part. |
 | Draft 0.6 | 2026-11-06 | From the app session. New APP-06: a release archive, snapshot or `zangbundel.json` library with the ID of a library in this format is an unsigned copy of it; the app asks M-71 (without `{versionNote}`) or M-72, never silently (D-41, the owner's decision); a sentence below the §8.3 table points to it. New M-75, the app's wording of a MAN-08 failure (D-42). Fixed terms *signed by* and *not signed* (EDT-83, APP-21, APP-22, D-43). O-04: the first six test libraries exist in `test-libraries/`. After the app's first run of them: PF-42 made byte-exact, and an *Archive* column in §6.2 mapping PKG-01 to PKG-09 to the shared archive checks, with FDS codes reported for packages. |
 | Draft 0.7 | 2026-11-06 | O-04: 56 test libraries cover every rule of section 6 except PKG-09 and some forms of PKG-02 and PKG-03. New O-11: the readings the test libraries made where the rules leave room, to be confirmed. No rule changed. |
+| Draft 0.12 | 2026-11-08 | SNG-10 compares title, subtitle and language, no longer the title alone (D-46); M-59 reworded. O-04: test library `song-title-duplicate` changed to match, and `song-title-other-language` added, so there are 59. |
 | Draft 0.11 | 2026-11-07 | A signing key may stay in memory across library sessions until the Editor closes (EDT-02, EDT-64 reworded; D-45). No package format or validation rule changed. |
 | Draft 0.10 | 2026-11-07 | Tag labels in the manifest (D-44, song format v0.26): optional field `tags` (§4.1), checked by MAN-02; EDT-26 carries them over from `zangbundel.json`; EDT-30 edits them; APP-27 shows them. The 1.1 view is unchanged; `formatVersion` stays 1. |
 | Draft 0.9 | 2026-11-07 | O-11: the engine readings of draft 0.8 are settled with the app (song format v0.24); whitespace in directive names, values, the `meta` split and setlist lines means spaces and tabs only; an indented `#` line is a lyric line, and the display text drops trailing Unicode spaces (song format v0.25). No rule of this specification changed. |

@@ -12,9 +12,10 @@ import { severityGroup, severityIcon, messageFor } from './check.js';
 /** Lower case without accents: "Één" and "een" are the same word (as the app's fold). */
 export const fold = (s) => String(s || '').normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase().trim();
 
-export const DEFAULT_FILTER = Object.freeze({ query: '', inText: false, descending: false, languages: [], tags: [] });
+// only: { ids, title } while *Ga naar* on SNG-10 shows just the songs that share a title (GD-13, GD-20), else null
+export const DEFAULT_FILTER = Object.freeze({ query: '', inText: false, descending: false, languages: [], tags: [], only: null });
 
-export const isDefaultFilter = (f) => !f.query.trim() && !f.inText && !f.descending && !f.languages.length && !f.tags.length;
+export const isDefaultFilter = (f) => !f.query.trim() && !f.inText && !f.descending && !f.languages.length && !f.tags.length && !f.only;
 
 /**
  * GD-13: the songs to show, in order. Every typed word in the title (or, with inText, in the words);
@@ -23,7 +24,8 @@ export const isDefaultFilter = (f) => !f.query.trim() && !f.inText && !f.descend
  */
 export function filterSongs(songs, filter, lang) {
   const words = filter.query.split(/\s+/).map(fold).filter(Boolean);
-  const shown = songs.filter((s) => (!filter.languages.length || filter.languages.includes(s.language || ''))
+  const shown = songs.filter((s) => (!filter.only || filter.only.ids.includes(s.id))
+    && (!filter.languages.length || filter.languages.includes(s.language || ''))
     && (!filter.tags.length || (s.tags || []).some((x) => filter.tags.includes(x)))
     && (!words.length || ((hay) => words.every((w) => hay.includes(w)))(fold(filter.inText ? s.words : s.title))));
   const coll = new Intl.Collator(lang, { sensitivity: 'base' });
@@ -73,7 +75,7 @@ function worstBySong(findings) {
 
 /**
  * createSongList({ lang, readOnly, onSelect(id), onEdit(id), onDelete(id) }) → { node, update(state, selectedId),
- * filter(), visibleIds(), reveal(id) }. *Bewerken* opens the song editor (M5.3); a song that is not text
+ * filter(), visibleIds(), showOnly(ids, title), reveal(id) }. *Bewerken* opens the song editor (M5.3); a song that is not text
  * (SNG-01, SNG-18) is edited only in the code mode.
  */
 export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onAdd, onImport, onAddToSet }) {
@@ -124,6 +126,12 @@ export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onA
     } } }, [on ? icon('check') : null, label]);
   }
 
+  // GD-13, GD-20: the chip of *Ga naar* on SNG-10, on; a click takes it away
+  function onlyChip() {
+    return el('button', { type: 'button', class: 'fchip on', 'aria-pressed': 'true',
+      on: { click: () => setFilter({ ...filter, only: null }) } }, [icon('check'), t(lang, 'sameTitleChip', { title: filter.only.title })]);
+  }
+
   // GD-21: while a set is open, each row adds its song to it; a song already in it shows a check (SET-04)
   function setButton(id) {
     if (!openSet || !onAddToSet) return null;
@@ -165,15 +173,16 @@ export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onA
   function draw() {
     const c = chipsOf(songs, lang);
     // a chosen chip whose songs are gone no longer filters
-    filter = { ...filter, languages: filter.languages.filter((x) => c.languages.includes(x)), tags: filter.tags.filter((x) => c.tags.includes(x)) };
+    filter = { ...filter, languages: filter.languages.filter((x) => c.languages.includes(x)), tags: filter.tags.filter((x) => c.tags.includes(x)),
+      only: filter.only && filter.only.ids.some((id) => songs.some((s) => s.id === id)) ? filter.only : null };
     heading.replaceChildren(`${t(lang, 'songs')} (${songs.length})`);
     tools.hidden = songs.length === 0;
     empty.hidden = songs.length !== 0;
     sort.replaceChildren(filter.descending ? 'Z–A' : 'A–Z');
     inText.checked = filter.inText;
     if (search.value !== filter.query) search.value = filter.query;
-    chips.hidden = !c.languages.length && !c.tags.length;
-    chips.replaceChildren(...c.languages.map((x) => chip('languages', x, languageName(lang, x))), ...c.tags.map((x) => chip('tags', x, x)));
+    chips.hidden = !c.languages.length && !c.tags.length && !filter.only;
+    chips.replaceChildren(...(filter.only ? [onlyChip()] : []), ...c.languages.map((x) => chip('languages', x, languageName(lang, x))), ...c.tags.map((x) => chip('tags', x, x)));
     clear.replaceChildren(...(isDefaultFilter(filter) ? [] : [el('button', { type: 'button', class: 'btn btn-text btn-small',
       on: { click: () => setFilter({ ...DEFAULT_FILTER, languages: [], tags: [] }) } }, [t(lang, 'clearFilters')])]));
     const worst = worstBySong(findings);
@@ -195,6 +204,10 @@ export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onA
     },
     filter: () => filter,
     visibleIds: () => visible,
+    /** GD-20: *Ga naar* on SNG-10: only these songs, every other filter cleared so none of them is hidden. */
+    showOnly(ids, title) {
+      setFilter({ ...DEFAULT_FILTER, languages: [], tags: [], only: { ids: [...ids], title } });
+    },
     /** GD-25: a song the filter hides is shown by clearing the filter; returns true when it was hidden. */
     reveal(id) {
       if (visible.includes(id) || !songs.some((s) => s.id === id)) return false;

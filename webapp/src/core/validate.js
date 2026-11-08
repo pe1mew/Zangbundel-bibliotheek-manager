@@ -34,7 +34,7 @@ const SONG_LICENSE = /^[A-Za-z0-9.+-]+$/;             // SPDX, public-domain or 
 const VIEW_APP_VERSION = [0, 1, 0];                   // PF-41: an app from 0.1.0 on must accept the view
 const SHARING = 16 * 1024 * 1024;                     // FDS 3.5, PKG-09 (Editor only)
 
-/** FDS 6.6 for one song file songs/<id>/<id>.cho; returns its title, or null. */
+/** FDS 6.6 for one song file songs/<id>/<id>.cho; returns { title, subtitle, language } for SNG-10, or null. */
 function checkSong(id, bytes, add) {
   if (bytes.length > SONG_MAX) {
     add('SNG-18', 'Error', id, { song: id });           // not parsed further: bounded work on input (SR-33)
@@ -85,7 +85,7 @@ function checkSong(id, bytes, add) {
     lines.length > 254 ? 'lines' : null, bytes.length > SONG_RECOMMENDED ? 'size' : null,
   ].filter(Boolean);
   if (what.length) add('SNG-17', 'Warning', id, { song, what });
-  return title || null;
+  return title ? { title, subtitle: get('subtitle')[0] || '', language: lang[0] || '' } : null;
 }
 
 /**
@@ -304,20 +304,22 @@ export async function validateLibrary(bytes, options = {}) {
     add('STR-02', 'Warning');
   }
 
-  // ---- SNG: every songs/<id>/<id>.cho; SNG-10 over the titles of the library
-  const titles = new Map();
+  // ---- SNG: every songs/<id>/<id>.cho; SNG-10 over the library: the same title, subtitle and language,
+  // without case (D-46); no subtitle is the same subtitle. The finding names its songs in params.songs (EDT-41).
+  const same = new Map();
   const titleOf = new Map();                          // song id -> its title, for messages
   for (const song of songs) {
-    const title = checkSong(song.id, rel.get(song.path), add);
-    if (title) {
-      titleOf.set(song.id, title);
-      const k = title.toLowerCase();
-      titles.set(k, [...(titles.get(k) || []), song.id]);
+    const named = checkSong(song.id, rel.get(song.path), add);
+    if (named) {
+      titleOf.set(song.id, named.title);
+      const k = [named.title, named.subtitle, named.language].map((x) => x.toLowerCase()).join('\n');   // no directive value holds a line break
+      same.set(k, [...(same.get(k) || []), song.id]);
     }
   }
-  for (const ids of titles.values()) {
+  for (const ids of same.values()) {
     if (ids.length > 1) {
-      add('SNG-10', 'Warning', [...ids].sort(compareOrdinal).join(', '), { title: titleOf.get(ids[0]) });
+      const sorted = [...ids].sort(compareOrdinal);
+      add('SNG-10', 'Warning', sorted.join(', '), { title: titleOf.get(ids[0]), songs: sorted });
     }
   }
 

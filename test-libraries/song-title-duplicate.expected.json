@@ -1,5 +1,5 @@
 {
-  "description": "lorem-ipsum is titled \"vader jacob\", the title of vader-jacob in other case: the rule compares case-insensitively.",
+  "description": "lorem-ipsum is titled \"vader jacob\", the title of vader-jacob in other case, in Dutch and without a subtitle, as vader-jacob: the rule compares title, subtitle and language, case-insensitively (D-46).",
   "app": {
     "verdict": "accepted",
     "codes": [],
@@ -34,5 +34,5 @@
     ],
     "note": "Song format section 11 has no rule on titles that repeat."
   },
-  "sha256": "ee49abdcf2f09368eff4d3bbc7bb94a576723b9a11ffed6a71ea7057f5877d11"
+  "sha256": "248bbbcb27cb88fc93a01c64d58d9dc1235bcfb45c13a0add5e8b17e8e75b50f"
 }

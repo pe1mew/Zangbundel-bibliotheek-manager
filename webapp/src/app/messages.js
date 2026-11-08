@@ -116,7 +116,7 @@ export const MESSAGES = {
     "M-56": "Line {line} of \"{song}\": \"{directive}\" is not known and will be ignored. Check the spelling.",
     "M-57": "Line {line} of \"{song}\": \"{chord}\" does not look like a chord.",
     "M-58": "The song \"{song}\" has no lyrics.",
-    "M-59": "The library contains more than one song titled \"{title}\".",
+    "M-59": "The library contains more than one song titled \"{title}\" with the same subtitle and language.",
   },
   nl: {
     "M-01": "Dit bestand is geen geldig ZIP-bestand.",
@@ -171,7 +171,7 @@ export const MESSAGES = {
     "M-56": "Regel {line} van \"{song}\": \"{directive}\" is onbekend en wordt genegeerd. Controleer de spelling.",
     "M-57": "Regel {line} van \"{song}\": \"{chord}\" lijkt geen akkoord.",
     "M-58": "Het lied \"{song}\" heeft geen tekst.",
-    "M-59": "De bibliotheek bevat meer dan één lied met de titel \"{title}\".",
+    "M-59": "De bibliotheek bevat meer dan één lied met de titel \"{title}\", met dezelfde ondertitel en taal.",
   },
   de: {
     "M-01": "Diese Datei ist keine gültige ZIP-Datei.",
@@ -226,6 +226,6 @@ export const MESSAGES = {
     "M-56": "Zeile {line} von „{song}\": „{directive}\" ist unbekannt und wird ignoriert. Prüfe die Schreibweise.",
     "M-57": "Zeile {line} von „{song}\": „{chord}\" sieht nicht wie ein Akkord aus.",
     "M-58": "Das Lied „{song}\" hat keinen Text.",
-    "M-59": "Die Bibliothek enthält mehr als ein Lied mit dem Titel „{title}\".",
+    "M-59": "Die Bibliothek enthält mehr als ein Lied mit dem Titel „{title}\" mit gleichem Untertitel und gleicher Sprache.",
   },
 };

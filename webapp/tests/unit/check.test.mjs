@@ -39,7 +39,7 @@ test('every rule of FDS section 6 has a message in every language; the English i
   }
 });
 
-test('EDT-40: every finding of all 58 test libraries reads as a full message in nl, en and de', async () => {
+test('EDT-40: every finding of all 59 test libraries reads as a full message in nl, en and de', async () => {
   let n = 0;
   for (const name of all) {
     for (const f of await findingsOf(name)) {

@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
-| **Status** | Draft 0.17 |
-| **Date** | 2026-11-07 |
-| **Depends on** | `design/FDS.md` draft 0.11, `design/webappGUI.md` draft 0.20, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (58 cases) |
+| **Status** | Draft 0.18 |
+| **Date** | 2026-11-08 |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.21, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (59 cases) |
 
 ---
 
@@ -198,7 +198,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
 | M2.8 | `library-worker.js` with a 20-second time limit per file; the Trusted Types policy `zbm-worker` that starts it (webappTDS TD-23) | SR-30, SR-31, SR-20 |
 | M2.9 | Fuzzing of the ZIP and ChordPro readers, corpus from `test-libraries/` | SR-35 |
 
-**Exit:** all 58 test libraries give exactly their expected findings (SC-04); a valid library opened and saved without changes is byte-identical (EDT-51); fuzzing ran without crash or hang (SC-11).
+**Exit:** all 59 test libraries give exactly their expected findings (SC-04); a valid library opened and saved without changes is byte-identical (EDT-51); fuzzing ran without crash or hang (SC-11).
 
 **State (2026-11-06).**
 - **SC-04 met:** all 58 test libraries (56 until FDS draft 0.10 added the two tag-label cases) give exactly their expected Editor findings, every rule family of FDS section 6 (`webapp/tests/conformance.test.mjs`, 0 to-dos). Seeded defects turn cases red: SIG-03 skipped, STR-08 for a second `.cho`, SNG-10 case-sensitive, SET-03 skipped, phase 2 directives not listed.
@@ -402,6 +402,7 @@ Each milestone ends with its exit checks passing and the result written to `desi
 | M5.3 | Song editor: *Blokken* and *Code (ChordPro)*, drag with scrolling, up/down, labels, locked blocks, apply always, the leave-editor question | GD-05 to GD-09, GD-11, GD-18, GD-19, GD-33, GD-36, GD-38 |
 | M5.4 | Library fields in the left bar, licence and required maintainer | GD-22, GD-37, EDT-13, EDT-14, MAN-07, MAN-08 |
 | M5.5 | Sets tab: add, rename, reorder, delete, entries | GD-21, EDT-31, SET-01 to SET-05 |
+| M5.6 | The owner's M5 review: observations F1 to F10 (under the state below) | GD-12, GD-13, GD-17, GD-20, GD-21, GD-30, GD-33, GD-34, SNG-10 |
 
 **Exit:** each GD of M5 demonstrated on the test instance against its text; unit tests for every state change of the library model.
 
@@ -629,7 +630,63 @@ Each milestone ends with its exit checks passing and the result written to `desi
   - The owner signed it with the release key, uploaded it with the deploy key (706,560 bytes) and activated it with `zbm-release activate --trial test.zangbundel.nl`. `live` has pointed to it since 21:10; `test-holding-0.1.0` stays as the release to switch back to.
   - The owner's first look was in Firefox.
   - It showed one stale text: the *Bibliotheek bewerken* tile still said *Komt in een volgende testversie*. Fixed after the release: that tile now only says a library is needed, and *Bewerken* on a song that is not text gives that as its reason. Both go into the next trial build.
-- **Next: the M5 exit with the owner** on the test instance, each GD of M5 against its text, dragging a block to an edge included (its auto-scroll was not seen here); then M6's exit (a library made and signed here through the independent checker and the phone).
+- **The M5 exit look, part 1 (2026-11-08):** the owner's ten observations are in M5.6 below.
+- **Next:** M5.6. Then the rest of the M5 exit look, dragging a block to an edge included (its auto-scroll was not seen here), and M6's exit: a library made and signed here, through the independent checker and the phone.
+
+#### M5.6 — The owner's M5 review (2026-11-08)
+
+The owner's first look at the trial release (`manager-0.2.0-dev.1`, Firefox) gave ten observations, F1 to F10. Their causes were found in the code; nothing has been changed yet. Each look is written as a GD in `design/webappGUI.md` (draft 0.21) and checked in the mock before it is built (the GUI's own rule); F3 changes the FDS and therefore the app.
+
+| # | Observation | Cause found | Work | Documents |
+|---|---|---|---|---|
+| F1 | Tag chips that do not fit cannot be seen; the scrollbar is hidden and overlaps the chips on hover. | `.chiprow` scrolls sideways with a thin scrollbar (`app.css`). | ◀ and ▶ buttons at the ends of the chip row, shown only when chips are hidden on that side; each steps to the next hidden chip. The scrollbar is hidden; the row still scrolls with the wheel, touch and keyboard focus. | GUI: GD-13 amended |
+| F2 | *Ga naar* on the duplicate-title warning closes *Controle* and does nothing. | SNG-10's finding names all its songs in one `where` (`"a, b, c"`), which is no song ID, so `goto.js` finds no song. | SNG-10 also carries the song IDs as a list. *Ga naar* on it sets a song-list filter on exactly those songs: a chip *Zelfde titel: "…"* that *Wis filters* clears. Every other finding that names a song (SNG, and STR on `songs/<id>/…`) opens that song; a song not in the library leads to the library's home. A test runs every finding of the test libraries and checks that each one leads somewhere. | GUI: GD-20 amended |
+| F3 | Three *Alouette* songs (English, French, Dutch; different subtitles, tags and song IDs) are reported as duplicates. That is not an error. | FDS SNG-10 (Warning, M-59): no two songs may share a title, case-insensitive; nothing else is compared. | SNG-10 is narrowed (decision **R1**). The validator, its test library and M-59 follow. | FDS draft 0.12; the app repository is told (principle 2); `test-libraries/` |
+| F4 | The language button cycles through the languages. | `i18n.next()` in the bottom bar (GD-17). | The button opens a small menu with each language in its own name (*Nederlands*, *English*, *Deutsch*), the current one checked. A choice closes the menu and applies the language at once; Escape or a click outside closes it unchanged; the arrow keys move through it. | GUI: GD-17 amended |
+| F5 | Reordering songs in a set only shows a line where the song will land. | `drag.js` marks the drop place with the classes `dropbefore` and `dropafter`. | While dragging, the other cards slide apart to open a gap where the card will land; on release the card slides into that gap. Offsets are custom properties set with `setVar` (no style attribute, SR-24); nothing moves under `prefers-reduced-motion`. The up/down buttons (GD-33) animate the same way. | GUI: GD-21 amended |
+| F6 | A folded side bar shows only its fold tab. | The fold tab of `layout.js`. | A folded bar becomes a narrow strip with one icon per part: right *Liedjes* and *Sets*, left the song's data or the library's fields, whichever the bar would show. An icon opens the bar at that part; the bar stays open until it is folded again, and is remembered as now (GD-34). | GUI: GD-34 amended, new GD for the strip |
+| F7 | Reordering blocks in the *Blokken* editor should move like F5. | The same `drag.js`. | Comes with F5: one animation in `drag.js` for both lists. | GUI: GD-33 amended |
+| F8 | The song's data needs help, shown when the user asks for it. | — | A help text per field of the song's data (decision **R2**), each with a link to its wiki page (F9). The texts are in `texts.js` for every interface language. | GUI: new GD |
+| F9 | A wiki in every language of the manager, now and later, with what the manager does and some best practices; the manager links to it. | GD-35 and M7.6 put the manual on this repository's GitHub wiki. | Owner's decisions: the wiki is on `zangbundel.nl`; its content is Markdown in this repository, converted by a simple static site generator; so the manager's help links stay on our own domain. Work under M7.6. | GUI: GD-35 amended; TDS: new TD; assessment: SR-91 |
+| F10 | The centre's plain black background should be the photograph of the splash, with the centre's content on a box above it, like the song cards of a set. | The photograph is `assets/backdrop-3200x1440.webp`, used only by the splash (GD-30, CC BY-SA 4.0, credited in *Over*). | The centre gets the photograph as its background; the library home, song view, editor, set and *Controle* sit on a card in the surface colour of the set cards, opaque enough that the text keeps its contrast (M7.3). | GUI: GD-12 and GD-30 amended |
+
+**Decisions (the owner accepted all three recommendations, 2026-11-08):**
+- **R1, SNG-10 (F3).** Decided: two songs are reported only when they share title, subtitle and language, all compared case-insensitively, with no subtitle counting as the same subtitle. The three *Alouette* songs then differ in language and subtitle. The alternative is to leave out only songs that share a `variant-group`. That fits *Alouette*, but it still warns about two unrelated songs in different languages that share a title. Either way the app's import check must change the same way.
+- **R2, the form of the help (F8).** Decided: an ⓘ beside each field label that opens a short explanation under the field and closes again on a second click (`aria-expanded`). The alternative is one help switch for the whole panel, which shows all the explanations at once.
+- **R3, the site generator (F9).** Decided: Hugo. It is one binary with built-in multilingual sites, and we would use it with our own minimal templates and no JavaScript, so the pages fit the placeholder's CSP. It would be a development tool like Node.js (TD-21), never part of the site, with its version and SHA-256 pinned as in `vendor/VENDOR.md`. Zola is the close alternative. MkDocs needs a Python package tree and its themes bring JavaScript.
+
+**Order of work.**
+1. F3 and F2: they make *Controle* right, and F2's filter needs F3's list of IDs.
+2. F4 and F1: small, and in the bottom bar and the song list.
+3. F5 with F7: one change to `drag.js`.
+4. F6, then F10: both change the layout, so each goes through the mock first.
+5. F8: the help texts first, their links once the wiki exists.
+6. F9 runs under M7.6 and can start beside steps 1 to 5. It touches neither `webapp/src` nor the manager's build.
+
+Then a new trial build on the test instance and the rest of the M5 exit look.
+
+**State (2026-11-08): step 1 done (F3, F2).**
+- **F3, the rule:**
+  - FDS draft 0.12 (D-46): SNG-10 compares title, subtitle and language, and M-59 says so.
+  - `validate.js` and the independent `check_test_libraries.py` follow the new rule.
+  - Test library `song-title-duplicate` now also makes `lorem-ipsum` Dutch with no subtitle, so it is still a duplicate. `song-title-other-language` is added (the same title alone), making 59 cases. The generator, run twice, changed only those two.
+  - The app repository is told in `design/proposals/2026-11-08-sng-10-title-subtitle-language.md`. Its behaviour does not change, as it shows no Warnings, but its corpus `packages/` needs the two cases.
+- **F3, the real library:** in the owner's Drasva library (414 songs), the title-only rule gave 11 groups, *Alouette* among them; the new rule gives none.
+- **F2:**
+  - SNG-10's finding carries `params.songs`.
+  - In `goto.js`, SNG-10 leads to `{ kind: 'songs' }`, and a structure finding on `songs/<id>/…` leads to that song.
+  - `songlist.js` has the filter `only` with its chip and `showOnly`. `layout.unfold` opens a folded bar.
+  - In `main.js`, a song not in the library leads to the library's home.
+  - webappGUI draft 0.21 amends GD-13 and GD-20. The chip looks like a chosen filter chip, so the mock is unchanged.
+- **Tested:** `node --test` passes 380 of 380, and every SNG-10 finding of the test libraries names songs of its library. `test_engine_bundle.py` gives 59 of 59, and `test_build.py` and `test_bundle.py` are OK. The container test (Node 18) passes 81 of 81. All checks ran after the last code change.
+- **In the browser pane (Chromium), a build under the test instance's CSP:**
+  - In `song-title-duplicate`, *Ga naar* on M-59 closed *Controle*, showed only `lorem-ipsum` and `vader-jacob` with the chip on, and unfolded a folded right bar. The chip's click brought back all four songs.
+  - SNG-16 focused *Tekst* of *Vader Jacob*.
+  - `song-title-other-language` lists *Vader Jacob* twice, with no M-59.
+  - The Drasva archive, converted, gives 0 errors and 0 warnings.
+  - The console was clean.
+
+**Exit:** each of F1 to F8 and F10 shown to the owner on the test instance; F3's change in the FDS and announced to the app repository; `node --test` and the container test green.
 
 ### M6 — Open, save and sign (M)
 
@@ -758,7 +815,13 @@ Each milestone ends with its exit checks passing and the result written to `desi
 | M7.3 | Accessibility pass: keyboard paths, focus, contrast, labels | GD-10, GD-33 |
 | M7.4 | Security assessment repeated for the implementation | SR-91 |
 | M7.5 | Testers: the requester (Pepe) and two or three scout leaders, one basic-auth account each (SR-80); the RFC 8032 test key and test libraries (SR-82); a short tester guide; findings as GitHub issues in this repository (IQ-05) | SR-80, SR-82 |
-| M7.6 | First draft of the manager's manual on the repository's wiki | GD-35 |
+| M7.6 | The wiki on `zangbundel.nl`, in every interface language (M5.6 F9; details below) | GD-35, SR-10, SR-91 |
+
+**M7.6 in detail:**
+- **Source:** Markdown in this repository (`wiki/<lang>/`), built by the static site generator of R3.
+- **Languages:** every interface language. A build check refuses a page that a language lacks, and a help link of the manager whose page does not exist.
+- **Release:** built through `build.py`, signed and activated with `zbm-release` together with the placeholder, and checked with SC-01.
+- **First pages:** what the manager does, step by step, and best practices (song IDs, tags, sets, keys and signing).
 
 **Exit:** the tagged release `v0.2.0` (IQ-04) on `test.zangbundel.nl`, with the gate's results in `design/test-results/`, and the testers' findings recorded as issues.
 
@@ -789,7 +852,7 @@ M0 ──▶ M1 ──▶ M2 ──┬──▶ M5 ──▶ M6 ──▶ M7
 | Level | What | Where it runs | Gate |
 |---|---|---|---|
 | Unit | `core/` functions: ZIP, manifest, ChordPro, names, view, validation rules | `node --test` | Every change |
-| Conformance | All 58 test libraries against `expected.json` | `node --test` with the conformance runner | SC-04, every change to `core/` |
+| Conformance | All 59 test libraries against `expected.json` | `node --test` with the conformance runner | SC-04, every change to `core/` |
 | Round trip | Open and save unchanged gives identical bytes; blocks to text and back gives identical songs | `node --test` | Every change to `core/` |
 | Crypto | Known-answer tests, cross-check, `valid-signed` reproduction | `node --test` and every browser | SC-05 |
 | Fuzz | ZIP and ChordPro readers with the test libraries as corpus | A fuzz harness under `node` | SC-11, before each release |
@@ -861,4 +924,5 @@ The placeholder and the manager have separate release directories and separate m
 | Draft 0.14 | 2026-11-07 | M2.8 (library worker, client, `zbm-worker` policy, 20 s limit) and M2.9 (fuzzing, SC-11: 20,000 inputs, 0 failures) done. |
 | Draft 0.15 | 2026-11-07 | M2.7 (conversion of release archives, snapshots and plain ZIPs) done; left in M2: the block form. |
 | Draft 0.16 | 2026-11-07 | The engine follows song format v0.24 to v0.26: whitespace, comments, display text, and tag labels in the manifest (FDS draft 0.10); 58 test libraries. |
+| Draft 0.18 | 2026-11-08 | M5.6: the owner's M5 review, observations F1 to F10, with their causes, work, documents, the decisions R1 to R3 (accepted by the owner) and the order of work. M7.6: the wiki is on `zangbundel.nl`, built from Markdown in this repository. |
 | Draft 0.17 | 2026-11-07 | M3 written: key files, hybrid Ed25519 with self-test, the crypto worker and client, signed saves over a MessagePort. The exit is met in Chromium; Firefox, Safari and Edge are still to run. |

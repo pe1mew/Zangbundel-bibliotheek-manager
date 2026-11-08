@@ -6,7 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+- **Implementation plan draft 0.18:** M5.6 lists the owner's ten observations from the first trial release (F1 to F10), with their causes, the work and three decisions, all accepted by the owner: SNG-10 compares title, subtitle and language (R1); an ⓘ per song-data field (R2); Hugo for the wiki (R3). M7.6 moves the manual to a wiki on `zangbundel.nl`, in every interface language.
+
 ### Fixed
+- **SNG-10, the duplicate-title warning (FDS draft 0.12, D-46):** songs are reported only when they share title, subtitle and language. Three *Alouette* songs in three languages are no longer a duplicate; the Drasva library goes from 11 such warnings to none. M-59 reworded; test library `song-title-duplicate` adjusted and `song-title-other-language` added (59 cases); the app repository told.
+- ***Ga naar* on the duplicate-title warning** did nothing. It now shows just those songs in the song list, with a chip *Zelfde titel* that takes the filter away, and unfolds the right bar if needed. A structure message on a song's folder opens that song (webappGUI draft 0.21, GD-13, GD-20).
 - **Stale *Komt in een volgende testversie*:** the *Bibliotheek bewerken* tile no longer says it, and *Bewerken* on a song that is not text gives the real reason. Seen in the first trial release on the test instance.
 
 ### Added

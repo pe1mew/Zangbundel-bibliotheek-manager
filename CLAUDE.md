@@ -100,8 +100,8 @@ python webapp/tools/build.py build --src webapp/placeholder --name placeholder -
 python webapp/tests/test_build.py
 python webapp/tests/test_bundle.py
 python webapp/tests/test_vendor.py
-python webapp/tests/test_engine_bundle.py           # the bundled engine = the native engine on all 58 test libraries
-node --test webapp/tests/                          # unit tests + test-library conformance (SC-04: all 58 cases, every rule family) + a short fuzz
+python webapp/tests/test_engine_bundle.py           # the bundled engine = the native engine on all 59 test libraries
+node --test webapp/tests/                          # unit tests + test-library conformance (SC-04: all 59 cases, every rule family) + a short fuzz
 node webapp/tests/fuzz.mjs --iterations 20000      # the long fuzz (SR-35, SC-11): before a release and after changing a reader
 python webapp/tools/vendor.py check                # vendored files against VENDOR.md (vendor.py add needs npm and the network)
 

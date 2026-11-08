@@ -103,7 +103,7 @@ class Fatal(Exception):
 # ---------------------------------------------------------------------------
 
 def check_song(song_id, data):
-    """Findings of one `.cho` file; also returns its title (or None)."""
+    """Findings of one `.cho` file; also returns (title, subtitle, language) for SNG-10, or None without a title."""
     out = []
     add = lambda code, sev: out.append(Finding(code, sev, song_id))
     if len(data) > SONG_MAX:
@@ -237,7 +237,8 @@ def check_song(song_id, data):
         add('SNG-16', 'Warning')
     if len(title) > 60 or any(len(l) > 120 for l in lyric) or len(lyric) > 254 or len(data) > SONG_RECOMMENDED:
         add('SNG-17', 'Warning')
-    return out, title or None
+    subtitle = (meta.get('subtitle') or [''])[0]
+    return out, (title, subtitle, language[0] if language else '') if title else None
 
 
 # ---------------------------------------------------------------------------
@@ -599,10 +600,10 @@ def check_songs(files):
         parts = p.split('/')
         if len(parts) != 3 or parts[2] != parts[1] + '.cho':
             continue
-        findings, title = check_song(parts[1], files[p])
+        findings, named = check_song(parts[1], files[p])
         out.extend(findings)
-        if title:
-            titles[title.lower()].append(parts[1])
+        if named:                                       # SNG-10: title, subtitle and language, without case (D-46)
+            titles[tuple(x.lower() for x in named)].append(parts[1])
     for ids in titles.values():
         if len(ids) > 1:
             out.append(Finding('SNG-10', 'Warning', ', '.join(sorted(ids))))
