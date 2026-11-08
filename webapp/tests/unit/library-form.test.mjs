@@ -130,7 +130,10 @@ test('EDT-23, F13: a read-only library shows its fields as values, as the song d
   const library = { title: 'Ondertekend', description: 'Regel 1\nRegel 2', license: { id: 'MIT', summary: 'Kort.', text: 'De hele tekst.' },
     maintainer: { name: 'Akela', email: 'akela@example.org', url: 'https://example.org' } };
   const form = createLibraryForm({ lang: 'nl', library, readOnly: true, onChange() { throw new Error('no change expected'); } });
-  assert.equal([...walk(form.node)].filter((x) => ['input', 'textarea', 'select', 'button'].includes(x.tag)).length, 0);
+  assert.equal([...walk(form.node)].filter((x) => ['input', 'textarea', 'select'].includes(x.tag)).length, 0);
+  // F11: the only buttons are the explanations' ⓘ, one per field shown
+  assert.deepEqual([...walk(form.node)].filter((x) => x.tag === 'button').map((x) => x.attrs['aria-controls']),
+    ['help-libTitle', 'help-libDescription', 'help-libLicense', 'help-libSummary', 'help-libLicenseText', 'help-libMaintainer', 'help-libContact']);
   const text = textOf(form.node);
   for (const v of ['Ondertekend', 'Regel 1\nRegel 2', 'MIT', 'Kort.', 'De hele tekst.', 'Akela', 'akela@example.org · https://example.org']) {
     assert.ok(text.includes(v), v);
@@ -139,4 +142,19 @@ test('EDT-23, F13: a read-only library shows its fields as values, as the song d
   const bare = createLibraryForm({ lang: 'nl', library: { title: 'Kaal' }, readOnly: true, onChange() {} });
   assert.match(textOf(bare.node), /niet ingevuld/);                           // an empty field says so
   assert.ok(!textOf(bare.node).includes('Volledige licentietekst'));          // no licence text: no field for it
+});
+
+test('F11, GD-44: every field of the library form has its explanation, closed until asked for', () => {
+  const form = createLibraryForm({ lang: 'nl', library: LIB, readOnly: false, onChange() {} });
+  const buttons = [...walk(form.node)].filter((x) => x.attrs.class === 'helpbtn');
+  assert.deepEqual(buttons.map((x) => x.attrs['aria-controls']), ['help-libTitle', 'help-libDescription', 'help-libLicense', 'help-libLicenseId',
+    'help-libSummary', 'help-libLicenseText', 'help-libMaintainer', 'help-libContact']);
+  const panel = byId(form.node, 'help-libContact');
+  assert.equal(panel.attrs.hidden, '');
+  assert.match(textOf(panel), /https:\/\//);
+  buttons.at(-1).listeners.click();
+  assert.equal(panel.hidden, false);
+  buttons.at(-1).listeners.click();
+  assert.equal(panel.hidden, true);
+  assert.ok(byId(form.node, 'lib-title'), 'the field itself is still there');
 });

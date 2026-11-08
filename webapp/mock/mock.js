@@ -388,30 +388,33 @@ function leftLibrary() {
   // F13 (the owner's M5 review): a library opened read-only shows its fields as values, as a song's data does
   if (readOnly()) {
     return `<div class="pad"><h3>${t('library')} ${gd('GD-22')}</h3>
-      ${roField(t('fTitle'), L.title)}${roField(t('fDescription'), L.description)}
-      ${roField(t('fLicense'), L.license.id)}${roField(t('fSummary'), L.license.summary)}
+      ${roField(t('fTitle'), L.title, null, 'libTitle')}${roField(t('fDescription'), L.description, null, 'libDescription')}
+      ${roField(t('fLicense'), L.license.id, null, 'libLicense')}${roField(t('fSummary'), L.license.summary, null, 'libSummary')}
       <h3 style="margin-top:18px">${t('fMaintainer')} ${gd('GD-37')}</h3>
-      ${roField(t('fMaintName'), L.maintainer.name)}${roField(t('fMaintContact'), L.maintainer.contact)}</div>`;
+      ${roField(t('fMaintName'), L.maintainer.name, null, 'libMaintainer')}${roField(t('fMaintContact'), L.maintainer.contact, null, 'libContact')}</div>`;
   }
   const licErr = !L.license.id || !L.license.summary.trim();
   return `<div class="pad"><h3>${t('library')} ${gd('GD-22')}</h3>
-    <div class="field"><label for="lib-title">${t('fTitle')} <span class="req">*</span></label><input id="lib-title" data-libfield="title" value="${esc(L.title)}" maxlength="80" ${dis}></div>
-    <div class="field"><label for="lib-description">${t('fDescription')}</label><textarea id="lib-description" data-libfield="description" maxlength="1000" ${dis}>${esc(L.description)}</textarea></div>
-    <div class="field ${licErr ? 'invalid' : ''}"><label for="lib-license">${t('fLicense')} <span class="req">*</span></label>
+    <div class="field">${labelRow('libTitle', t('fTitle'), 'lib-title', true)}<input id="lib-title" data-libfield="title" value="${esc(L.title)}" maxlength="80" ${dis}>${helpText('libTitle')}</div>
+    <div class="field">${labelRow('libDescription', t('fDescription'), 'lib-description')}<textarea id="lib-description" data-libfield="description" maxlength="1000" ${dis}>${esc(L.description)}</textarea>${helpText('libDescription')}</div>
+    <div class="field ${licErr ? 'invalid' : ''}">${labelRow('libLicense', t('fLicense'), 'lib-license', true)}
       <select id="lib-license" data-libfield="license.id" ${dis}>
         <option value="">${t('chooseLicense')}</option>
         ${Object.keys(LICENSES).map((k) => `<option value="${k}" ${L.license.id === k ? 'selected' : ''}>${k}</option>`).join('')}
-      </select><div class="err">${sevIcon('error')} ${t('M29')}</div></div>
-    <div class="field"><label for="lib-summary">${t('fSummary')} <span class="req">*</span></label><textarea id="lib-summary" data-libfield="license.summary" maxlength="200" ${dis}>${esc(L.license.summary)}</textarea></div>
+      </select>${helpText('libLicense')}<div class="err">${sevIcon('error')} ${t('M29')}</div></div>
+    <div class="field">${labelRow('libSummary', t('fSummary'), 'lib-summary', true)}<textarea id="lib-summary" data-libfield="license.summary" maxlength="200" ${dis}>${esc(L.license.summary)}</textarea>${helpText('libSummary')}</div>
     <h3 style="margin-top:18px">${t('fMaintainer')} ${gd('GD-37')}</h3>
-    <div class="field ${!L.maintainer.name.trim() ? 'invalid' : ''}"><label for="lib-mname">${t('fMaintName')} <span class="req">*</span></label><input id="lib-mname" data-libfield="maintainer.name" value="${esc(L.maintainer.name)}" maxlength="100" ${dis}><div class="err">${sevIcon('error')} ${t('M39')}</div></div>
-    <div class="field ${!L.maintainer.contact.trim() ? 'invalid' : ''}"><label for="lib-mcontact">${t('fMaintContact')} <span class="req">*</span></label><input id="lib-mcontact" data-libfield="maintainer.contact" value="${esc(L.maintainer.contact)}" ${dis}><div class="err">${sevIcon('error')} ${t('M39')}</div></div>
+    <div class="field ${!L.maintainer.name.trim() ? 'invalid' : ''}">${labelRow('libMaintainer', t('fMaintName'), 'lib-mname', true)}<input id="lib-mname" data-libfield="maintainer.name" value="${esc(L.maintainer.name)}" maxlength="100" ${dis}>${helpText('libMaintainer')}<div class="err">${sevIcon('error')} ${t('M39')}</div></div>
+    <div class="field ${!L.maintainer.contact.trim() ? 'invalid' : ''}">${labelRow('libContact', t('fMaintContact'), 'lib-mcontact', true)}<input id="lib-mcontact" data-libfield="maintainer.contact" value="${esc(L.maintainer.contact)}" ${dis}>${helpText('libContact')}<div class="err">${sevIcon('error')} ${t('M39')}</div></div>
     <p class="muted small">${t('maintNote')}</p></div>`;
 }
 
 // F8 (the owner's M5 review, GD-44): an ⓘ beside a song-data field opens its explanation under the field
 const HELP_KEY = { title: 'helpTitle', language: 'helpLanguage', lyricist: 'helpLyricist', composer: 'helpComposer', copyright: 'helpCopyright',
-  license: 'helpLicense', source: 'helpSource', tags: 'helpTags', id: 'helpSongId' };
+  license: 'helpLicense', source: 'helpSource', tags: 'helpTags', id: 'helpSongId',
+  // F11: the library's fields too
+  libTitle: 'helpLibTitle', libDescription: 'helpLibDescription', libLicense: 'helpLibLicense', libSummary: 'helpLibSummary',
+  libMaintainer: 'helpLibMaintainer', libContact: 'helpLibContact' };
 const helpOpen = new Set();
 const helpBtn = (f, label) => `<button type="button" class="helpbtn" data-help="${f}" aria-expanded="${helpOpen.has(f)}" aria-controls="help-${f}" title="${esc(t('helpFor', { field: label }))}" aria-label="${esc(t('helpFor', { field: label }))}">${icon('about')}</button>`;
 const helpText = (f) => `<div class="fieldhelp" id="help-${f}" ${helpOpen.has(f) ? '' : 'hidden'}>${esc(t(HELP_KEY[f], { other: t('otherLanguage') }))}</div>`;

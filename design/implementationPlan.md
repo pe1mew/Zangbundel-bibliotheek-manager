@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.26, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.27, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (59 cases) |
 
 ---
 
@@ -749,7 +749,14 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
 - **Left for F9:** each explanation's link to its wiki page.
 
 **The owner's second look (2026-11-08), on `0.2.0-dev.2`:**
-- **F11, help for the library's fields:** registered. It extends GD-44 to the whole left bar; it waits for the owner's go-ahead.
+- **F11, help for the library's fields, done:** GD-44 now covers the whole left bar.
+  - `fieldhelp.js` has eight `lib*` keys, and `library-form.js` puts an ⓘ on every field of the form (`hbox`) and of a read-only library.
+  - The texts (`helpLib*`, nl, en, de) follow FDS 4.1, EDT-13, EDT-14, MAN-07, MAN-08, and M-73 for the title.
+  - The mock got it first and was checked in the pane. webappGUI draft 0.27.
+  - **Tested:** `node --test` passes 395 of 395, with a new test in `library-form.test.mjs`. The read-only test allows only the ⓘ as buttons. `test_build.py` and `test_bundle.py` are OK. The container test (Node 18) passes 81 of 81. All checks ran after the last code change.
+  - **In the browser pane (Chromium), a build under the test instance's CSP:**
+    - `valid-unsigned` showed eight ⓘ, the SPDX code's among them once *Andere licentie* was chosen. The summary's explanation opened.
+    - `valid-signed`, read-only, showed seven ⓘ and no inputs, and the summary's explanation was still open.
 - **F12, done:** the way back to the library's fields was hidden, since only the library's title in the right bar led there. The owner chose tabs in the left bar (option b).
   - In `main.js`, the left bar has a `tablist` *Liedgegevens* / *Bibliotheek* over a `tabpanel`. The song's tab is disabled without a song, and another song switches back to it. The library's tab works while editing, and the *Blokken* fields node is kept, so typed changes stay.
   - The left strip offers both icons.

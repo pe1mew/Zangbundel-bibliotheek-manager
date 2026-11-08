@@ -133,7 +133,7 @@ test('GD-44 (F8): each field of the song data has an ⓘ that opens its explanat
   const { helpOpen, HELP } = await import('../../src/app/fieldhelp.js');
   const node = songDataNode('nl', 'x', songDetails(SONG('{composer: Iemand}\nla\n')));
   const buttons = [...walk(node)].filter((n) => n.attrs.class === 'helpbtn');
-  assert.deepEqual(buttons.map((b) => b.attrs['aria-controls']), Object.keys(HELP).map((k) => `help-${k}`));
+  assert.deepEqual(buttons.map((b) => b.attrs['aria-controls']), Object.keys(HELP).filter((k) => !k.startsWith('lib')).map((k) => `help-${k}`));
   assert.equal(buttons[0].attrs['aria-label'], 'Uitleg bij Titel');
   const panel = [...walk(node)].find((n) => n.attrs.id === 'help-license');
   const button = buttons.find((b) => b.attrs['aria-controls'] === 'help-license');

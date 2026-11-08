@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - **Help for each song-data field** (webappGUI draft 0.25, GD-44; the owner's M5 review, F8).
   - **What it does:** an ⓘ beside each field opens a short explanation under it, in nl, en and de; a second click closes it. It works in view mode and in the editor.
   - **Code:** `app/fieldhelp.js`. The mock got it first.
+- **Help for each of the library's fields** (webappGUI draft 0.27, GD-44; the owner's second look, F11).
+  - **What it does:** the same ⓘ on title, description, licence, SPDX code, summary, licence text, maintainer and contact, also in a read-only library.
 
 ### Changed
 - **The left bar has the tabs *Liedgegevens* and *Bibliotheek*** (webappGUI draft 0.26, GD-22; the owner's second look, F12). The library's fields are now one click away, also while a song is shown or edited. The left strip of a folded bar offers both.

@@ -8,6 +8,7 @@
 import { el, icon, listen, toggleClass } from './dom.js';
 import { LANGUAGES, t } from './i18n.js';
 import { messageFor } from './check.js';
+import { fieldHelp } from './fieldhelp.js';
 import { LICENSE_ID } from '../core/manifest.js';
 
 /** EDT-13: the short list of common licences, each with its summary in the interface language. */
@@ -97,20 +98,21 @@ function readOnlyLibrary(lang, library) {
   const lic = library.license || {};
   const mt = library.maintainer || {};
   const none = t(lang, 'notFilled');
-  const field = (label, value, more) => el('div', { class: 'field' }, [
-    el('div', { class: 'flabel' }, [label]),
-    el('div', { class: value ? ['value', more].filter(Boolean).join(' ') : 'value none' }, [value || none]),
+  // F11 (GD-44): each value has its ⓘ, as in the form
+  const field = (help, label, value, more) => el('div', { class: 'field' }, [
+    ...((h) => [h.row, el('div', { class: value ? ['value', more].filter(Boolean).join(' ') : 'value none' }, [value || none]), h.panel])(
+      fieldHelp(lang, help, label, el('div', { class: 'flabel' }, [label]))),
   ]);
   const node = el('div', { class: 'libform songdata' }, [
     el('h3', {}, [t(lang, 'library')]),
-    field(t(lang, 'fTitle'), library.title),
-    field(t(lang, 'fDescription'), library.description, 'prewrap'),
-    field(t(lang, 'fLicense'), lic.id),
-    field(t(lang, 'fSummary'), lic.summary, 'prewrap'),
-    lic.text ? field(t(lang, 'fLicenseText'), lic.text, 'prewrap longtext') : null,
+    field('libTitle', t(lang, 'fTitle'), library.title),
+    field('libDescription', t(lang, 'fDescription'), library.description, 'prewrap'),
+    field('libLicense', t(lang, 'fLicense'), lic.id),
+    field('libSummary', t(lang, 'fSummary'), lic.summary, 'prewrap'),
+    lic.text ? field('libLicenseText', t(lang, 'fLicenseText'), lic.text, 'prewrap longtext') : null,
     el('h3', {}, [t(lang, 'fMaintainer')]),
-    field(t(lang, 'fMaintName'), mt.name),
-    field(t(lang, 'fMaintContact'), [mt.email, mt.url].filter(Boolean).join(' · ')),
+    field('libMaintainer', t(lang, 'fMaintName'), mt.name),
+    field('libContact', t(lang, 'fMaintContact'), [mt.email, mt.url].filter(Boolean).join(' · ')),
   ]);
   return { node, update() {} };
 }
@@ -131,6 +133,11 @@ export function createLibraryForm({ lang, library, readOnly, onChange }) {
   const errLine = (name) => (errors[name] = el('div', { class: 'err', role: 'alert' }, []));
   const box = (name, children) => (boxes[name] = el('div', { class: 'field' }, [...children, errLine(name)]));
   const label = (id, text, required) => el('label', { for: id }, [text, required ? el('span', { class: 'req', 'aria-hidden': 'true' }, [' *']) : null]);
+  // F11 (GD-44): a field with its ⓘ beside the label and its explanation under the control
+  const hbox = (name, help, id, text, required, controls) => {
+    const h = fieldHelp(lang, help, text, label(id, text, required));
+    return box(name, [h.row, ...controls, h.panel]);
+  };
   const input = (id, value, attrs = {}) => el('input', { id, type: 'text', value: value || '', disabled, autocomplete: 'off', ...attrs }, []);
   const area = (id, value, attrs = {}) => el('textarea', { id, disabled, ...attrs }, [value || '']);
 
@@ -142,7 +149,7 @@ export function createLibraryForm({ lang, library, readOnly, onChange }) {
     el('option', { value: OTHER, selected: choice === OTHER }, [t(lang, 'licenseOther')]),
   ]);
   const licenseId = input('lib-license-id', choice === OTHER ? lic.id : '', { spellcheck: 'false', maxlength: 100 });
-  const otherBox = box('licenseId', [label('lib-license-id', t(lang, 'fLicenseId'), true), licenseId]);
+  const otherBox = hbox('licenseId', 'libLicenseId', 'lib-license-id', t(lang, 'fLicenseId'), true, [licenseId]);
   const summary = area('lib-summary', lic ? lic.summary : '', { maxlength: 200, rows: 2, 'aria-required': 'true' });
   const text = area('lib-license-text', lic ? lic.text : '', { maxlength: 32000, rows: 3 });
   const mName = input('lib-mname', mt.name, { maxlength: 100, 'aria-required': 'true' });
@@ -204,15 +211,15 @@ export function createLibraryForm({ lang, library, readOnly, onChange }) {
 
   const node = el('div', { class: 'libform' }, [
     el('h3', {}, [t(lang, 'library')]),
-    box('title', [label('lib-title', t(lang, 'fTitle'), true), title]),
-    box('description', [label('lib-description', t(lang, 'fDescription')), description]),
-    box('license', [label('lib-license', t(lang, 'fLicense'), true), select]),
+    hbox('title', 'libTitle', 'lib-title', t(lang, 'fTitle'), true, [title]),
+    hbox('description', 'libDescription', 'lib-description', t(lang, 'fDescription'), false, [description]),
+    hbox('license', 'libLicense', 'lib-license', t(lang, 'fLicense'), true, [select]),
     otherBox,
-    box('summary', [label('lib-summary', t(lang, 'fSummary'), true), summary]),
-    box('licenseText', [label('lib-license-text', t(lang, 'fLicenseText')), text]),
+    hbox('summary', 'libSummary', 'lib-summary', t(lang, 'fSummary'), true, [summary]),
+    hbox('licenseText', 'libLicenseText', 'lib-license-text', t(lang, 'fLicenseText'), false, [text]),
     el('h3', {}, [t(lang, 'fMaintainer')]),
-    box('maintainer', [label('lib-mname', t(lang, 'fMaintName'), true), mName]),
-    box('contact', [label('lib-mcontact', t(lang, 'fMaintContact'), true), mContact, also]),
+    hbox('maintainer', 'libMaintainer', 'lib-mname', t(lang, 'fMaintName'), true, [mName]),
+    hbox('contact', 'libContact', 'lib-mcontact', t(lang, 'fMaintContact'), true, [mContact, also]),
     el('p', { class: 'muted small' }, [t(lang, 'maintNote')]),
   ]);
 

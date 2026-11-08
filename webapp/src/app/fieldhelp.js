@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-// Help for the song's fields (webappGUI GD-44; the owner's M5 review, F8): an ⓘ beside a field's label opens a
-// short explanation under the field, and a second click closes it. Which explanations are open lasts while the
+// Help for the fields of the left bar, the song's and the library's (webappGUI GD-44; the owner's M5 review, F8,
+// F11): an ⓘ beside a field's label opens a short explanation under the field, and a second click closes it. Which explanations are open lasts while the
 // page is open, so a redrawn left bar keeps them; nothing is stored (EDT-02). Used by the song's data in view mode
-// (songview.js) and by its fields in the editor (songfields.js).
+// (songview.js), its fields in the editor (songfields.js) and the library's fields (library-form.js).
 
 import { el, icon, listen, setAttrs } from './dom.js';
 import { t } from './i18n.js';
@@ -11,6 +11,9 @@ import { t } from './i18n.js';
 export const HELP = Object.freeze({
   title: 'helpTitle', language: 'helpLanguage', lyricist: 'helpLyricist', composer: 'helpComposer', copyright: 'helpCopyright',
   license: 'helpLicense', source: 'helpSource', tag: 'helpTags', id: 'helpSongId',
+  // F11: the library's fields (library-form.js)
+  libTitle: 'helpLibTitle', libDescription: 'helpLibDescription', libLicense: 'helpLibLicense', libLicenseId: 'helpLibLicenseId',
+  libSummary: 'helpLibSummary', libLicenseText: 'helpLibLicenseText', libMaintainer: 'helpLibMaintainer', libContact: 'helpLibContact',
 });
 
 const open = new Set();                                  // the explanations open on this page

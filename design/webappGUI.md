@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.26 |
+| **Status** | Draft 0.27 |
 | **Date** | 2026-11-08 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -331,6 +331,7 @@ The owner's answers to the open questions, and two further requests made during 
 - **The explanation:** a click opens a short explanation under the field, and a second click closes it. It says what the field means and the rule that applies to it, from the song format's fields (6.1) and EDT-36 for the song ID.
 - **While the page is open:** which explanations are open lasts until the page closes, also when the bar is drawn again. Nothing is stored.
 - **Later:** each explanation gets a link to its page of the manual on `zangbundel.nl` once that exists (implementationPlan M7.6).
+- **The library's fields (amended 2026-11-08, F11):** the same ⓘ and explanation on each field of *Bibliotheek*, in the form and in a read-only library alike: title, description, licence, the SPDX code of another licence, licence summary, licence text, maintainer's name and contact. The texts follow FDS 4.1, EDT-13, EDT-14, MAN-07 and MAN-08.
 
 **GD-34 — Bar widths, folding and the language are remembered on this computer.** *(Resolves GQ-16.)* They are kept in the browser's local storage, on that computer only, and restored on the next visit (EDT-82). Nothing about a library or a key is kept there (EDT-02, EDT-64). If local storage is not available, the manager starts with the defaults.
 
@@ -415,6 +416,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.27 | 2026-11-08 | GD-44 amended (F11): the library's fields have their ⓘ and explanation too, so every field of the left bar explains itself. Added to the mock first and checked there. |
 | Draft 0.26 | 2026-11-08 | GD-22 amended after the owner's second look: the left bar's tabs *Liedgegevens* and *Bibliotheek* (F12), and a read-only library shown as values (F13). GD-43: the left strip shows both. Added to the mock first and checked there. |
 | Draft 0.25 | 2026-11-08 | GD-44 (F8): an ⓘ beside each song-data field opens its explanation under it, in view mode and in the editor. Added to the mock first and checked there. |
 | Draft 0.24 | 2026-11-08 | GD-43 (F6): a folded bar keeps a strip of icons that open it at that part. GD-30 amended (F10): the splash photograph behind the centre, its screens on a box. Both added to the mock first and checked there. |
