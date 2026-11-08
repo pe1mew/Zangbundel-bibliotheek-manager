@@ -757,6 +757,10 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - **In the browser pane (Chromium), a build under the test instance's CSP:**
     - `valid-unsigned` showed eight ⓘ, the SPDX code's among them once *Andere licentie* was chosen. The summary's explanation opened.
     - `valid-signed`, read-only, showed seven ⓘ and no inputs, and the summary's explanation was still open.
+
+**Third trial (2026-11-08), being prepared:** `manager-0.2.0-dev.3`, with F11 to F13 and the narrow-head fix.
+- **Version:** `version.js` raised to `0.2.0-dev.3`, to be built from the owner's commit of it.
+- **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened with the left tabs and eight ⓘ; *Over* gave `0.2.0-dev.3`; *Sleutel maken* made a key. The console was clean.
 - **F12, done:** the way back to the library's fields was hidden, since only the library's title in the right bar led there. The owner chose tabs in the left bar (option b).
   - In `main.js`, the left bar has a `tablist` *Liedgegevens* / *Bibliotheek* over a `tabpanel`. The song's tab is disabled without a song, and another song switches back to it. The library's tab works while editing, and the *Blokken* fields node is kept, so typed changes stay.
   - The left strip offers both icons.

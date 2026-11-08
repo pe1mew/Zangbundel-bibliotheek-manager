@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ### Changed
 - **The left bar has the tabs *Liedgegevens* and *Bibliotheek*** (webappGUI draft 0.26, GD-22; the owner's second look, F12). The library's fields are now one click away, also while a song is shown or edited. The left strip of a folded bar offers both.
 - **A read-only library shows its fields as values**, as a song's data does, not as greyed-out inputs (F13).
+- **Version `0.2.0-dev.3`** for the third trial on the test instance (F11 to F13 of the owner's second look).
 - **Version `0.2.0-dev.2`** for the second trial on the test instance (F1 to F8 and F10 of the owner's M5 review).
 - **A folded side bar keeps a strip of icons** (webappGUI draft 0.24, GD-43; the owner's M5 review, F6).
   - **Right bar:** *Liedjes* and *Sets*. **Left bar:** the song's data or the library's fields.
