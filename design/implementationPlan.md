@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.22, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.24, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (59 cases) |
 
 ---
 
@@ -703,6 +703,39 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - With instant scrolling, the triangles stepped to the end in 18 steps, where only the left one remained.
   - The console was clean.
   - Smooth scrolling and scroll events could be watched only while the pane was in front; hidden, the pane drew one frame per 500 ms.
+
+**State (2026-11-08): step 3 done (F5, F7).**
+- **`app/drag.js`:**
+  - `shiftPlan(heights, gap, from, to)` gives each card's shift and the moved card's distance.
+  - While dragging, the cards passed get `--shift` (sliding by the moved card's height plus the gap) under the list class `sorting`. The drop place is judged against the others' middles, taken once in content coordinates, so sliding cards do not move it.
+  - On release, `settle` slides the card by `--dy` into its gap (`.settle`, .15 s) and then calls `onDrop`. Its promise is awaited before the old cards are reset.
+  - `slideMove(list, card, to, done)` does the same for *Omhoog* and *Omlaag*. A list still settling takes no new move. With `prefers-reduced-motion` the change is made at once.
+- **Callers:** used by `editor.js` (blocks) and `sets.js` (a set's songs). The drop lines (`dropbefore`, `dropafter`) are removed.
+- **Documents:** the mock got the same first and was checked in the pane, for drag and up/down in a set and in the editor. webappGUI draft 0.23 amends GD-08, GD-21 and GD-33.
+- **Tested:** `node --test` passes 390 of 390; `drag.test.mjs` is new. `test_build.py` and `test_bundle.py` are OK. The container test (Node 18) passes 81 of 81. All checks ran after the last code change.
+- **In the browser pane (Chromium), a build under the test instance's CSP, `valid-unsigned`:**
+  - **Set *Kampvuur*, dragging:** dragging *Vader Jacob* past two songs gave them `--shift: -111px`, with a .15 s transition. The card settled at `222px`, and the set was redrawn as *Vuur in de nacht*, *Fire in the Night*, *Vader Jacob*.
+  - **Set *Kampvuur*, *Omhoog*:** it slid the song and its neighbour by 111 px, then swapped them.
+  - **Lorem Ipsum in the editor:** *Omlaag* on the verse slid it 244 px and the chorus −300 px, then swapped them, with focus kept on *Omlaag*. Dragging the third verse up past two blocks put it second.
+  - The console was clean.
+- **Not seen:** the motion itself. The pane was hidden, so the checks read the classes, offsets and transition durations, not the frames. The owner's look on the test instance is the visual check.
+
+**State (2026-11-08): step 4 done (F6, F10).**
+- **F6:**
+  - `layout.js` keeps a 48 px strip (`STRIP`) for a folded bar, with `setStrip(side, items)`. A click unfolds the bar (remembered) and shows that part.
+  - `main.js` names the icons: left *Liedgegevens* (`musicNote`) or *Bibliotheek*; right *Liedjes* and *Sets*, which switch the tab.
+  - New GD-43.
+- **F10:**
+  - The centre has the splash photograph as its background, darkened 25 % and anchored right.
+  - The screens sit on a box (`.centrewrap > .home, .view, .edit, .editwrap`): black, with a border, 16 px corners and a shadow. The wrapper got the class `centrewrap`; the editor's box is `.editwrap`, so the *Toepassen* bar stays inside it.
+  - GD-30 amended.
+- **Mock first:** the mock got both first and was checked in the pane.
+- **Tested:** `node --test` passes 392 of 392; `layout.test.mjs` is new. `test_build.py` and `test_bundle.py` are OK. The container test (Node 18) passes 81 of 81. All checks ran after the last code change.
+- **In the browser pane (Chromium), a build under the test instance's CSP:**
+  - With both bars folded, the strips showed *Bibliotheek*, then *Liedgegevens* once Lorem Ipsum was selected, and *Liedjes* and *Sets* on the right. *Sets* unfolded the right bar on its *Sets* tab.
+  - Screenshots showed the photo behind the song view, the editor and the *Kampvuur* set, each on its box. The editor's *Toepassen* bar was inside its box, and the read-only bar of `valid-signed` sat above the box.
+  - The only console message was Chromium refusing a `beforeunload` dialog when the check itself reloaded the page with a library open (GD-42), not a fault.
+- **Seen in passing, not changed:** at 1024 px with both bars open the centre is so narrow that a song's head (title, *Verwijderen*, *Bewerken*) runs past its box. The mock shows the same; it predates F10.
 
 **Exit:** each of F1 to F8 and F10 shown to the owner on the test instance; F3's change in the FDS and announced to the app repository; `node --test` and the container test green.
 

@@ -4,6 +4,7 @@
 // the app (android/app/src/main/res/drawable). Drawn by dom.js icon(); never as an HTML string.
 
 export const ICONS = Object.freeze({
+  musicNote: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z',
   arrowLeft: 'M14 7l-5 5 5 5V7z',
   arrowRight: 'M10 17l5-5-5-5v10z',
   about: 'M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM13,17h-2v-6h2v6zM13,9h-2L11,7h2v2z',

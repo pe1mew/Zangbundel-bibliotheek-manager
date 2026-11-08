@@ -7,6 +7,7 @@
 // ---- Icons: Google Material Icons path data (Apache License 2.0), 24 x 24 viewBox. ----
 // about, library, list, chevrons: copied from the Zangbundel app (android/app/src/main/res/drawable).
 const ICONS = {
+  musicNote: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z',
   arrowLeft: 'M14 7l-5 5 5 5V7z',
   arrowRight: 'M10 17l5-5-5-5v10z',
   about: 'M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM13,17h-2v-6h2v6zM13,9h-2L11,7h2v2z',
@@ -569,6 +570,36 @@ function hint(i, msg) {
   h.textContent = msg; clearTimeout(h._t); h._t = setTimeout(() => { h.textContent = ''; }, 3500);
 }
 
+// ---- F5, F7 (the owner's M5 review): the cards slide; the same for dragging and for up/down (GD-21, GD-33) ----
+const STILL = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+// where each card stands while card `from` lands at place `to`, and how far that card moves: the cards it passes
+// make room by its height plus the gap
+function shiftPlan(heights, gap, from, to) {
+  const size = heights[from] + gap, shifts = heights.map(() => 0);
+  let dy = 0;
+  for (let i = from + 1; i <= to; i++) { shifts[i] = -size; dy += heights[i] + gap; }
+  for (let i = to; i < from; i++) { shifts[i] = size; dy -= heights[i] + gap; }
+  return { shifts, dy };
+}
+const cardGap = (cards) => (cards.length > 1 ? cards[1].getBoundingClientRect().top - cards[0].getBoundingClientRect().bottom : 0);
+function settle(list, card, dy, done) {
+  const finish = () => { list.classList.remove('sorting', 'settling'); done(); };
+  if (STILL()) { finish(); return; }
+  list.classList.add('sorting', 'settling');
+  card.classList.add('settle');
+  card.style.transform = `translateY(${dy}px)`;
+  setTimeout(finish, 170);
+}
+// up/down: the card and its neighbour change places by sliding, then the change is made
+function slideMove(list, itemSel, from, to, done) {
+  const cards = [...list.querySelectorAll(itemSel)];
+  if (!cards[from] || !cards[to] || list.classList.contains('settling')) { if (!list.classList.contains('settling')) done(); return; }
+  const plan = shiftPlan(cards.map((c) => c.offsetHeight), cardGap(cards), from, to);
+  list.classList.add('sorting');
+  cards.forEach((c, i) => { if (i !== from) c.style.transform = plan.shifts[i] ? `translateY(${plan.shifts[i]}px)` : ''; });
+  settle(list, cards[from], plan.dy, done);
+}
+
 // ---- Drag to reorder, with auto-scroll (GD-08, GD-11), for sections and set entries ----
 function makeSortable(list, itemSel, handleSel, onMove, rerender) {
   if (!list) return;
@@ -583,16 +614,17 @@ function makeSortable(list, itemSel, handleSel, onMove, rerender) {
       const box = list.getBoundingClientRect(), cr = card.getBoundingClientRect();
       const minDy = box.top - cr.top, maxDy = box.bottom - cr.bottom;
       let to = from, y = e.clientY, raf = 0;
-      const clear = () => cards.forEach((x) => { x.classList.remove('dropbefore'); x.style.boxShadow = ''; });
+      // F5, F7: the others slide apart where the card will land; their middles are taken once, in content coordinates
+      const others = cards.filter((c) => c !== card), gap = cardGap(cards), heights = cards.map((c) => c.offsetHeight);
+      const mids = others.map((c) => { const b = c.getBoundingClientRect(); return b.top + b.height / 2 + scroller.scrollTop; });
+      list.classList.add('sorting');
       const place = () => {
         card.style.transform = `translateY(${Math.max(minDy, Math.min(maxDy, y - startY + scroller.scrollTop - startScroll))}px)`;
-        const others = cards.filter((c) => c !== card);
-        let k = others.findIndex((c) => y < c.getBoundingClientRect().top + c.offsetHeight / 2);
+        let k = mids.findIndex((m) => y + scroller.scrollTop < m);
         if (k === -1) k = others.length;
-        to = k >= from ? k + 1 : k;
-        clear();
-        if (k < others.length) others[k].classList.add('dropbefore');
-        else if (others.length) others[others.length - 1].style.boxShadow = '0 3px 0 var(--sky-blue)';
+        to = k;                                             // the card's place in the new order
+        const plan = shiftPlan(heights, gap, from, to);
+        cards.forEach((c, i) => { if (c !== card) c.style.transform = plan.shifts[i] ? `translateY(${plan.shifts[i]}px)` : ''; });
       };
       const tick = () => {
         const r = scroller.getBoundingClientRect(), foot = document.querySelector('.editfoot');
@@ -608,12 +640,15 @@ function makeSortable(list, itemSel, handleSel, onMove, rerender) {
       const onUp = () => {
         cancelAnimationFrame(raf);
         h.removeEventListener('pointermove', onMoveP); h.removeEventListener('pointerup', onUp); h.removeEventListener('pointercancel', onUp);
-        const target = to > from ? to - 1 : to;
-        if (target !== from) onMove(from, target);
-        const keep = scroller.scrollTop;
-        const items = rerender();
-        scroller.scrollTop = keep;
-        if (items[target]) items[target].scrollIntoView({ block: 'nearest' });
+        const target = to;
+        // the card slides into its gap, then the list is drawn in its new order
+        settle(list, card, shiftPlan(heights, gap, from, target).dy, () => {
+          if (target !== from) onMove(from, target);
+          const keep = scroller.scrollTop;
+          const items = rerender();
+          scroller.scrollTop = keep;
+          if (items[target]) items[target].scrollIntoView({ block: 'nearest' });
+        });
       };
       h.addEventListener('pointermove', onMoveP); h.addEventListener('pointerup', onUp); h.addEventListener('pointercancel', onUp);
       raf = requestAnimationFrame(tick);
@@ -922,11 +957,12 @@ function showSplash() {
 
 const EDIT_SAFE = ['lang', 'about', 'android', 'check', 'keymake', 'keyload', 'keydl', 'apply', 'cancel', 'skip'];
 document.addEventListener('click', (e) => {
-  const tgt = e.target.closest('[data-act],[data-edit],[data-song],[data-dlg],[data-up],[data-down],[data-del],[data-addsec],[data-goto],[data-jump],[data-sort],[data-chip],[data-clear],[data-delsong],[data-tab],[data-setopen],[data-setmove],[data-setrename],[data-setdel],[data-addtoset],[data-entrymove],[data-entrydel],[data-setlang],[data-editmode],[data-chipstep]');
+  const tgt = e.target.closest('[data-act],[data-edit],[data-song],[data-dlg],[data-up],[data-down],[data-del],[data-addsec],[data-goto],[data-jump],[data-sort],[data-chip],[data-clear],[data-delsong],[data-tab],[data-setopen],[data-setmove],[data-setrename],[data-setdel],[data-addtoset],[data-entrymove],[data-entrydel],[data-setlang],[data-editmode],[data-chipstep],[data-strip]');
   if (!tgt) { if (!e.target.closest('#langmenu')) { const m = $('langmenu'); if (m) m.remove(); } return; }
   const d = tgt.dataset;
   if (d.jump) { jump(d.jump); return; }
   if (d.chipstep) { chipStep(tgt, Number(d.chipstep)); return; }
+  if (d.strip !== undefined) { const [side, tab] = d.strip.split(':'); BARS[side].folded = false; if (tab) S.tab = tab; saveBars(); render(); return; }
   if (d.setlang) { S.lang = d.setlang; store.set('lang', S.lang); closeDialog(); render(); return; }
   if (d.dlg) { dialogAction(d, tgt); return; }
   if (d.editmode) { setEditMode(d.editmode); return; }
@@ -981,7 +1017,7 @@ document.addEventListener('click', (e) => {
     dialog(`<h2>${t('delSetTitle')}</h2><p>${esc(t('delText', { name: st.name }))}</p><p class="muted small">${t('delSetNote')} FDS M-62.</p>
       ${btns(cancelBtn(), `<button class="btn btn-primary" data-dlg="delset" data-id="${d.setdel}">${icon('delete')}${t('delete')}</button>`)}`); return; }
   if (d.addtoset) { S.lib.sets[S.openSet].songs.push(d.addtoset); S.dirty = true; S.view = 'set'; render(); return; }
-  if (d.entrymove) { const [i, dir] = d.entrymove.split(':').map(Number); const a = S.lib.sets[S.openSet].songs, j = i + dir; [a[i], a[j]] = [a[j], a[i]]; S.dirty = true; render(); return; }
+  if (d.entrymove) { const [i, dir] = d.entrymove.split(':').map(Number); slideMove($('setentries'), '.setentry', i, i + dir, () => { const a = S.lib.sets[S.openSet].songs, j = i + dir; [a[i], a[j]] = [a[j], a[i]]; S.dirty = true; render(); }); return; }
   if (d.entrydel !== undefined) { S.lib.sets[S.openSet].songs.splice(+d.entrydel, 1); S.dirty = true; render(); return; }
   if (d.up !== undefined) { move(+d.up, -1); return; }
   if (d.down !== undefined) { move(+d.down, 1); return; }
@@ -1082,7 +1118,7 @@ function dialogAction(d, tgt) {
 function move(i, dir) {
   const secs = S.draft.sections, j = i + dir;
   if (j < 0 || j >= secs.length) return;
-  [secs[i], secs[j]] = [secs[j], secs[i]]; renderCentre();
+  slideMove($('sections'), '.section', i, j, () => { [secs[i], secs[j]] = [secs[j], secs[i]]; renderCentre(); });
 }
 
 document.addEventListener('input', (e) => {
@@ -1116,6 +1152,7 @@ document.addEventListener('change', (e) => {
 });
 
 // ---- Side bars: resize and fold (GD-10), remembered on this computer (GD-34) ----
+const STRIP = 48;                                        // F6: a folded bar's strip of icons
 const BARS = {
   left: { min: 220, max: 480, w: 300, folded: false, varName: '--lw', cls: 'lfold' },
   right: { min: 240, max: 520, w: 340, folded: false, varName: '--rw', cls: 'rfold' },
@@ -1125,7 +1162,8 @@ const appEl = document.querySelector('.app');
 const saveBars = () => store.set('bars', JSON.stringify({ left: { w: BARS.left.w, folded: BARS.left.folded }, right: { w: BARS.right.w, folded: BARS.right.folded } }));
 function applyBar(side) {
   const b = BARS[side];
-  appEl.style.setProperty(b.varName, (b.folded ? 0 : b.w) + 'px');
+  appEl.style.setProperty(b.varName, (b.folded ? STRIP : b.w) + 'px');
+  $('strip-' + side).hidden = !b.folded;
   appEl.classList.toggle(b.cls, b.folded);
   const tab = $('tab-' + side), edge = $('edge-' + side);
   tab.innerHTML = icon((side === 'left') !== b.folded ? 'left' : 'right');
@@ -1133,7 +1171,17 @@ function applyBar(side) {
   edge.setAttribute('aria-valuenow', String(b.folded ? 0 : b.w));
   $(side).inert = b.folded;
 }
-const applyBars = () => { applyBar('left'); applyBar('right'); };
+const applyBars = () => { applyBar('left'); applyBar('right'); renderStrips(); };
+// F6: the icons of a folded bar's strip: left the song's data or the library's fields, right Liedjes and Sets
+function renderStrips() {
+  const songShown = S.lib && (S.mode === 'edit' || (S.view === 'song' && selSong()));
+  const left = [songShown || !S.lib ? ['left:', 'musicNote', t('songData')] : ['left:', 'library', t('library')]];
+  const right = [['right:songs', 'list', t('songs')], ...(S.lib ? [['right:sets', 'playlist', t('sets')]] : [])];
+  const btn = ([key, ic, label]) => `<button class="iconbtn" data-strip="${key}" title="${esc(label)}" aria-label="${esc(label)}">${icon(ic)}</button>`;
+  $('strip-left').innerHTML = left.map(btn).join('');
+  $('strip-right').innerHTML = right.map(btn).join('');
+  $('strip-left').setAttribute('aria-label', t('unfoldLeft')); $('strip-right').setAttribute('aria-label', t('unfoldRight'));
+}
 function setWidth(side, w) { const b = BARS[side]; b.w = Math.max(b.min, Math.min(b.max, Math.round(w))); b.folded = false; applyBar(side); saveBars(); }
 ['left', 'right'].forEach((side) => {
   const b = BARS[side], edge = $('edge-' + side), tab = $('tab-' + side);

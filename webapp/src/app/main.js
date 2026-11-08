@@ -471,7 +471,7 @@ function start() {
             : shown.details ? songViewNode(lang, selected, shown.details, { readOnly, onDelete: leaving(onDeleteSong), onEdit: chooseEdit })
               : el('p', { class: 'empty' }, ['…']);
       replace(layout.centre, screen === 'splash' ? splash(lang, () => { screen = 'home'; render(); })
-        : el('div', {}, [readOnlyBar(lang, state), content]));
+        : el('div', { class: 'centrewrap' }, [readOnlyBar(lang, state), content]));   // F10: the content sits on a box
       if (keep !== null) layout.centre.scrollTop = keep;
     }
     // GD-13: the song list, built once per library, language and read-only state; its node stays in place
@@ -525,6 +525,11 @@ function start() {
       replace(layout.left, form ? form.node : el('p', { class: 'empty' }, [t(lang, 'tileNeedLib')]));
     }
     if (form) form.update(state);
+    // F6: the strips of folded bars: left the song's data or the library's fields, right Liedjes and Sets
+    layout.setStrip('left', [state.library && !selected && !editing
+      ? { icon: 'library', label: t(lang, 'library') } : { icon: 'musicNote', label: t(lang, 'songData') }]);
+    layout.setStrip('right', [{ icon: 'list', label: t(lang, 'songs'), onClick: state.library ? () => showTab('songs') : null },
+      ...(state.library ? [{ icon: 'playlist', label: t(lang, 'sets'), onClick: () => showTab('sets') }] : [])]);
     replace(layout.bottom, ...bottomBar({ lang, onLanguage: (event) => toggleLanguageMenu(lang, event.currentTarget, (l) => language.set(l)),
       onAndroid: () => androidDialog(language.get()), onAbout: () => aboutDialog(language.get()),
       onOpen: leaving(onOpen), onNew: leaving(onNew), onClose: leaving(onClose), onCheck, onDownload: leaving(() => onDownload()),

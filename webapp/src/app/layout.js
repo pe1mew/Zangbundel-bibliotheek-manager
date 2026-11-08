@@ -2,17 +2,20 @@
 // The main screen's frame (webappGUI GD-03, GD-04, GD-10, GD-32, GD-34; implementationPlan M4.3):
 // the left bar, the centre, the right bar and the bottom bar, with the side bars' inner edges that
 // resize them and the tabs that fold them. Widths and folding are remembered on this computer
-// (zbm.bars). The centre keeps at least 360 px (GD-41). The screens put their content into the four
-// areas; this module draws only the frame.
+// (zbm.bars). The centre keeps at least 360 px (GD-41). A folded bar keeps a strip of icons, one per part of
+// the bar; a click opens the bar there (the owner's M5 review, F6). The screens put their content into the four
+// areas and name the strip's icons; this module draws only the frame.
 
 import { el, icon, listen, replace, setAttrs, setInert, setVar, toggleClass } from './dom.js';
 import { afterKey, LIMITS, parseBars, serializeBars, shownWidths, toggled, withWidth } from './bars.js';
 import { load, save } from './storage.js';
 import { t } from './i18n.js';
 
+export const STRIP = 48;                                 // F6: a folded bar's strip of icons, in px
+
 /**
  * Build the frame. getLang() gives the current interface language; store is local storage (tests).
- * Returns { app, left, centre, right, bottom, setSplash(on), relabel(), unfold(side) }.
+ * Returns { app, left, centre, right, bottom, setSplash(on), relabel(), unfold(side), setStrip(side, items) }.
  */
 export function createLayout({ getLang, store } = {}) {
   let bars = parseBars(load('zbm.bars', store));
@@ -45,7 +48,11 @@ export function createLayout({ getLang, store } = {}) {
       } }, [tabs[side]]);
   }
 
-  const app = el('div', { class: 'app' }, [left, centre, right, bottom, edges.left, edges.right]);
+  // F6: the strip of a folded bar; its icons come from setStrip
+  const strips = {};
+  for (const side of ['left', 'right']) strips[side] = el('nav', { class: `strip strip-${side}`, hidden: true }, []);
+
+  const app = el('div', { class: 'app' }, [left, centre, right, bottom, strips.left, strips.right, edges.left, edges.right]);
 
   /** The frame's width, or undefined while it is not laid out (not yet in the page, or hidden by GD-32). */
   const frameWidth = () => app.clientWidth || undefined;
@@ -56,7 +63,10 @@ export function createLayout({ getLang, store } = {}) {
     const shown = shownWidths(bars, frameWidth());          // GD-41: the centre keeps 360 px
     for (const side of ['left', 'right']) {
       const folded = bars[side].folded;
-      setVar(app, side === 'left' ? '--lw' : '--rw', `${shown[side]}px`);
+      setVar(app, side === 'left' ? '--lw' : '--rw', `${folded ? STRIP : shown[side]}px`);
+      strips[side].hidden = !folded;
+      setInert(strips[side], splash);
+      setAttrs(strips[side], { 'aria-label': t(lang, side === 'left' ? 'unfoldLeft' : 'unfoldRight') });
       toggleClass(app, side === 'left' ? 'lfold' : 'rfold', folded);
       setInert(area[side], folded || splash);
       const name = side === 'left' ? 'Left' : 'Right';
@@ -115,6 +125,14 @@ export function createLayout({ getLang, store } = {}) {
     },
     /** Redraw the labels in the current language (GD-17). */
     relabel: draw,
+    /**
+     * F6: the icons of side's strip, each { icon, label, onClick }. A click opens the bar, which stays open until it is
+     * folded again (remembered, GD-34), then onClick shows that part (a tab of the right bar, say).
+     */
+    setStrip(side, items) {
+      replace(strips[side], ...items.map((item) => el('button', { type: 'button', class: 'iconbtn', title: item.label, 'aria-label': item.label,
+        on: { click: () => { if (bars[side].folded) update(toggled(bars, side)); if (item.onClick) item.onClick(); } } }, [icon(item.icon)])));
+    },
     /** Open a folded bar, so what is shown there can be seen (*Ga naar*, GD-20); remembered as a click on its tab. */
     unfold(side) {
       if (bars[side].folded) update(toggled(bars, side));
