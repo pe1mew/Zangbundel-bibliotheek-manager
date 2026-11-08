@@ -49,11 +49,11 @@ const iconButton = (name, text, disabled, click) => el('button', { type: 'button
   title: text, 'aria-label': text, disabled, on: disabled ? undefined : { click: (e) => { e.stopPropagation(); click(); } } }, [icon(name)]);
 
 /**
- * GD-21: the *Sets* tab: the sets in order, each with its number of songs, *Omhoog*, *Omlaag*,
- * *Naam wijzigen* and *Set verwijderen*, and *Nieuwe set* below. createSetList({ lang, readOnly, onOpen(i),
- * onNew(), onRename(i), onDelete(i), onMove(i, dir) }) → { node, update(state, openSet) }.
+ * GD-21: the *Sets* tab: the sets in order, each with its number of songs, *Naam wijzigen* and *Set verwijderen*,
+ * and *Nieuwe set* below. No *Omhoog* and *Omlaag* (the owner's look at dev.6): the order of the sets is not changed
+ * here. createSetList({ lang, readOnly, onOpen(i), onNew(), onRename(i), onDelete(i) }) → { node, update(state, openSet) }.
  */
-export function createSetList({ lang, readOnly, onOpen, onNew, onRename, onDelete, onMove }) {
+export function createSetList({ lang, readOnly, onOpen, onNew, onRename, onDelete }) {
   const list = el('ul', { class: 'songlist setlist', 'aria-label': t(lang, 'sets') }, []);
   const empty = el('p', { class: 'empty' }, [t(lang, 'noSets')]);
   const foot = el('div', { class: 'listfoot' }, [el('button', { type: 'button', class: 'btn btn-outline btn-small', disabled: readOnly,
@@ -70,8 +70,6 @@ export function createSetList({ lang, readOnly, onOpen, onNew, onRename, onDelet
           'aria-current': i === openSet ? 'true' : null }, [
           el('span', { class: 't' }, [s.songs.length ? icon('playlist', 'inl') : severityIcon('warning'), s.name]),
           el('span', { class: 'actions' }, [
-            iconButton('up', t(lang, 'up'), readOnly || i === 0, () => onMove(i, -1)),
-            iconButton('down', t(lang, 'down'), readOnly || i === sets.length - 1, () => onMove(i, 1)),
             iconButton('edit', t(lang, 'rename'), readOnly, () => onRename(i)),
             iconButton('delete', t(lang, 'deleteSet'), readOnly, () => onDelete(i)),
           ]),

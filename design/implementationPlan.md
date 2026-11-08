@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.31, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.32, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
 
 ---
 
@@ -793,7 +793,15 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - **In the browser pane (Chromium), the Drasva library at 1400 × 850:** it showed 414 pens, orange (`rgb(255, 138, 61)`) beside grey bins. The first opened its song's editor.
   - A first build showed the pens grey: the `.iconbtn` rule came later in `app.css`, so `.iconbtn.editbtn` now wins. It is not yet in a trial.
 
-**Sixth trial (2026-11-08), being prepared:** `manager-0.2.0-dev.6`, with the lock (GD-24) and the pen (GD-13).
+**Sixth trial (2026-11-08):** `manager-0.2.0-dev.6`, with the lock (GD-24) and the pen (GD-13).
+- **Built** into `dist/` from the owner's commit `bcaab8b`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.
+- **Live:** signed and uploaded by the owner (`upload-20261108T213731Z-2656017.tar`, SHA-256 `8593ee43…`, the same as the signed pack) and activated with `--trial`. Checked on contabo6: `live` points to `releases/manager-0.2.0-dev.6`, whose manifest names `bcaab8b` with `source_dirty: false`.
+- **The owner's look at dev.6: no *Omhoog* and *Omlaag* in the *Sets* tab.**
+  - Asked what should reorder the sets instead (a drag handle was recommended, or sorting A–Z), the owner chose to remove them with no replacement.
+  - `sets.js` `createSetList` has no `onMove`, `main.js` no `onMoveSet`, and the mock's two buttons are gone. `moveSet` stays in `sets.js`, tested, for a later way to reorder.
+  - **Open: FDS EDT-31 (reorder sets) is unmet** until a way to reorder them is chosen. The app shows sets in manifest order (D-22). GD-21 amended in webappGUI draft 0.32.
+  - **Tested:** `node --test` passes 396 of 396; `test_build.py` and `test_bundle.py` are OK.
+  - **In the browser pane (Chromium), `valid-unsigned`:** *Kampvuur* and *Demo* each showed only *Naam wijzigen* and *Set verwijderen*, and a click still opened the set. The console was clean. It is not yet in a trial.
 - **Version:** `version.js` raised to `0.2.0-dev.6`, to be built from the owner's commit of it.
 - **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened; *Over* gave `0.2.0-dev.6`; *Sleutel maken* made a key. The console was clean.
 - **Built** into `dist/` from the owner's commit `3970492`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.

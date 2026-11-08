@@ -27,7 +27,7 @@ import { libraryHomeNode, songDataNode, songViewNode } from './songview.js';
 import { createSongEditor } from './editor.js';
 import { LIBRARY_FIELD_ID, targetOf } from './goto.js';
 import { toggleLanguageMenu } from './langmenu.js';
-import { addEntry, addSet, createSetList, deleteSet, moveEntry, moveSet, removeEntry, renameSet, setNameProblem, setViewNode } from './sets.js';
+import { addEntry, addSet, createSetList, deleteSet, moveEntry, removeEntry, renameSet, setNameProblem, setViewNode } from './sets.js';
 import { closeConfirm, convertedDialog, copyDialog, deleteSetConfirm, deleteSongConfirm, downloadDialog, importFailedDialog, leaveEditorDialog, setNameDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
   keyReplaceConfirm, keySaveDialog, manifestConfirm, newLibraryDialog, openFailedDialog, pickFile, saveFailedDialog,
   savedDialog } from './library-ui.js';
@@ -385,12 +385,6 @@ function start() {
     else if (openSet !== null && openSet > i) openSet -= 1;
     render();
   });
-  const onMoveSet = async (i, dir) => {
-    if (!(await applySets(moveSet(sets(), i, i + dir)))) return;
-    if (openSet === i) openSet = i + dir;                 // the open set stays open where it went
-    else if (openSet === i + dir) openSet = i;
-    render();
-  };
   const onAddToSet = (id) => (openSet === null ? null : applySets(addEntry(sets(), openSet, id)));
   const showTab = (tab) => { rightTab = tab; render(); };
 
@@ -493,7 +487,7 @@ function start() {
         onAdd: onAddSong, onImport: onImportSong, onAddToSet }) : null;
       // GD-21: two tabs, *Liedjes* and *Sets*; both lists stay built, so switching keeps the search
       setList = state.library ? createSetList({ lang, readOnly, onOpen: chooseSet, onNew: onNewSet, onRename: onRenameSet,
-        onDelete: onDeleteSet, onMove: onMoveSet }) : null;
+        onDelete: onDeleteSet }) : null;
       const tab = (name) => el('button', { type: 'button', role: 'tab', class: 'tab', 'data-tab': name, on: { click: () => showTab(name) } }, []);
       tabs = state.library ? el('div', { class: 'tabs', role: 'tablist', 'aria-label': t(lang, 'rightTabs') }, [tab('songs'), tab('sets')]) : null;
       pane = el('div', { class: 'tabpane', role: 'tabpanel' }, []);

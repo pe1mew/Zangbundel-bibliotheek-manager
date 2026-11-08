@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.31 |
+| **Status** | Draft 0.32 |
 | **Date** | 2026-11-08 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -273,6 +273,8 @@ The owner's answers to the open questions, and two further requests made during 
 
 **GD-21 — Sets are a tab in the right bar.** *(Resolves GQ-11.)* The right bar has two tabs, *Liedjes* and *Sets*, like the app's *Setlist* and *Zangbundel* tabs. *Sets* lists the sets (add, rename, delete with M-62, drag to reorder; EDT-31). Opening a set shows its songs in order in the centre area, with drag and up/down reordering as in the section editor (GD-08, GD-11) and a bin per entry that removes the song from the set only. Songs are added to the open set from the *Liedjes* tab with a *+ Set* button on each row while a set is open. A song can be in several sets (D-22).
 
+*Amended 2026-11-08 (the owner's look at dev.6):* the *Sets* tab has no *Omhoog* and *Omlaag*; each set keeps *Naam wijzigen* and *Set verwijderen*. The owner chose to remove them without a replacement, so the order of the sets cannot be changed in the manager for now. FDS EDT-31's *reorder* of sets is therefore unmet (implementationPlan M5.6). The songs inside a set are still reordered by dragging and with their buttons.
+
 *Amended 2026-11-08 (F5):* a set's songs move as the sections do (GD-08, GD-33): the others slide aside to open the gap, and the moved song slides into it.
 
 **GD-22 — The library's own fields are in the left bar when no song is selected.** *(Resolves GQ-10.)* With no song selected, the left bar shows the library's title, description, licence and maintainer (EDT-13, EDT-14, EDT-30), editable there. Clicking the library's title at the top of the right bar deselects the song and shows them. The language choice is in the bottom bar (GD-17).
@@ -418,6 +420,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.32 | 2026-11-08 | GD-21 amended: no *Omhoog* and *Omlaag* in the *Sets* tab (the owner's choice); reordering sets is open (EDT-31). |
 | Draft 0.31 | 2026-11-08 | GD-13 amended: *Bewerken* in a song row is a pen icon. |
 | Draft 0.30 | 2026-11-08 | GD-24 amended: the lock beside the library's title shows only while the library is read-only, not for a signed library whose key is loaded. |
 | Draft 0.29 | 2026-11-08 | GD-30 refined from the owner's sketch: the photograph is centred in the window and as high as the window above the bottom bar, the children's open book in view. |

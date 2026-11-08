@@ -339,8 +339,6 @@ function setsTab() {
       <li class="song setrow ${S.view === 'set' && S.openSet === i ? 'selected' : ''}" data-setopen="${i}" tabindex="0">
         <span class="t">${!st.songs.length ? `<span title="${esc(t('M13', { set: st.name }))}">${sevIcon('warning')}</span>` : icon('playlist', 'inl')}${esc(st.name)}</span>
         <span class="actions">
-          <button class="iconbtn" data-setmove="${i}:-1" title="${esc(t('up'))}" ${i === 0 || ro ? 'disabled' : ''}>${icon('up')}</button>
-          <button class="iconbtn" data-setmove="${i}:1" title="${esc(t('down'))}" ${i === L.sets.length - 1 || ro ? 'disabled' : ''}>${icon('down')}</button>
           <button class="iconbtn" data-setrename="${i}" title="${esc(t('rename'))}" ${ro ? 'disabled' : ''}>${icon('edit')}</button>
           <button class="iconbtn binbtn" data-setdel="${i}" title="${esc(t('deleteSet'))}" ${ro ? 'disabled' : ''}>${icon('delete')}</button>
         </span>
