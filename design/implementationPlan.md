@@ -773,7 +773,10 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - `test_build.py` passes, and the build rewrites the photo's reference to its hashed name.
   - **Not seen:** the photo's stillness on screen. The browser pane was hidden and drew too few frames to compare. The owner's look in the next trial is the check.
 
-**Fourth trial (2026-11-08), being prepared:** `manager-0.2.0-dev.4`, with the fixed photograph.
+**Fourth trial (2026-11-08):** `manager-0.2.0-dev.4`, with the fixed photograph.
+- **Built** into `dist/` from the owner's commit `96b403e`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.
+- **Live:** signed and uploaded by the owner (`upload-20261108T194455Z-2627810.tar`, SHA-256 `a551c3da…`, the same as the signed pack) and activated with `--trial`. Checked on contabo6: `live` points to `releases/manager-0.2.0-dev.4`, whose manifest names `96b403e` with `source_dirty: false`. dev.1 to dev.3 and `test-holding-0.1.0` stay installed to switch back to.
+- **`zbm-release` installed** by the owner: `/usr/local/sbin/zbm-release` has SHA-256 `9263c19d…`, the version that refuses a mistyped upload name. Still open from SR-75: a copy of it in `../contabo-vps-6`, which has none of the zbm files yet.
 - **Version:** `version.js` raised to `0.2.0-dev.4`, to be built from the owner's commit of it.
 - **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened; the centre's background is `fixed`; *Over* gave `0.2.0-dev.4`; *Sleutel maken* made a key. The console was clean.
 - **Version:** `version.js` raised to `0.2.0-dev.3`, to be built from the owner's commit of it.
