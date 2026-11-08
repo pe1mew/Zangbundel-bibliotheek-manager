@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.28, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.29, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
 
 ---
 
@@ -775,6 +775,11 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
 
 **Fourth trial (2026-11-08):** `manager-0.2.0-dev.4`, with the fixed photograph.
 - **Built** into `dist/` from the owner's commit `96b403e`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.
+- **The owner's look at dev.4, the photograph:** the photograph is to be centred in the window, the children's book in view (the owner's two sketches; a first try centred the book itself, which the second sketch corrected).
+  - The photograph runs from x 1823 to the right edge of the 3200 × 1440 image, measured as the first column brighter than the black part. Its centre is 78.48 % across.
+  - `.centre`'s background is `calc(50vw - 174.4vh + 132.5px) 0 / auto calc(100vh - 76px)`, `fixed`: as high as the window above the 76 px bottom bar, so the book, low in the picture, is not under the bar.
+  - **At 1400 × 850, with both bars folded and the box hidden (a build of the current source):** the photograph runs from 330 to 1070 px (centre 700), and the book's bottom is at about 735 px, above the bar at 774. The screenshot matches the owner's sketch.
+  - The build rewrites the reference; `test_build.py` is OK. webappGUI draft 0.29. It is not yet in a trial.
 - **Live:** signed and uploaded by the owner (`upload-20261108T194455Z-2627810.tar`, SHA-256 `a551c3da…`, the same as the signed pack) and activated with `--trial`. Checked on contabo6: `live` points to `releases/manager-0.2.0-dev.4`, whose manifest names `96b403e` with `source_dirty: false`. dev.1 to dev.3 and `test-holding-0.1.0` stay installed to switch back to.
 - **`zbm-release` installed** by the owner: `/usr/local/sbin/zbm-release` has SHA-256 `9263c19d…`, the version that refuses a mistyped upload name. Still open from SR-75: a copy of it in `../contabo-vps-6`, which has none of the zbm files yet.
 - **Version:** `version.js` raised to `0.2.0-dev.4`, to be built from the owner's commit of it.

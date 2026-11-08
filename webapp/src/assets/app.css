@@ -62,7 +62,10 @@ h3 { font-size: 13px; color: var(--secondary); text-transform: uppercase; letter
 .bottom { grid-area: bottom; border-top: 1px solid var(--line); background: var(--sheet); }
 
 /* F10 (the owner's M5 review): the arrival photograph behind the centre; what the centre shows sits on a box above it */
-.centre { background: linear-gradient(rgba(0, 0, 0, .25), rgba(0, 0, 0, .25)), url(backdrop-3200x1440.webp) center / cover no-repeat fixed, var(--bg); }   /* fixed: to the window, not the centre, so the bars never move it */
+.centre { background: linear-gradient(rgba(0, 0, 0, .25), rgba(0, 0, 0, .25)), url(backdrop-3200x1440.webp) calc(50vw - 174.4vh + 132.5px) 0 / auto calc(100vh - 76px) no-repeat fixed, var(--bg); }
+/* fixed to the window, as high as the window above the 76 px bottom bar, so the book low in the photograph stays in view; the
+   photograph (x 1823 to 3200 of the 3200 x 1440 image) has its centre 78.48 % across, and the image is 2.222 times its height wide
+   centred in the window, as the owner's sketch: the side bars never move it, and black fills the rest (GD-30) */
 .centrewrap > .home, .centrewrap > .view, .centrewrap > .edit, .centrewrap > .editwrap {
   margin: 24px auto; background: var(--bg); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
 }
