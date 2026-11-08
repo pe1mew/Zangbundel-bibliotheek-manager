@@ -780,6 +780,10 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - `.centre`'s background is `calc(50vw - 174.4vh + 132.5px) 0 / auto calc(100vh - 76px)`, `fixed`: as high as the window above the 76 px bottom bar, so the book, low in the picture, is not under the bar.
   - **At 1400 × 850, with both bars folded and the box hidden (a build of the current source):** the photograph runs from 330 to 1070 px (centre 700), and the book's bottom is at about 735 px, above the bar at 774. The screenshot matches the owner's sketch, and the owner accepted it.
   - The build rewrites the reference; `test_build.py` is OK. webappGUI draft 0.29. It is not yet in a trial.
+
+**Fifth trial (2026-11-08), being prepared:** `manager-0.2.0-dev.5`, with the centred photograph.
+- **Version:** `version.js` raised to `0.2.0-dev.5`, to be built from the owner's commit of it.
+- **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened; the photograph's height is the window's less the bottom bar (`auto 710.4px` at 786 px); *Over* gave `0.2.0-dev.5`; *Sleutel maken* made a key. The console was clean.
 - **Live:** signed and uploaded by the owner (`upload-20261108T194455Z-2627810.tar`, SHA-256 `a551c3da…`, the same as the signed pack) and activated with `--trial`. Checked on contabo6: `live` points to `releases/manager-0.2.0-dev.4`, whose manifest names `96b403e` with `source_dirty: false`. dev.1 to dev.3 and `test-holding-0.1.0` stay installed to switch back to.
 - **`zbm-release` installed** by the owner: `/usr/local/sbin/zbm-release` has SHA-256 `9263c19d…`, the version that refuses a mistyped upload name. Still open from SR-75: a copy of it in `../contabo-vps-6`, which has none of the zbm files yet.
 - **Version:** `version.js` raised to `0.2.0-dev.4`, to be built from the owner's commit of it.
