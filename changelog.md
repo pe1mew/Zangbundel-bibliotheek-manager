@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+- **Version `0.2.0-dev.2`** for the second trial on the test instance (F1 to F8 and F10 of the owner's M5 review).
+
 ### Added
 - **Help for each song-data field** (webappGUI draft 0.25, GD-44; the owner's M5 review, F8).
   - **What it does:** an ⓘ beside each field opens a short explanation under it, in nl, en and de; a second click closes it. It works in view mode and in the editor.

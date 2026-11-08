@@ -748,6 +748,10 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - The language explanation names the list's own *Andere taalcode…*.
 - **Left for F9:** each explanation's link to its wiki page.
 
+**Second trial (2026-11-08), being prepared:** `manager-0.2.0-dev.2`, for the owner's look at F1 to F8 and F10.
+- **Version:** `version.js` raised to `0.2.0-dev.2`, to be built from the owner's commit of it.
+- **Dry run from the uncommitted bump:** two builds were byte-identical (SR-10). Under the test instance's own CSP (`connect-src 'none'`) the banner showed; a new library opened through the library worker; *Over* gave `0.2.0-dev.2`; *Sleutel maken* made a key through the crypto worker. The console was clean.
+
 **Exit:** each of F1 to F8 and F10 shown to the owner on the test instance; F3's change in the FDS and announced to the app repository; `node --test` and the container test green.
 
 ### M6 — Open, save and sign (M)
