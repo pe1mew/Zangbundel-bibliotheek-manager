@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.21, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.22, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (59 cases) |
 
 ---
 
@@ -685,6 +685,24 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - `song-title-other-language` lists *Vader Jacob* twice, with no M-59.
   - The Drasva archive, converted, gives 0 errors and 0 warnings.
   - The console was clean.
+
+**State (2026-11-08): step 2 done (F4, F1).**
+- **F4:**
+  - `app/langmenu.js` is the language menu, as the mock's: each language in its own name, the current one checked and focused.
+  - A choice applies the language at once and focus returns to the button. Escape, Tab, a second click or a click outside close it; the arrow keys, Home and End move.
+  - The button has `aria-haspopup="menu"` and `aria-expanded`. The menu is placed with `--mx` and `--my` through `setVar`, as the CSP requires. `i18n.next()` is removed.
+- **F1:**
+  - The mock got the triangles first and was checked in the pane.
+  - In the app, `songlist.js` wraps the chip row in `.chipbar` with a triangle at each end, using the pure helpers `chipArrowState` and `chipStepDelta`. The scrollbar is hidden. Scroll events and a `ResizeObserver` keep the triangles up to date; smooth scrolling unless `prefers-reduced-motion`.
+- **Documents:** webappGUI draft 0.22 amends GD-17 and GD-13.
+- **Tested:** `node --test` passes 386 of 386; the new tests are `langmenu.test.mjs` and the triangle tests in `songlist.test.mjs`. `test_build.py` and `test_bundle.py` are OK, and `test_engine_bundle.py` gives 59 of 59. The container test (Node 18) passes 81 of 81. All checks ran after the last code change.
+- **In the browser pane (Chromium), a build under the test instance's CSP:**
+  - The menu opened above *NL*. A real click on *Deutsch* switched the interface to German, with focus back on the button. Escape, a click outside and a second click closed it unchanged.
+  - The Drasva library has 23 chips in a 224 px row. The right triangle showed and the left one was invisible.
+  - A real click scrolled one chip into view, and the left triangle appeared.
+  - With instant scrolling, the triangles stepped to the end in 18 steps, where only the left one remained.
+  - The console was clean.
+  - Smooth scrolling and scroll events could be watched only while the pane was in front; hidden, the pane drew one frame per 500 ms.
 
 **Exit:** each of F1 to F8 and F10 shown to the owner on the test instance; F3's change in the FDS and announced to the app repository; `node --test` and the container test green.
 

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Languages of the interface (FDS 7.9, EDT-80 to EDT-82; webappGUI GD-17, GD-34; implementationPlan
 // M4.2). The texts are in texts.js. The language on opening is the one remembered on this computer,
-// else the first of the browser's languages the manager offers, else English; the bottom bar
-// switches it at once, without losing work, and the choice is remembered (storage.js, zbm.lang).
+// else the first of the browser's languages the manager offers, else English; the bottom bar's menu
+// (langmenu.js) switches it at once, without losing work, and the choice is remembered (storage.js, zbm.lang).
 
 import { TEXTS } from './texts.js';
 import { load, save } from './storage.js';
@@ -45,7 +45,7 @@ export function tParts(lang, key, nodes) {
 }
 
 /**
- * The interface language of this page: { get(), set(lang), next(), onChange(fn) }. preferred is
+ * The interface language of this page: { get(), set(lang), onChange(fn) }. preferred is
  * navigator.languages; store is local storage (tests pass their own). A stored value that is not
  * one of LANGUAGES is ignored.
  */
@@ -61,10 +61,6 @@ export function createLanguage({ preferred, store } = {}) {
       current = lang;
       save('zbm.lang', lang, store);                    // GD-34: remembered on this computer
       for (const fn of listeners) fn(lang);
-    },
-    /** GD-17: the bottom bar's button goes NL, EN, DE and round again. */
-    next() {
-      this.set(LANGUAGES[(LANGUAGES.indexOf(current) + 1) % LANGUAGES.length]);
     },
     onChange(fn) {
       listeners.add(fn);

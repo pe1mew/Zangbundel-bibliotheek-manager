@@ -23,9 +23,9 @@ export const LINKS = Object.freeze({
 export const privacyUrl = (lang) => `https://zangbundel.nl/${lang}/privacy.html`;
 
 /** A bottom-bar button: icon above its label. */
-function navButton(name, label, { onClick, disabled, title, dot, ariaLabel } = {}) {
-  return el('button', { type: 'button', class: dot ? 'navbtn dirty' : 'navbtn', disabled: Boolean(disabled), title: title || label,
-    'aria-label': ariaLabel || null, on: onClick ? { click: onClick } : undefined }, [dot ? el('span', { class: 'dot' }, []) : null, icon(name), el('span', {}, [label])]);
+function navButton(name, label, { onClick, disabled, title, dot, ariaLabel, extraClass, popup } = {}) {
+  return el('button', { type: 'button', class: ['navbtn', dot ? 'dirty' : null, extraClass].filter(Boolean).join(' '), disabled: Boolean(disabled),
+    title: title || label, 'aria-label': ariaLabel || null, 'aria-haspopup': popup || null, 'aria-expanded': popup ? 'false' : null, on: onClick ? { click: onClick } : undefined }, [dot ? el('span', { class: 'dot' }, []) : null, icon(name), el('span', {}, [label])]);
 }
 
 /**
@@ -130,8 +130,9 @@ export function bottomBar({ lang, onLanguage, onAndroid, onAbout, onCheck, onOpe
     ]),
     sep(),
     navButton('android', t(lang, 'android'), { onClick: onAndroid }),
+    // GD-17 (F4): the button opens the language menu (langmenu.js)
     navButton('lang', t(lang, 'languageCode'), { onClick: onLanguage, title: t(lang, 'languageSwitch', { name: t(lang, 'languageName') }),
-      ariaLabel: t(lang, 'languageSwitch', { name: t(lang, 'languageName') }) }),
+      ariaLabel: t(lang, 'languageSwitch', { name: t(lang, 'languageName') }), extraClass: 'langbtn', popup: 'menu' }),
     navButton('about', t(lang, 'about'), { onClick: onAbout }),
   ];
 }

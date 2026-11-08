@@ -49,15 +49,16 @@ test('placeholders are filled in, and an unknown key throws', () => {
   assert.throws(() => t('nl', 'noSuchKey'), /no text for noSuchKey/);
 });
 
-test('GD-17, GD-34: the remembered language wins over the browser; switching goes round, tells, and is remembered', () => {
+test('GD-17, GD-34: the remembered language wins over the browser; a choice tells, and is remembered', () => {
   const store = fakeStore();
   const a = createLanguage({ preferred: ['de-DE'], store });
   assert.equal(a.get(), 'de');                                      // nothing stored: the browser's
   const seen = [];
   a.onChange((l) => seen.push(l));
-  a.next();
-  a.next();
-  assert.deepEqual(seen, ['nl', 'en']);                             // LANGUAGES order: nl, en, de
+  a.set('nl');
+  a.set('nl');                                                      // the same language again tells nobody
+  a.set('en');
+  assert.deepEqual(seen, ['nl', 'en']);
   assert.equal(store.map.get('zbm.lang'), 'en');
   assert.equal(createLanguage({ preferred: ['de-DE'], store }).get(), 'en');   // next visit
   store.map.set('zbm.lang', 'fr');                                  // a value it does not offer is ignored

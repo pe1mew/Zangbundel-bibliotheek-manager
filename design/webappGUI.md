@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.21 |
+| **Status** | Draft 0.22 |
 | **Date** | 2026-11-08 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -158,7 +158,7 @@ Whether the widths and folded state are remembered for the next visit is GQ-16.
 | Search field *Zoeken* | A song is shown when its title holds every typed word, compared without case or accents (*Één* finds *een*). The list follows while typing. |
 | Switch *Ook in de tekst* | Off by default. On: the typed words are looked for in the lyrics instead of the title (the app's full-text search, FR-LIB-31 there). |
 | Sort button *A–Z* / *Z–A* | Toggles the order. Sorting uses the sort title when the song has one (`{sorttitle}`), otherwise the title, compared without case or accents. |
-| Filter chips | One row of chips, scrolling sideways: the languages of the library's songs (only when there is more than one) and its tags. Within a group any chosen chip matches; the groups all apply. A chosen chip shows a check mark. |
+| Filter chips | One row of chips, scrolling sideways: the languages of the library's songs (only when there is more than one) and its tags. Within a group any chosen chip matches; the groups all apply. A chosen chip shows a check mark. *Amended 2026-11-08 (the owner's M5 review, F1):* the row has no scrollbar. While chips do not all fit, a triangle at each end (◀ ▶) shows that more chips are hidden on that side; it is invisible, its place kept, when none are. A click brings the next hidden chip on that side fully into view. The triangles are not in the tab order: a chip reached with Tab scrolls into view itself. |
 | Chip *Zelfde titel: “…”* | *Added 2026-11-08 (GD-20).* Only while *Ga naar* on SNG-10 shows the songs that share a title, subtitle and language: the list holds just those songs, the chip is first in the row and shown chosen, and a click on it, or *Wis filters*, takes it away. It goes by itself when none of its songs is left. |
 | *Wis filters* | Shown only while search, switch, sort or a chip differs from the default; clears them all at once. |
 | No match | The list reads *Geen liederen gevonden.* |
@@ -240,6 +240,12 @@ The owner's answers to the open questions, and two further requests made during 
 **GD-16 — Deleting a song.** A song is deleted with the bin icon to the right of *Bewerken* on its row in the song list, with *Verwijderen* next to *Bewerken* above the song in view mode, or with *Lied verwijderen* in the edit footer. Each asks for confirmation (FDS M-62, *"<titel>" verwijderen? Dit kan in deze sessie niet ongedaan worden gemaakt.*). The song is removed from every set as well (EDT-32). Afterwards the neighbouring song in the list is selected, or none when the list is empty. A song that is new and not yet applied has no delete button; *Annuleren* discards it.
 
 **GD-17 — The interface follows the browser's language, and the bottom bar can change it.** On opening, the manager takes the first of the browser's preferred languages (`navigator.languages`) that it offers: Dutch, English or German (EDT-80); otherwise English (EDT-81). A language button in the bottom bar shows the current language (*NL*, *EN*, *DE*) and switches it at once, without losing work. Whether the choice is remembered for the next visit is GQ-16 (EDT-82 allows it). This replaces the proposal of GQ-10 to put the language choice in *Over*.
+
+*Amended 2026-11-08 (the owner's M5 review, F4; as the mock):* the language button opens a menu instead of going to the next language.
+- **The menu:** it opens above the button and lists every interface language in its own name (*Nederlands*, *English*, *Deutsch*), with the current one checked and focused.
+- **A choice:** closes the menu and applies the language at once. The focus returns to the language button.
+- **Closing unchanged:** Escape, Tab, a second click on the button, or a click outside.
+- **Keys:** the arrow keys move through the menu and go round; Home and End go to the first and last language.
 
 **GD-18 — Sections first, ChordPro text as a second view.** *(Resolves GQ-14.)* The section editor (GD-06) is the default. A switch *ChordPro-tekst* shows the same song as plain ChordPro text, editable, with validation while typing (FDS EDT-33 stands). Switching back rebuilds the sections from the text. Both views edit the same song; nothing is lost by switching.
 
@@ -381,5 +387,6 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.22 | 2026-11-08 | GD-17 amended (F4): the language button opens a menu, as the mock already had. GD-13 amended (F1): the chip row's triangles replace its scrollbar, added to the mock first and checked there. |
 | Draft 0.21 | 2026-11-08 | GD-20 and GD-13 amended after the owner's M5 review (F2): *Ga naar* on SNG-10 filters the song list to its songs with a chip *Zelfde titel*; a structure message on a song folder opens that song; a song not in the library leads to the library's home. The chip has the look of a chosen filter chip, so the mock is unchanged. |
 | Draft 0.20 | 2026-11-07 | GD-19 clarified by the owner: a locked line inside a section keeps its place there, and the section stays editable around it. |

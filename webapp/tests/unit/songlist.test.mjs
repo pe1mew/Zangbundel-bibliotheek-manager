@@ -13,9 +13,16 @@ class FakeNode {
   append(...c) { this.children.push(...c); }
   replaceChildren(...c) { this.children = c; }
   addEventListener(t, f) { this.listeners[t] = f; }
+  get classList() {
+    const names = () => new Set((this.attrs.class || '').split(' ').filter(Boolean));
+    return {
+      toggle: (c, on) => { const s = names(); if (on) s.add(c); else s.delete(c); this.attrs.class = [...s].join(' '); },
+      contains: (c) => names().has(c),
+    };
+  }
 }
 globalThis.document = { createElement: (t) => new FakeNode(t), createElementNS: (ns, t) => new FakeNode(t, ns), createTextNode: (s) => ({ text: s }) };
-const { chipsOf, createSongList, DEFAULT_FILTER, filterSongs, fold, isDefaultFilter, neighbourAfterDelete } = await import('../../src/app/songlist.js');
+const { chipArrowState, chipStepDelta, chipsOf, createSongList, DEFAULT_FILTER, filterSongs, fold, isDefaultFilter, neighbourAfterDelete } = await import('../../src/app/songlist.js');
 
 const S = (id, title, extra = {}) => ({ id, title, sortTitle: null, language: 'nl', lyricist: null, tags: [], words: '', ...extra });
 const SONGS = [
@@ -143,6 +150,24 @@ test('GD-20: showOnly lists just the songs of SNG-10, clears the other filters, 
 test('GD-13: filterSongs with only keeps those songs, within the other filters', () => {
   assert.deepEqual(ids(filterSongs(SONGS, f({ only: { ids: ['vader-jacob', 'vuur'], title: 'x' } }), 'nl')), ['vader-jacob', 'vuur']);
   assert.deepEqual(ids(filterSongs(SONGS, f({ only: { ids: ['vader-jacob', 'vuur'], title: 'x' }, tags: ['kampvuur'] }), 'nl')), ['vuur']);
+});
+
+test('GD-13 (F1): the triangles show only while chips are hidden on their side', () => {
+  assert.deepEqual(chipArrowState({ scrollLeft: 0, scrollWidth: 200, clientWidth: 200 }), { over: false, back: false, more: false });
+  assert.deepEqual(chipArrowState({ scrollLeft: 0, scrollWidth: 421, clientWidth: 224 }), { over: true, back: false, more: true });
+  assert.deepEqual(chipArrowState({ scrollLeft: 118, scrollWidth: 421, clientWidth: 224 }), { over: true, back: true, more: true });
+  assert.deepEqual(chipArrowState({ scrollLeft: 196.6, scrollWidth: 421, clientWidth: 224 }), { over: true, back: true, more: false });
+  assert.deepEqual(chipArrowState({}), { over: false, back: false, more: false });            // not laid out
+});
+
+test('GD-13 (F1): a triangle scrolls just far enough to show the next hidden chip', () => {
+  const row = { left: 0, right: 224 };
+  const chips = [[0, 70], [78, 175], [183, 246], [254, 342], [350, 421]].map(([left, right]) => ({ left, right }));
+  assert.equal(chipStepDelta(row, chips, 1), 22);                   // canon, cut off at 224, comes in whole
+  assert.equal(chipStepDelta(row, chips, -1), 0);                   // nothing hidden on the left
+  const moved = chips.map((c) => ({ left: c.left - 118, right: c.right - 118 }));
+  assert.equal(chipStepDelta(row, moved, -1), -40);                 // Nederlands, half hidden on the left
+  assert.equal(chipStepDelta(row, moved, 1), 79);                   // kampvuur ends at 224, in view: welpen is next
 });
 
 test('EDT-23: a read-only list deletes nothing; an empty library says so instead of a list', () => {

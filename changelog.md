@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **The language button opens a menu** (webappGUI draft 0.22, GD-17; the owner's M5 review, F4).
+  - **Before:** it went to the next language.
+  - **Now:** it shows every language in its own name with the current one checked. A choice applies at once and closes the menu; Escape or a click outside closes it unchanged. This is as the mock already had it.
+  - **Code:** `app/langmenu.js`; `i18n.next()` is removed.
+- **The filter chips have triangles instead of a scrollbar** (GD-13; F1). While chips are hidden on a side, a triangle there shows it, and a click brings the next hidden chip into view. It was added to the mock first.
 - **Implementation plan draft 0.18:** M5.6 lists the owner's ten observations from the first trial release (F1 to F10), with their causes, the work and three decisions, all accepted by the owner: SNG-10 compares title, subtitle and language (R1); an ⓘ per song-data field (R2); Hugo for the wiki (R3). M7.6 moves the manual to a wiki on `zangbundel.nl`, in every interface language.
 
 ### Fixed

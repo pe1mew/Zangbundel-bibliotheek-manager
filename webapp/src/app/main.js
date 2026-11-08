@@ -26,6 +26,7 @@ import { createSongList, neighbourAfterDelete } from './songlist.js';
 import { libraryHomeNode, songDataNode, songViewNode } from './songview.js';
 import { createSongEditor } from './editor.js';
 import { LIBRARY_FIELD_ID, targetOf } from './goto.js';
+import { toggleLanguageMenu } from './langmenu.js';
 import { addEntry, addSet, createSetList, deleteSet, moveEntry, moveSet, removeEntry, renameSet, setNameProblem, setViewNode } from './sets.js';
 import { closeConfirm, convertedDialog, copyDialog, deleteSetConfirm, deleteSongConfirm, downloadDialog, importFailedDialog, leaveEditorDialog, setNameDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
   keyReplaceConfirm, keySaveDialog, manifestConfirm, newLibraryDialog, openFailedDialog, pickFile, saveFailedDialog,
@@ -524,7 +525,7 @@ function start() {
       replace(layout.left, form ? form.node : el('p', { class: 'empty' }, [t(lang, 'tileNeedLib')]));
     }
     if (form) form.update(state);
-    replace(layout.bottom, ...bottomBar({ lang, onLanguage: () => language.next(),
+    replace(layout.bottom, ...bottomBar({ lang, onLanguage: (event) => toggleLanguageMenu(lang, event.currentTarget, (l) => language.set(l)),
       onAndroid: () => androidDialog(language.get()), onAbout: () => aboutDialog(language.get()),
       onOpen: leaving(onOpen), onNew: leaving(onNew), onClose: leaving(onClose), onCheck, onDownload: leaving(() => onDownload()),
       onEdit: () => { if (selected) chooseEdit(selected); },

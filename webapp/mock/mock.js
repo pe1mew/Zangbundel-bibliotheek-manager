@@ -7,6 +7,8 @@
 // ---- Icons: Google Material Icons path data (Apache License 2.0), 24 x 24 viewBox. ----
 // about, library, list, chevrons: copied from the Zangbundel app (android/app/src/main/res/drawable).
 const ICONS = {
+  arrowLeft: 'M14 7l-5 5 5 5V7z',
+  arrowRight: 'M10 17l5-5-5-5v10z',
   about: 'M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM13,17h-2v-6h2v6zM13,9h-2L11,7h2v2z',
   library: 'M18,2H6c-1.1,0 -2,0.9 -2,2v16c0,1.1 0.9,2 2,2h12c1.1,0 2,-0.9 2,-2V4c0,-1.1 -0.9,-2 -2,-2zM6,4h5v8l-2.5,-1.5L6,12V4z',
   list: 'M3,13h2v-2H3v2zm0,4h2v-2H3v2zm0,-8h2V7H3v2zm4,4h14v-2H7v2zm0,4h14v-2H7v2zM7,7v2h14V7H7z',
@@ -262,12 +264,36 @@ function songsTab() {
         <label class="switch"><input type="checkbox" id="intext" ${f.inText ? 'checked' : ''}><span class="track"></span><span>${t('inText')}</span></label>
         <button class="btn btn-text btn-small" data-sort="1" title="${esc(t('reverse'))}">${f.desc ? 'Z–A' : 'A–Z'}</button>
       </div>
-      ${langs.length > 1 || tags.length ? `<div class="chiprow">${langs.length > 1 ? langs.map((l) => chip('langs', l, langName(l))).join('') : ''}${tags.map((x) => chip('tags', x, x)).join('')}</div>` : ''}
+      ${langs.length > 1 || tags.length ? `<div class="chipbar">${chipArrow(-1)}<div class="chiprow">${langs.length > 1 ? langs.map((l) => chip('langs', l, langName(l))).join('') : ''}${tags.map((x) => chip('tags', x, x)).join('')}</div>${chipArrow(1)}</div>` : ''}
       <div id="clearwrap"></div>
     </div>` : `<div class="empty">${t('libEmpty')}</div>`}
     <ul class="songlist" id="songlist"></ul>
     <div class="listfoot"><button class="btn btn-outline" data-act="newsong" ${readOnly() ? 'disabled' : ''}>${icon('add')}${t('newSong')}</button></div>`;
 }
+
+// GD-13 (2026-11-08, the owner's M5 review F1): a triangle at each end of the chip row while chips are hidden on that
+// side; a click brings the next hidden chip into view. The row's scrollbar is hidden.
+const chipArrow = (dir) => `<button class="chiparrow" data-chipstep="${dir}" hidden tabindex="-1" aria-label="${esc(t(dir < 0 ? 'chipsBack' : 'chipsMore'))}" title="${esc(t(dir < 0 ? 'chipsBack' : 'chipsMore'))}">${icon(dir < 0 ? 'arrowLeft' : 'arrowRight')}</button>`;
+function chipArrows() {
+  for (const bar of document.querySelectorAll('.chipbar')) {
+    const row = bar.querySelector('.chiprow');
+    const over = row.scrollWidth > row.clientWidth + 1;
+    const [back, more] = bar.querySelectorAll('.chiparrow');
+    back.hidden = more.hidden = !over;
+    back.classList.toggle('off', row.scrollLeft <= 1);
+    more.classList.toggle('off', row.scrollLeft + row.clientWidth >= row.scrollWidth - 1);
+  }
+}
+function chipStep(btn, dir) {
+  const row = btn.parentElement.querySelector('.chiprow');
+  const r = row.getBoundingClientRect();
+  const chips = [...row.children].map((c) => c.getBoundingClientRect());
+  const next = dir > 0 ? chips.find((c) => c.right > r.right + 1) : chips.reverse().find((c) => c.left < r.left - 1);
+  if (next) row.scrollBy({ left: dir > 0 ? next.right - r.right : next.left - r.left, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+document.addEventListener('scroll', (e) => { if (e.target.classList && e.target.classList.contains('chiprow')) chipArrows(); }, true);
+window.addEventListener('resize', chipArrows);
+new MutationObserver(chipArrows).observe(document.body, { childList: true, subtree: true });
 
 // ---- Song list: search, sort and filters as the app's songbook (GD-13) ----
 const DEFAULT_FILTER = () => ({ query: '', inText: false, desc: false, langs: [], tags: [] });
@@ -896,10 +922,11 @@ function showSplash() {
 
 const EDIT_SAFE = ['lang', 'about', 'android', 'check', 'keymake', 'keyload', 'keydl', 'apply', 'cancel', 'skip'];
 document.addEventListener('click', (e) => {
-  const tgt = e.target.closest('[data-act],[data-edit],[data-song],[data-dlg],[data-up],[data-down],[data-del],[data-addsec],[data-goto],[data-jump],[data-sort],[data-chip],[data-clear],[data-delsong],[data-tab],[data-setopen],[data-setmove],[data-setrename],[data-setdel],[data-addtoset],[data-entrymove],[data-entrydel],[data-setlang],[data-editmode]');
+  const tgt = e.target.closest('[data-act],[data-edit],[data-song],[data-dlg],[data-up],[data-down],[data-del],[data-addsec],[data-goto],[data-jump],[data-sort],[data-chip],[data-clear],[data-delsong],[data-tab],[data-setopen],[data-setmove],[data-setrename],[data-setdel],[data-addtoset],[data-entrymove],[data-entrydel],[data-setlang],[data-editmode],[data-chipstep]');
   if (!tgt) { if (!e.target.closest('#langmenu')) { const m = $('langmenu'); if (m) m.remove(); } return; }
   const d = tgt.dataset;
   if (d.jump) { jump(d.jump); return; }
+  if (d.chipstep) { chipStep(tgt, Number(d.chipstep)); return; }
   if (d.setlang) { S.lang = d.setlang; store.set('lang', S.lang); closeDialog(); render(); return; }
   if (d.dlg) { dialogAction(d, tgt); return; }
   if (d.editmode) { setEditMode(d.editmode); return; }

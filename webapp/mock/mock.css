@@ -240,7 +240,14 @@ h3 { font-size: 16px; color: var(--secondary); text-transform: uppercase; letter
 .switch input:checked + .track { background: var(--fire-orange); border-color: var(--fire-orange); }
 .switch input:checked + .track::after { left: 20px; top: 2px; width: 18px; height: 18px; background: var(--white); }
 .switch input:focus-visible + .track { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
-.chiprow { display: flex; gap: 8px; overflow-x: auto; padding: 6px 0 4px; scrollbar-width: thin; }
+.chipbar { display: flex; align-items: center; gap: 2px; }
+.chiprow { display: flex; gap: 8px; overflow-x: auto; padding: 6px 0 4px; scrollbar-width: none; flex: 1; min-width: 0; }
+.chiprow::-webkit-scrollbar { display: none; }
+.chiparrow { flex: none; width: 28px; height: 32px; border: none; border-radius: 8px; background: none; color: var(--fire-orange); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.chiparrow[hidden] { display: none; }
+.chiparrow:hover { background: rgba(255, 255, 255, .12); }
+.chiparrow.off { visibility: hidden; }
+.chiparrow svg { width: 28px; height: 28px; fill: currentColor; }
 .fchip {
   flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px;
   border: 1px solid var(--grey); background: none; color: var(--white); cursor: pointer; font-size: 14px;

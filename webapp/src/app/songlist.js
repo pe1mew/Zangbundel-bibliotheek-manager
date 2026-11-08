@@ -5,7 +5,7 @@
 // The songs come from the worker's summary (SR-30). The filter belongs to the screen, not the library:
 // the list is built once per library and language and keeps it until another library is opened.
 
-import { el, icon, listen } from './dom.js';
+import { el, icon, listen, toggleClass } from './dom.js';
 import { t } from './i18n.js';
 import { severityGroup, severityIcon, messageFor } from './check.js';
 
@@ -40,6 +40,25 @@ export function chipsOf(songs, lang) {
   const languages = [...new Set(songs.map((s) => s.language || ''))].sort();
   const tags = [...new Set(songs.flatMap((s) => s.tags || []))].sort(coll.compare);
   return { languages: languages.length > 1 ? languages : [], tags };
+}
+
+/**
+ * GD-13 (the owner's M5 review, F1): the chip row's triangles. over: chips do not all fit; back and more: chips are
+ * hidden on that side. From the row's scrollLeft, scrollWidth and clientWidth; a row not laid out has none.
+ */
+export function chipArrowState({ scrollLeft = 0, scrollWidth = 0, clientWidth = 0 } = {}) {
+  const over = clientWidth > 0 && scrollWidth > clientWidth + 1;
+  return { over, back: over && scrollLeft > 1, more: over && scrollLeft + clientWidth < scrollWidth - 1 };
+}
+
+/**
+ * GD-13: how far a triangle scrolls the chip row: just far enough to show the next chip hidden on that side
+ * (dir 1 to the right, -1 to the left), or 0 when there is none. row and chips are { left, right } boxes.
+ */
+export function chipStepDelta(row, chips, dir) {
+  const next = dir > 0 ? chips.find((c) => c.right > row.right + 1) : [...chips].reverse().find((c) => c.left < row.left - 1);
+  if (!next) return 0;
+  return dir > 0 ? next.right - row.right : next.left - row.left;
 }
 
 /** GD-16: the song selected after deleting id: the next one in the list, else the one before, else none. */
@@ -91,6 +110,29 @@ export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onA
   const inText = el('input', { type: 'checkbox', id: 'song-intext' }, []);
   const sort = el('button', { type: 'button', class: 'btn btn-text btn-small', title: t(lang, 'reverse'), 'aria-label': t(lang, 'reverse') }, ['A–Z']);
   const chips = el('div', { class: 'chiprow', role: 'group', 'aria-label': t(lang, 'filters') }, []);
+  // GD-13 (F1): a triangle at each end while chips are hidden there; not in the tab order, as a focused chip scrolls into view
+  const arrow = (dir) => {
+    const label = t(lang, dir < 0 ? 'chipsBack' : 'chipsMore');
+    return el('button', { type: 'button', class: 'chiparrow off', tabindex: -1, title: label, 'aria-label': label,
+      on: { click: () => step(dir) } }, [icon(dir < 0 ? 'arrowLeft' : 'arrowRight')]);
+  };
+  const back = arrow(-1);
+  const more = arrow(1);
+  const chipbar = el('div', { class: 'chipbar' }, [back, chips, more]);
+  function arrows() {
+    const s = chipArrowState(chips);
+    back.hidden = more.hidden = !s.over;
+    toggleClass(back, 'off', !s.back);
+    toggleClass(more, 'off', !s.more);
+  }
+  function step(dir) {
+    const box = (n) => n.getBoundingClientRect();
+    const left = chipStepDelta(box(chips), [...chips.children].map(box), dir);
+    const still = globalThis.matchMedia && globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (left) chips.scrollBy({ left, behavior: still ? 'auto' : 'smooth' });
+  }
+  listen(chips, 'scroll', arrows);
+  if (typeof ResizeObserver === 'function') new ResizeObserver(arrows).observe(chips);   // laid out, or the bar resized
   const clear = el('div', { class: 'clearwrap' }, []);
   const tools = el('div', { class: 'sbtools' }, [
     search,
@@ -98,7 +140,7 @@ export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onA
       el('label', { class: 'switch', for: 'song-intext' }, [inText, el('span', { class: 'track', 'aria-hidden': 'true' }, []), el('span', {}, [t(lang, 'inText')])]),
       sort,
     ]),
-    chips,
+    chipbar,
     clear,
   ]);
   const heading = el('h3', { class: 'listhead' }, []);
@@ -181,8 +223,9 @@ export function createSongList({ lang, readOnly, onSelect, onEdit, onDelete, onA
     sort.replaceChildren(filter.descending ? 'Z–A' : 'A–Z');
     inText.checked = filter.inText;
     if (search.value !== filter.query) search.value = filter.query;
-    chips.hidden = !c.languages.length && !c.tags.length && !filter.only;
+    chipbar.hidden = !c.languages.length && !c.tags.length && !filter.only;
     chips.replaceChildren(...(filter.only ? [onlyChip()] : []), ...c.languages.map((x) => chip('languages', x, languageName(lang, x))), ...c.tags.map((x) => chip('tags', x, x)));
+    arrows();
     clear.replaceChildren(...(isDefaultFilter(filter) ? [] : [el('button', { type: 'button', class: 'btn btn-text btn-small',
       on: { click: () => setFilter({ ...DEFAULT_FILTER, languages: [], tags: [] }) } }, [t(lang, 'clearFilters')])]));
     const worst = worstBySong(findings);
