@@ -11,6 +11,7 @@ import { t } from './i18n.js';
 import { metaValues, setMeta, valueProblem } from '../core/blockmeta.js';
 import { isLanguageTag, isSongId } from '../core/names.js';
 import { languageName } from './songlist.js';
+import { fieldHelp } from './fieldhelp.js';
 
 /** The languages offered in the list (the mock's); a song's own other language is added to them. */
 export const SONG_LANGUAGES = ['nl', 'en', 'de', 'fy', 'fr'];
@@ -69,9 +70,11 @@ export function createSongFields({ lang, id, getForm, setForm }) {
   };
   const box = (name, label, control, required, note) => {
     errors[name] = el('div', { class: 'err', role: 'alert' }, []);
+    // GD-44 (F8): an ⓘ beside the label opens the field's explanation under it
+    const help = fieldHelp(lang, name, label,
+      el('label', { for: `song-${name}` }, [label, required ? el('span', { class: 'req', 'aria-hidden': 'true' }, [' *']) : null]));
     boxes[name] = el('div', { class: 'field' }, [
-      el('label', { for: `song-${name}` }, [label, required ? el('span', { class: 'req', 'aria-hidden': 'true' }, [' *']) : null]),
-      control, note ? el('div', { class: 'muted small' }, [note]) : null, errors[name]]);
+      help.row, control, note ? el('div', { class: 'muted small' }, [note]) : null, help.panel, errors[name]]);
     return boxes[name];
   };
   const input = (name, placeholder) => {
@@ -119,8 +122,9 @@ export function createSongFields({ lang, id, getForm, setForm }) {
     box('source', t(lang, 'fSource'), input('source', t(lang, 'phSource'))),
     box('tag', t(lang, 'fTags'), input('tag', t(lang, 'phTags'))),
     // EDT-36: a new song's ID is proposed from its title when it is applied
-    el('div', { class: 'field' }, [el('div', { class: 'flabel' }, [t(lang, 'fSongId')]),
-      id ? el('div', { class: 'value fp' }, [id]) : el('div', { class: 'value none' }, [t(lang, 'idProposed')])]),
+    ((help) => el('div', { class: 'field' }, [help.row,
+      id ? el('div', { class: 'value fp' }, [id]) : el('div', { class: 'value none' }, [t(lang, 'idProposed')]), help.panel]))(
+      fieldHelp(lang, 'id', t(lang, 'fSongId'), el('div', { class: 'flabel' }, [t(lang, 'fSongId')]))),
     el('p', { class: 'muted small' }, [el('span', { class: 'req' }, ['*']), ' ', t(lang, 'required')]),
   ]);
   for (const name of ['title', 'language', 'tag']) mark(name, fieldProblem(lang, name, metaValues(form, name)));

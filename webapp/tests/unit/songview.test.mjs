@@ -123,8 +123,30 @@ test('GD-13, GD-16, GD-19: the view: title, who wrote it, Verwijderen (not when 
 test('GD-05: the song\'s data in the left bar; an empty licence is the library\'s', () => {
   const node = songDataNode('nl', 'x', songDetails(SONG('{composer: Iemand}\n{meta: tag kampvuur}\nla\n')));
   const all = text(node);
-  assert.match(all, /Muziek\|Iemand/);
-  assert.match(all, /Licentie\|licentie van de bibliotheek/);
-  assert.match(all, /Lied-ID\|x/);
+  assert.match(all, /Muziek\|+Iemand/);
+  assert.match(all, /Licentie\|+licentie van de bibliotheek/);
+  assert.match(all, /Lied-ID\|+x/);
   assert.ok([...walk(node)].some((n) => n.attrs.class === 'chip' && n.children[0].text === 'kampvuur'));
+});
+
+test('GD-44 (F8): each field of the song data has an ⓘ that opens its explanation and closes it again', async () => {
+  const { helpOpen, HELP } = await import('../../src/app/fieldhelp.js');
+  const node = songDataNode('nl', 'x', songDetails(SONG('{composer: Iemand}\nla\n')));
+  const buttons = [...walk(node)].filter((n) => n.attrs.class === 'helpbtn');
+  assert.deepEqual(buttons.map((b) => b.attrs['aria-controls']), Object.keys(HELP).map((k) => `help-${k}`));
+  assert.equal(buttons[0].attrs['aria-label'], 'Uitleg bij Titel');
+  const panel = [...walk(node)].find((n) => n.attrs.id === 'help-license');
+  const button = buttons.find((b) => b.attrs['aria-controls'] === 'help-license');
+  assert.equal(panel.attrs.hidden, '');                              // closed until asked for
+  button.listeners.click();
+  assert.equal(button.attrs['aria-expanded'], 'true');
+  assert.equal(panel.hidden, false);
+  assert.ok(helpOpen('license'));
+  assert.match(panel.children[0].text, /SPDX/);
+  // a redrawn bar keeps it open; a second click closes it
+  const again = songDataNode('nl', 'x', songDetails(SONG('la\n')));
+  assert.ok(![...walk(again)].find((n) => n.attrs.id === 'help-license').attrs.hidden);
+  button.listeners.click();
+  assert.equal(panel.hidden, true);
+  assert.ok(!helpOpen('license'));
 });

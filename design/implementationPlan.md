@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.24, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.25, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (59 cases) |
 
 ---
 
@@ -736,6 +736,17 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - Screenshots showed the photo behind the song view, the editor and the *Kampvuur* set, each on its box. The editor's *Toepassen* bar was inside its box, and the read-only bar of `valid-signed` sat above the box.
   - The only console message was Chromium refusing a `beforeunload` dialog when the check itself reloaded the page with a library open (GD-42), not a fault.
 - **Seen in passing, not changed:** at 1024 px with both bars open the centre is so narrow that a song's head (title, *Verwijderen*, *Bewerken*) runs past its box. The mock shows the same; it predates F10.
+
+**State (2026-11-08): step 5 done (F8; the links wait for F9).**
+- **`app/fieldhelp.js`:** `fieldHelp(lang, name, label, labelNode)` gives a label row with an ⓘ (`aria-expanded`, `aria-controls`) and an explanation panel. Which explanations are open lasts while the page is open (a module-level set), and nothing is stored.
+- **Callers:** `songview.js`, the song's data in view mode, and `songfields.js`, the *Blokken* fields. Both have nine fields: title, language, words, music, copyright, licence, source, tags and song ID.
+- **Texts:** `helpFor` and `help*` in nl, en and de, from song format 6.1 and EDT-36.
+- **Documents:** the mock got the same first and was checked in the pane. New GD-44.
+- **Tested:** `node --test` passes 394 of 394, with the help tests in `songview.test.mjs` and `songfields.test.mjs`. `test_build.py` and `test_bundle.py` are OK. The container test (Node 18) passes 81 of 81. All checks ran after the last code change.
+- **In the browser pane (Chromium), a build under the test instance's CSP:**
+  - Lorem Ipsum had nine ⓘ in view mode and nine in the editor. The song ID's explanation, opened in view mode, stayed open in the editor.
+  - The language explanation names the list's own *Andere taalcode…*.
+- **Left for F9:** each explanation's link to its wiki page.
 
 **Exit:** each of F1 to F8 and F10 shown to the owner on the test instance; F3's change in the FDS and announced to the app repository; `node --test` and the container test green.
 

@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.24 |
+| **Status** | Draft 0.25 |
 | **Date** | 2026-11-08 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -318,6 +318,12 @@ The owner's answers to the open questions, and two further requests made during 
 - **A click:** opens the bar at that part, with the right bar on that tab. The bar stays open until it is folded again, and that is remembered (GD-34).
 - **The fold tab:** stays at the strip's inner edge.
 
+**GD-44 — Each song-data field explains itself on request.** *(Owner, 2026-11-08, M5 review F8; R2.)*
+- **The button:** an ⓘ beside each label of the song's data, in view mode and in the editor's *Blokken* fields alike: title, language, words, music, copyright, licence, source, tags and song ID.
+- **The explanation:** a click opens a short explanation under the field, and a second click closes it. It says what the field means and the rule that applies to it, from the song format's fields (6.1) and EDT-36 for the song ID.
+- **While the page is open:** which explanations are open lasts until the page closes, also when the bar is drawn again. Nothing is stored.
+- **Later:** each explanation gets a link to its page of the manual on `zangbundel.nl` once that exists (implementationPlan M7.6).
+
 **GD-34 — Bar widths, folding and the language are remembered on this computer.** *(Resolves GQ-16.)* They are kept in the browser's local storage, on that computer only, and restored on the next visit (EDT-82). Nothing about a library or a key is kept there (EDT-02, EDT-64). If local storage is not available, the manager starts with the defaults.
 
 **GD-35 — Store badges say *binnenkort* until the app is there; the manager's manual is on its GitHub wiki.** *(Resolves GQ-19.)* In the Android panel (GD-15), a badge is shown greyed with *binnenkort* (*coming soon*) and no link while the app is not public in that store, except the Google Play badge, which is left out until the app is listed there: Google's badge guidelines allow it only unaltered (*amended 2026-11-07* by the owner, on the placeholder first); the GitHub APK link works now. The manager's manual lives on this repository's GitHub wiki (`github.com/pe1mew/Zangbundel-bibliotheek-manager/wiki`), like the app's.
@@ -401,6 +407,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.25 | 2026-11-08 | GD-44 (F8): an ⓘ beside each song-data field opens its explanation under it, in view mode and in the editor. Added to the mock first and checked there. |
 | Draft 0.24 | 2026-11-08 | GD-43 (F6): a folded bar keeps a strip of icons that open it at that part. GD-30 amended (F10): the splash photograph behind the centre, its screens on a box. Both added to the mock first and checked there. |
 | Draft 0.23 | 2026-11-08 | GD-08, GD-21 and GD-33 amended (F5, F7): dragging opens a gap where the card lands, and the card slides into it; *Omhoog* and *Omlaag* slide too. Added to the mock first and checked there. |
 | Draft 0.22 | 2026-11-08 | GD-17 amended (F4): the language button opens a menu, as the mock already had. GD-13 amended (F1): the chip row's triangles replace its scrollbar, added to the mock first and checked there. |

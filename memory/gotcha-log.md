@@ -126,6 +126,14 @@
 **Root cause**: Not yet known. Likely the test's slow upload finished before the second one started while the machine was busy (`node --test` and the build had just run).
 **Fix**: None yet. Rule until then: a failure of only these three checks is rerun once before it is reported as a fault; report both runs. Fix by making the slow upload wait on a signal instead of a delay.
 
+### A Python patch in a bash heredoc decodes the escapes meant for JS (2026-11-08)
+**Problem**: In M5.6, five scripted patches broke their target.
+- **In JS:** `\n` in a replacement became a real line break, `\'` became a bare quote that ended the string, and `\u0000` became a NUL byte. It showed only as a syntax error in the next test run.
+- **In Python itself:** the patch writing this entry failed on `\u…`.
+
+**Root cause**: The quoted heredoc keeps the backslashes, but Python's own string literal then decodes them, so the target gets the decoded character instead of the escape.
+**Fix**: Edit those lines with the Edit tool. Rule: an escape that must reach a source file (`\n`, `\'`, `\u…`) goes through the Edit tool or a raw string, never through a plain Python literal. Run `node --check` on the file right after a scripted patch.
+
 ## Promoted
 
 <!-- Track gotchas that have been promoted to topic files or the memory index.

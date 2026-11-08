@@ -8,6 +8,7 @@
 import { el, icon } from './dom.js';
 import { t } from './i18n.js';
 import { languageName } from './songlist.js';
+import { fieldHelp } from './fieldhelp.js';
 
 /** 7.1: the section's own label, or the one the app generates. */
 export function sectionLabel(lang, section) {
@@ -65,10 +66,12 @@ export function songViewNode(lang, id, details, { readOnly, onDelete, onEdit }) 
   ]);
 }
 
-const field = (label, value, none) => el('div', { class: 'field' }, [
-  el('div', { class: 'flabel' }, [label]),
-  el('div', { class: value ? 'value' : 'value none' }, [value || none]),
-]);
+// GD-44 (F8): each field has its ⓘ and explanation
+const field = (lang, name, label, valueNode) => {
+  const help = fieldHelp(lang, name, label, el('div', { class: 'flabel' }, [label]));
+  return el('div', { class: 'field' }, [help.row, valueNode, help.panel]);
+};
+const value = (v, none) => el('div', { class: v ? 'value' : 'value none' }, [v || none]);
 
 /** GD-05 (view mode): the song's data in the left bar, read-only; editing them is M5.3. */
 export function songDataNode(lang, id, details) {
@@ -76,19 +79,16 @@ export function songDataNode(lang, id, details) {
   const notFilled = t(lang, 'notFilled');
   return el('div', { class: 'libform songdata' }, [
     el('h3', {}, [t(lang, 'songData')]),
-    field(t(lang, 'fTitle'), m.title, notFilled),
-    field(t(lang, 'fLanguage'), m.language ? languageName(lang, m.language) : null, notFilled),
-    field(t(lang, 'fLyricist'), (m.lyricists || []).join(', '), notFilled),
-    field(t(lang, 'fComposer'), (m.composers || []).join(', '), notFilled),
-    field(t(lang, 'fCopyright'), m.copyright, notFilled),
-    field(t(lang, 'fLicense'), m.license, t(lang, 'libLicense')),
-    field(t(lang, 'fSource'), m.source, notFilled),
-    el('div', { class: 'field' }, [
-      el('div', { class: 'flabel' }, [t(lang, 'fTags')]),
-      m.tags && m.tags.length ? el('div', { class: 'chips' }, m.tags.map((x) => el('span', { class: 'chip' }, [x])))
-        : el('div', { class: 'value none' }, [t(lang, 'none')]),
-    ]),
-    el('div', { class: 'field' }, [el('div', { class: 'flabel' }, [t(lang, 'fSongId')]), el('div', { class: 'value fp' }, [id])]),
+    field(lang, 'title', t(lang, 'fTitle'), value(m.title, notFilled)),
+    field(lang, 'language', t(lang, 'fLanguage'), value(m.language ? languageName(lang, m.language) : null, notFilled)),
+    field(lang, 'lyricist', t(lang, 'fLyricist'), value((m.lyricists || []).join(', '), notFilled)),
+    field(lang, 'composer', t(lang, 'fComposer'), value((m.composers || []).join(', '), notFilled)),
+    field(lang, 'copyright', t(lang, 'fCopyright'), value(m.copyright, notFilled)),
+    field(lang, 'license', t(lang, 'fLicense'), value(m.license, t(lang, 'libLicense'))),
+    field(lang, 'source', t(lang, 'fSource'), value(m.source, notFilled)),
+    field(lang, 'tag', t(lang, 'fTags'), m.tags && m.tags.length ? el('div', { class: 'chips' }, m.tags.map((x) => el('span', { class: 'chip' }, [x])))
+      : el('div', { class: 'value none' }, [t(lang, 'none')])),
+    field(lang, 'id', t(lang, 'fSongId'), el('div', { class: 'value fp' }, [id])),
   ]);
 }
 

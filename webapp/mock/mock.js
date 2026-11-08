@@ -365,14 +365,14 @@ function renderLeft() {
   const s = S.view === 'song' ? selSong() : null;
   if (!s) { l.innerHTML = leftLibrary(); return; }
   l.innerHTML = `<div class="pad"><h3>${t('songData')}</h3>
-    ${roField(t('fTitle'), s.title)}${roField(t('fLanguage'), s.language && langName(s.language))}
-    ${roField(t('fLyricist'), s.lyricist)}${roField(t('fComposer'), s.composer)}
-    ${roField(t('fCopyright'), s.copyright)}${roField(t('fLicense'), s.license, t('libLicense'))}
-    ${roField(t('fSource'), s.source)}
-    <div class="field"><label>${t('fTags')}</label>${s.tags.length ? `<div class="chips">${s.tags.map((x) => `<span class="chip">${esc(x)}</span>`).join('')}</div>` : `<div class="value none">${t('none')}</div>`}</div>
-    <div class="field"><label>${t('fSongId')}</label><div class="songid">${esc(s.id)}</div></div></div>`;
+    ${roField(t('fTitle'), s.title, null, 'title')}${roField(t('fLanguage'), s.language && langName(s.language), null, 'language')}
+    ${roField(t('fLyricist'), s.lyricist, null, 'lyricist')}${roField(t('fComposer'), s.composer, null, 'composer')}
+    ${roField(t('fCopyright'), s.copyright, null, 'copyright')}${roField(t('fLicense'), s.license, t('libLicense'), 'license')}
+    ${roField(t('fSource'), s.source, null, 'source')}
+    <div class="field">${labelRow('tags', t('fTags'))}${s.tags.length ? `<div class="chips">${s.tags.map((x) => `<span class="chip">${esc(x)}</span>`).join('')}</div>` : `<div class="value none">${t('none')}</div>`}${helpText('tags')}</div>
+    <div class="field">${labelRow('id', t('fSongId'))}<div class="songid">${esc(s.id)}</div>${helpText('id')}</div></div>`;
 }
-const roField = (label, v, none) => `<div class="field"><label>${esc(label)}</label><div class="value ${v ? '' : 'none'}">${v ? esc(v) : esc(none || t('notFilled'))}</div></div>`;
+const roField = (label, v, none, help) => `<div class="field">${help ? labelRow(help, label) : `<label>${esc(label)}</label>`}<div class="value ${v ? '' : 'none'}">${v ? esc(v) : esc(none || t('notFilled'))}</div>${help ? helpText(help) : ''}</div>`;
 
 // GD-22: the library's own fields, editable, when no song is selected.
 function leftLibrary() {
@@ -393,28 +393,36 @@ function leftLibrary() {
     <p class="muted small">${t('maintNote')}</p></div>`;
 }
 
+// F8 (the owner's M5 review, GD-44): an ⓘ beside a song-data field opens its explanation under the field
+const HELP_KEY = { title: 'helpTitle', language: 'helpLanguage', lyricist: 'helpLyricist', composer: 'helpComposer', copyright: 'helpCopyright',
+  license: 'helpLicense', source: 'helpSource', tags: 'helpTags', id: 'helpSongId' };
+const helpOpen = new Set();
+const helpBtn = (f, label) => `<button type="button" class="helpbtn" data-help="${f}" aria-expanded="${helpOpen.has(f)}" aria-controls="help-${f}" title="${esc(t('helpFor', { field: label }))}" aria-label="${esc(t('helpFor', { field: label }))}">${icon('about')}</button>`;
+const helpText = (f) => `<div class="fieldhelp" id="help-${f}" ${helpOpen.has(f) ? '' : 'hidden'}>${esc(t(HELP_KEY[f], { other: t('otherLanguage') }))}</div>`;
+const labelRow = (f, label, forId, req) => `<div class="flabelrow"><label ${forId ? `for="${forId}"` : ''}>${esc(label)}${req ? ' <span class="req">*</span>' : ''}</label>${helpBtn(f, label)}</div>`;
+
 function leftEdit(d) {
   const iss = songIssues(d);
   const err = (f) => iss.find((e) => e.field === f && e.sev === 'error');
   const inp = (f, label, req, ph = '') => `
     <div class="field ${err(f) ? 'invalid' : ''}" id="f-${f}">
-      <label for="in-${f}">${esc(label)}${req ? ' <span class="req">*</span>' : ''}</label>
-      <input id="in-${f}" data-field="${f}" value="${esc(d[f])}" placeholder="${esc(ph)}">
+      ${labelRow(f, label, `in-${f}`, req)}
+      <input id="in-${f}" data-field="${f}" value="${esc(d[f])}" placeholder="${esc(ph)}">${helpText(f)}
       <div class="err">${err(f) ? sevIcon('error') + ' ' + esc(err(f).msg) : ''}</div>
     </div>`;
   return `<div class="pad"><h3>${t('songData')}</h3>
     ${inp('title', t('fTitle'), true)}
     <div class="field ${err('language') ? 'invalid' : ''}" id="f-language">
-      <label for="in-language">${t('fLanguage')} <span class="req">*</span></label>
+      ${labelRow('language', t('fLanguage'), 'in-language', true)}
       <select id="in-language" data-field="language"><option value="">${t('chooseLang')}</option>
-        ${SONG_LANGS.map(([c, n]) => `<option value="${c}" ${d.language === c ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
+        ${SONG_LANGS.map(([c, n]) => `<option value="${c}" ${d.language === c ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${helpText('language')}
       <div class="err">${err('language') ? sevIcon('error') + ' ' + esc(err('language').msg) : ''}</div>
     </div>
     ${inp('lyricist', t('fLyricist'), false, t('phTrad'))}${inp('composer', t('fComposer'), false, t('phTrad'))}
     ${inp('copyright', t('fCopyright'), false, t('phPd'))}${inp('license', t('fLicense'), false, t('phLicense'))}
     ${inp('source', t('fSource'), false, t('phSource'))}
-    <div class="field"><label for="in-tags">${t('fTags')}</label><input id="in-tags" data-field="tags" value="${esc(Array.isArray(d.tags) ? d.tags.join(', ') : d.tags)}" placeholder="${esc(t('phTags'))}"></div>
-    <div class="field"><label>${t('fSongId')}</label><div class="songid">${d.id ? esc(d.id) : esc(t('idProposed'))}</div></div>
+    <div class="field">${labelRow('tags', t('fTags'), 'in-tags')}<input id="in-tags" data-field="tags" value="${esc(Array.isArray(d.tags) ? d.tags.join(', ') : d.tags)}" placeholder="${esc(t('phTags'))}">${helpText('tags')}</div>
+    <div class="field">${labelRow('id', t('fSongId'))}<div class="songid">${d.id ? esc(d.id) : esc(t('idProposed'))}</div>${helpText('id')}</div>
     <p class="muted small"><span class="req">*</span> ${t('required')}</p></div>`;
 }
 
@@ -957,11 +965,12 @@ function showSplash() {
 
 const EDIT_SAFE = ['lang', 'about', 'android', 'check', 'keymake', 'keyload', 'keydl', 'apply', 'cancel', 'skip'];
 document.addEventListener('click', (e) => {
-  const tgt = e.target.closest('[data-act],[data-edit],[data-song],[data-dlg],[data-up],[data-down],[data-del],[data-addsec],[data-goto],[data-jump],[data-sort],[data-chip],[data-clear],[data-delsong],[data-tab],[data-setopen],[data-setmove],[data-setrename],[data-setdel],[data-addtoset],[data-entrymove],[data-entrydel],[data-setlang],[data-editmode],[data-chipstep],[data-strip]');
+  const tgt = e.target.closest('[data-act],[data-edit],[data-song],[data-dlg],[data-up],[data-down],[data-del],[data-addsec],[data-goto],[data-jump],[data-sort],[data-chip],[data-clear],[data-delsong],[data-tab],[data-setopen],[data-setmove],[data-setrename],[data-setdel],[data-addtoset],[data-entrymove],[data-entrydel],[data-setlang],[data-editmode],[data-chipstep],[data-strip],[data-help]');
   if (!tgt) { if (!e.target.closest('#langmenu')) { const m = $('langmenu'); if (m) m.remove(); } return; }
   const d = tgt.dataset;
   if (d.jump) { jump(d.jump); return; }
   if (d.chipstep) { chipStep(tgt, Number(d.chipstep)); return; }
+  if (d.help) { const on = !helpOpen.has(d.help); if (on) helpOpen.add(d.help); else helpOpen.delete(d.help); tgt.setAttribute('aria-expanded', String(on)); const p = $('help-' + d.help); if (p) p.hidden = !on; return; }
   if (d.strip !== undefined) { const [side, tab] = d.strip.split(':'); BARS[side].folded = false; if (tab) S.tab = tab; saveBars(); render(); return; }
   if (d.setlang) { S.lang = d.setlang; store.set('lang', S.lang); closeDialog(); render(); return; }
   if (d.dlg) { dialogAction(d, tgt); return; }

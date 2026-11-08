@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Added
+- **Help for each song-data field** (webappGUI draft 0.25, GD-44; the owner's M5 review, F8).
+  - **What it does:** an ⓘ beside each field opens a short explanation under it, in nl, en and de; a second click closes it. It works in view mode and in the editor.
+  - **Code:** `app/fieldhelp.js`. The mock got it first.
+
 ### Changed
 - **A folded side bar keeps a strip of icons** (webappGUI draft 0.24, GD-43; the owner's M5 review, F6).
   - **Right bar:** *Liedjes* and *Sets*. **Left bar:** the song's data or the library's fields.

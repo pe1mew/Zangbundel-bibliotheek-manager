@@ -121,6 +121,17 @@ button { font: inherit; color: inherit; }
   display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 12px;
 }
 .strip[hidden] { display: none; }
+/* F8, GD-44: an ⓘ beside a song-data field opens its explanation under the field */
+.flabelrow { display: flex; align-items: center; gap: 2px; margin-bottom: 4px; }
+.flabelrow label { margin: 0; }
+.helpbtn { width: 28px; height: 28px; padding: 0; border: none; border-radius: 50%; background: none; cursor: pointer;
+  color: var(--secondary); display: inline-flex; align-items: center; justify-content: center; }
+.helpbtn:hover { background: rgba(255, 255, 255, .12); color: var(--white); }
+.helpbtn[aria-expanded="true"] { color: var(--fire-orange); }
+.helpbtn svg { width: 18px; height: 18px; fill: currentColor; }
+.fieldhelp { margin-top: 6px; padding: 8px 10px; font-size: 13px; line-height: 1.45; color: var(--white);
+  background: var(--divider); border-left: 3px solid var(--fire-orange); border-radius: 0 8px 8px 0; }
+.fieldhelp[hidden] { display: none; }
 .strip-left { left: 0; border-right: 1px solid var(--line); }
 .strip-right { right: 0; border-left: 1px solid var(--line); }
 .strip .iconbtn svg { width: 22px; height: 22px; fill: currentColor; }

@@ -98,3 +98,18 @@ test('GD-05: another language code, and marks that come and go', () => {
   title.listeners.input();
   assert.equal(title.value, 'gevaarlijk');                                    // braces never reach a directive
 });
+
+test('GD-44 (F8): every field in the editor has its explanation, closed until its button is used', () => {
+  let form = toBlocks(SONG);
+  const fields = createSongFields({ lang: 'en', id: 'vader-jacob', getForm: () => form, setForm: (f) => { form = f; } });
+  const buttons = [...walk(fields.node)].filter((n) => n.attrs.class === 'helpbtn');
+  assert.deepEqual(buttons.map((b) => b.attrs['aria-controls']),
+    ['help-title', 'help-language', 'help-lyricist', 'help-composer', 'help-copyright', 'help-license', 'help-source', 'help-tag', 'help-id']);
+  const panel = byId(fields.node, 'help-language');
+  assert.equal(panel.attrs.hidden, '');
+  assert.match(panel.children[0].text, /Other language code/);       // names the list's own choice
+  buttons[1].listeners.click();
+  assert.equal(panel.hidden, false);
+  buttons[1].listeners.click();
+  assert.equal(panel.hidden, true);
+});
