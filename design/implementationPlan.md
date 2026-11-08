@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.27, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.14, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.27, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
 
 ---
 
@@ -758,7 +758,14 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
     - `valid-unsigned` showed eight ⓘ, the SPDX code's among them once *Andere licentie* was chosen. The summary's explanation opened.
     - `valid-signed`, read-only, showed seven ⓘ and no inputs, and the summary's explanation was still open.
 
-**Third trial (2026-11-08), being prepared:** `manager-0.2.0-dev.3`, with F11 to F13 and the narrow-head fix.
+**Third trial (2026-11-08):** `manager-0.2.0-dev.3`, with F11 to F13 and the narrow-head fix.
+- **Built** into `dist/` from the owner's commit `2c183a6`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.
+- **Signed and uploaded by the owner:** twice, as `upload-20261108T192418Z-2622643.tar` and `upload-20261108T192625Z-2623405.tar`, both SHA-256 `5003de84…`, the same as the signed pack.
+- **Found while activating:** given a path that does not exist, `zbm-release activate` crashes with a Python traceback (`FileNotFoundError` in `unpack`) instead of refusing plainly. Three activations failed this way because the command handed to the owner held a placeholder for the upload's name. Nothing was changed on the server. Fixed the same day, at the owner's request:
+  - `zbm-release` refuses a missing upload with the newest upload names in staging; a path that is no regular file and a file that is no tar are refused as well.
+  - Four new cases in the container test: 85 of 85.
+  - securityAssessment draft 0.15 rechecks it (SR-91).
+  - It takes effect once the owner installs it on contabo6 (`webapp/server/README.md`). The installed version is still the one from commit `c5b2542` and before (`c1d9b523…`).
 - **Version:** `version.js` raised to `0.2.0-dev.3`, to be built from the owner's commit of it.
 - **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened with the left tabs and eight ⓘ; *Over* gave `0.2.0-dev.3`; *Sleutel maken* made a key. The console was clean.
 - **F12, done:** the way back to the library's fields was hidden, since only the library's title in the right bar led there. The owner chose tabs in the left bar (option b).

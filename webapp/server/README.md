@@ -2,14 +2,14 @@
 
 The owner's runbook for `design/implementationPlan.md` M0 on contabo6 (169.58.68.107, Ubuntu, nginx 1.24). Every step names the requirement it meets (`design/securityAssessment.md`). The files in this folder are the source; once installed, copy the live versions into `../contabo-vps-6` as for the other sites (SR-75).
 
-Tested on 2026-11-06 in an Ubuntu 24.04 container with its nginx 1.24.0, Python 3.12, OpenSSH 9.6 and git, using self-signed certificates and throwaway keys; 81 of 81 checks passed. The test:
+Tested on 2026-11-06 in an Ubuntu 24.04 container with its nginx 1.24.0, Python 3.12, OpenSSH 9.6 and git, using self-signed certificates and throwaway keys; 81 of 81 checks passed (85 of 85 since 2026-11-08, with the refusals of a mistyped upload name). The test:
 
 - builds the placeholder from a signed git tag and the holding page as a trial build, then signs both;
 - runs `webapp/tests/test_build.py` (25 unsafe pages or modules refused, one valid page built), `test_bundle.py`, `test_vendor.py`, `test_engine_bundle.py` and `node --test webapp/tests/`;
 - builds the manager (`webapp/src`) twice as a trial and compares the bytes, activates it on the test instance, runs SC-01 with `--app` and the hourly check, and checks the served bundle against its SRI hash;
 - installs the nginx, script and logrotate files of steps 4 and 6 (not the systemd units, sshd, authorized_keys or the deploy user's password field);
 - uploads through the forced command and activates as root;
-- tries nine kinds of bad upload, two misplaced trial builds, eight upload limits of `zbm-receive` (size, cut short twice, compressed, run as root, 20 waiting, 200 MB waiting, 200 MB passed) and parallel uploads;
+- tries nine kinds of bad upload, an upload name that does not exist (refused with the uploads waiting, never a traceback), a file that is no tar and a directory, two misplaced trial builds, eight upload limits of `zbm-receive` (size, cut short twice, compressed, run as root, 20 waiting, 200 MB waiting, 200 MB passed) and parallel uploads;
 - activates with root umask 002 and 077;
 - runs the integrity check as `zbm-verify`, with a push, against four kinds of tampering;
 - serves both hosts next to a contabo6-like default server and an HTTP/2 neighbour, and runs SC-01 for both.
@@ -285,6 +285,7 @@ zbm-release list
 - **`check_headers.py test.zangbundel.nl --auth <tester>:<password> --app`**, run by the owner: 16 of 16. `--app` is needed because the test instance serves SR-20's full CSP, also for the holding page.
 
 - **The manager's first trial (2026-11-07):** `manager-0.2.0-dev.1`, a trial build from commit `07558a9`, activated on the test instance with `activate --trial` at 21:10. The upload's name comes from the upload's own output, or from `sudo ls -la /srv/zangbundel-staging/incoming/`; the placeholder `upload-<…>.tar` in the commands above must be replaced by it.
+- **A mistyped upload name (2026-11-08):** `zbm-release activate` refuses it plainly and lists the newest uploads waiting in staging, so the right name can be copied from there. Before this fix it stopped with a Python traceback. The same goes for a file that is not a tar archive, or a path that is not a regular file. To install the fixed version, copy `bin/zbm-release` to `~/zbm/bin/` and install it as in step 4 (`install -m 0755 ~/zbm/bin/zbm-release /usr/local/sbin/`), then copy the live version into `../contabo-vps-6` (SR-75).
 - **Clearing staging.** Delete processed uploads from the staging directory. `zbm-receive` takes one upload at a time. It refuses an upload when 20 uploads are already waiting, when staging would hold more than 200 MB with this one, or when what arrives is not an uncompressed tar with its end marker.
 
 ## 8. Integrity check and monitoring (M0.6, M0.9, SR-06, SR-62, SR-73)

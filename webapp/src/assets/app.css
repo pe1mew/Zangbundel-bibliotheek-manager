@@ -62,7 +62,7 @@ h3 { font-size: 13px; color: var(--secondary); text-transform: uppercase; letter
 .bottom { grid-area: bottom; border-top: 1px solid var(--line); background: var(--sheet); }
 
 /* F10 (the owner's M5 review): the arrival photograph behind the centre; what the centre shows sits on a box above it */
-.centre { background: linear-gradient(rgba(0, 0, 0, .25), rgba(0, 0, 0, .25)), url(backdrop-3200x1440.webp) right center / cover no-repeat, var(--bg); }
+.centre { background: linear-gradient(rgba(0, 0, 0, .25), rgba(0, 0, 0, .25)), url(backdrop-3200x1440.webp) center / cover no-repeat fixed, var(--bg); }   /* fixed: to the window, not the centre, so the bars never move it */
 .centrewrap > .home, .centrewrap > .view, .centrewrap > .edit, .centrewrap > .editwrap {
   margin: 24px auto; background: var(--bg); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
 }

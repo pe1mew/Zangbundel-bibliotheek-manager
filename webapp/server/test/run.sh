@@ -146,6 +146,12 @@ refused "symbolic link"      "not a regular file"             zbm-release activa
 refused "hard link"          "not a regular file"             zbm-release activate test.zangbundel.nl $T/hardlink.tar
 refused "unlisted file"      "files not in the manifest"      zbm-release activate test.zangbundel.nl $T/extra-file.tar
 refused "file, then dir"     "cannot unpack"                  zbm-release activate test.zangbundel.nl $T/file-then-dir.tar
+# a mistyped upload name is refused plainly and names what is waiting, so the owner can copy the right one
+refused "no such upload"     "no such upload"                 zbm-release activate --trial test.zangbundel.nl /tmp/REPLACE-ME.tar
+refused "it lists the waiting uploads" "newest first: upload-" zbm-release activate --trial test.zangbundel.nl /tmp/REPLACE-ME.tar
+printf 'no tar here\n' > $T/junk.tar
+refused "not a tar archive"  "not a readable uncompressed tar" zbm-release activate --trial test.zangbundel.nl $T/junk.tar
+refused "upload is a directory" "not a regular file"          zbm-release activate --trial test.zangbundel.nl /tmp
 check "nothing named evil written anywhere" test -z "$(find / -xdev -type f -name evil -not -path '/proc/*' 2>/dev/null)"
 ssh-keygen -q -t ed25519 -N '' -f /tmp/otherkey
 mkdir -p /tmp/other && tar -C /tmp/other -xf $W/dist/placeholder-0.1.0.tar && rm /tmp/other/release-manifest.json.sig
