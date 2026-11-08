@@ -134,6 +134,14 @@
 **Root cause**: The quoted heredoc keeps the backslashes, but Python's own string literal then decodes them, so the target gets the decoded character instead of the escape.
 **Fix**: Edit those lines with the Edit tool. Rule: an escape that must reach a source file (`\n`, `\'`, `\u…`) goes through the Edit tool or a raw string, never through a plain Python literal. Run `node --check` on the file right after a scripted patch.
 
+### A temporary edit to a tracked file ends up in the owner's commit (2026-11-08)
+**Problem**: Twice on 2026-11-08 the owner's commit took in files the agent had changed but not staged.
+- **CSS:** commit `404a3ff` got the photo's CSS.
+- **launch.json:** commit `e40b92c` got a temporary `.claude/launch.json` entry pointing into the agent's scratch folder.
+
+**Root cause**: The owner's Git client commits every changed file, not only the staged ones. A file the agent means to restore later is committed as it is when the owner commits.
+**Fix**: Rule: leave no temporary edit in a tracked file between turns. Restore `.claude/launch.json` right after `preview_start` has started the server, since the running server does not need it, and stage only finished work. When it happens anyway, restore the file, stage it, and tell the owner.
+
 ## Promoted
 
 <!-- Track gotchas that have been promoted to topic files or the memory index.

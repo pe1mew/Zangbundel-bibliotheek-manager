@@ -6,12 +6,6 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8771", "--directory", "webapp/mock", "--bind", "127.0.0.1"],
       "port": 8771
-    },
-    {
-      "name": "app-current",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-I", "C:/Users/drasv/AppData/Local/Temp/claude/ab6b6af685aeb501/48060f6e-809d-4928-9063-c98be08d6143/scratchpad/csp_server.py", "C:/Users/drasv/AppData/Local/Temp/claude/ab6b6af685aeb501/48060f6e-809d-4928-9063-c98be08d6143/scratchpad/view", "8775"],
-      "port": 8775
     }
   ]
 }
