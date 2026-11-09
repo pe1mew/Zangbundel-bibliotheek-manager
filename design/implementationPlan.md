@@ -1017,6 +1017,14 @@ Criteria for the owner's decision: M7 complete; testers' blocking issues closed;
   - The container test passes 92 of 92. New in it: the manager built from the signed tag with its privacy pages, put live on `zangbundel.nl` (not a trial), `/` serving its page, and SC-01 for `zangbundel.nl` with `--app`.
   - In the browser pane (Chromium), the 0.2.0 build under the CSP: `/nl/privacy.html` has its stylesheet, links back to `../` and is in the present tense.
 - **The owner's steps:** in `webapp/server/README.md`, *Going live with the manager*.
+- **Built (2026-11-09):** `dist/manager-0.2.0` from commit `f2b9c08` with the signed tag `v0.2.0` (verified: a good `git` signature, ED25519). It is a production build, not `--allow-dirty`: `source_tag: v0.2.0`, `source_dirty: false`, 13 files. Two builds were byte-identical.
+- **Live on `zangbundel.nl` since 2026-11-09:**
+  - **The upload:** signed and uploaded by the owner (`upload-20261109T211724Z-3008270.tar`, SHA-256 `024f4dcd…`, the same as the signed pack).
+  - **The server:** the owner installed the two nginx files, with the earlier ones kept in `/etc/nginx/zbm-backup-20261109/`. `nginx -t` passed, nginx reloaded, and the release was activated without `--trial`.
+  - **Checked on contabo6:** `live` points to `releases/manager-0.2.0` (tag `v0.2.0`, commit `f2b9c08`, `source_dirty: false`). `zbm-release verify zangbundel.nl` gives `ok … (13 files)`, and the nginx files are the repository's.
+  - **SC-01 from outside:** 21 of 21 (`design/test-results/2026-11-09-sc01-zangbundel.nl.md`).
+  - **In the browser pane:** `https://zangbundel.nl/` shows version 0.2.0 without the test banner, with a clean console.
+  - **Going back:** the two backed-up nginx files, then `zbm-release switch zangbundel.nl placeholder-0.1.0` (`webapp/server/README.md`).
 
 ---
 

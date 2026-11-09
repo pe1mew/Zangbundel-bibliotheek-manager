@@ -264,6 +264,8 @@ Building the manager needs Node.js on PATH: the build checks each bundle with `n
 
 To go back: put the earlier two nginx files back, reload, and `zbm-release switch zangbundel.nl placeholder-0.1.0`.
 
+Done on 2026-11-09: `manager-0.2.0` (tag `v0.2.0`) is live on `zangbundel.nl`. The earlier nginx files are in `/etc/nginx/zbm-backup-20261109/`, and SC-01 passed 21 of 21.
+
 Each upload prints its file name in the staging directory. Then, on the server as root:
 
 ```bash
