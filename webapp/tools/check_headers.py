@@ -4,7 +4,7 @@
 security requirements (securityAssessment SR-02, SR-20 to SR-25, SR-60, SR-61, SR-80, SR-81).
 
     check_headers.py zangbundel.nl
-    check_headers.py test.zangbundel.nl --auth tester:secret
+    check_headers.py test.zangbundel.nl --auth tester        (asks for the password; it stays out of shell history)
     check_headers.py zangbundel.nl --connect 127.0.0.1:8443 --http-connect 127.0.0.1:8080 --insecure
 
 --connect sends the requests to another address while keeping the host name for TLS (SNI) and
@@ -18,6 +18,7 @@ auth; zangbundel.nl is the placeholder. Standard library only.
 import argparse
 import base64
 import datetime
+import getpass
 import http.client
 import os
 import re
@@ -257,11 +258,13 @@ def main():
     ap.add_argument('--connect', help='address[:port] for HTTPS instead of the DNS name')
     ap.add_argument('--http-connect', help='address[:port] for plain HTTP')
     ap.add_argument('--insecure', action='store_true', help='do not check the certificate (self-signed test only)')
-    ap.add_argument('--auth', help='user:password for the test instance')
+    ap.add_argument('--auth', help='user for the test instance; the password is asked for (user:password also works, but lands in shell history)')
     ap.add_argument('--app', action='store_true', help='the manager is deployed: expect the CSP of SR-20')
     ap.add_argument('--hsts-min', type=int, default=300, help='lowest acceptable HSTS max-age (ramp step)')
     ap.add_argument('--report', help='write a Markdown report to this file')
     a = ap.parse_args()
+    if a.auth and ':' not in a.auth:                      # a password typed on the command line ends up in history
+        a.auth = f'{a.auth}:{getpass.getpass(f"Password for {a.auth} on {a.host}: ")}'
     c = Checker(a)
     c.run()
     print(f'\n{len(c.rows) - c.failed} passed, {c.failed} failed')

@@ -285,7 +285,7 @@ zbm-release list
 - **`check_headers.py test.zangbundel.nl --auth <tester>:<password> --app`**, run by the owner: 16 of 16. `--app` is needed because the test instance serves SR-20's full CSP, also for the holding page.
 
 - **The manager's first trial (2026-11-07):** `manager-0.2.0-dev.1`, a trial build from commit `07558a9`, activated on the test instance with `activate --trial` at 21:10. The upload's name comes from the upload's own output, or from `sudo ls -la /srv/zangbundel-staging/incoming/`; the placeholder `upload-<…>.tar` in the commands above must be replaced by it.
-- **Later trials (2026-11-08):** `manager-0.2.0-dev.2` to `-dev.6`, each built from a commit with a clean source and activated with `activate --trial`. dev.6 is live; the earlier ones stay installed (`zbm-release list test.zangbundel.nl`).
+- **Later trials (2026-11-08):** `manager-0.2.0-dev.2` to `-dev.7`, each built from a commit with a clean source and activated with `activate --trial`. dev.7 is live; the earlier ones stay installed (`zbm-release list test.zangbundel.nl`).
 - **A mistyped upload name (2026-11-08):** `zbm-release activate` refuses it plainly and lists the newest uploads waiting in staging, so the right name can be copied from there. Before this fix it stopped with a Python traceback. The same goes for a file that is not a tar archive, or a path that is not a regular file. Installed on contabo6 the same day (SHA-256 `9263c19d…`). To install a later version, copy `bin/zbm-release` to `~/zbm/bin/` and install it as in step 4 (`install -m 0755 ~/zbm/bin/zbm-release /usr/local/sbin/`), then copy the live version into `../contabo-vps-6` (SR-75).
 - **Clearing staging.** Delete processed uploads from the staging directory. `zbm-receive` takes one upload at a time. It refuses an upload when 20 uploads are already waiting, when staging would hold more than 200 MB with this one, or when what arrives is not an uncompressed tar with its end marker.
 
@@ -334,7 +334,7 @@ python webapp/tools/check_headers.py zangbundel.nl --report design/test-results/
 ```
 
 ```bash
-python webapp/tools/check_headers.py test.zangbundel.nl --auth <tester>:<password> --app --report design/test-results/<date>-sc01-test.zangbundel.nl.md
+python webapp/tools/check_headers.py test.zangbundel.nl --auth <tester> --app --report design/test-results/<date>-sc01-test.zangbundel.nl.md
 ```
 
 | Check | How |

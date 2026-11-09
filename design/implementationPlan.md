@@ -822,7 +822,9 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
     - Six recommended fields were marked at once, Tab went from the title to the language, and *Ga naar* SNG-16 opened the words field.
   - The mock got the same and was checked. webappGUI draft 0.33. It is not yet in a trial.
 
-**Seventh trial (2026-11-09), being prepared:** `manager-0.2.0-dev.7`, with the fixes from the owner's look at dev.6.
+**Seventh trial (2026-11-09):** `manager-0.2.0-dev.7`, with the fixes from the owner's look at dev.6.
+- **Built** into `dist/` from the owner's commit `e3e02ea`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.
+- **Live:** signed and uploaded by the owner (`upload-20261109T204159Z-2999425.tar`, SHA-256 `1e67274a…`, the same as the signed pack) and activated with `--trial`. Checked on contabo6: `live` points to `releases/manager-0.2.0-dev.7`, whose manifest names `e3e02ea` with `source_dirty: false`.
 - **Version:** `version.js` raised to `0.2.0-dev.7`, to be built from the owner's commit of it.
 - **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP:
   - The banner showed and a new library opened.

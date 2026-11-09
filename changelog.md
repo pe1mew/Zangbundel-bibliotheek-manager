@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   - **What it does:** the same ⓘ on title, description, licence, SPDX code, summary, licence text, maintainer and contact, also in a read-only library.
 
 ### Changed
+- **`check_headers.py --auth <user>` asks for the password** instead of taking it on the command line, where it lands in shell history. `user:password` still works for the container test.
 - ***Toepassen* refuses a song with an Error** (no title, no language, …). It says why and goes to the field; warnings do not stop it (webappGUI draft 0.33, GD-20; the owner's look at dev.6).
 - **Every empty recommended field is advised in the editor at once:** words or music, copyright, licence, source, tag (GD-05).
 - **A library field's mark goes as soon as that field is right**, checked on leaving it (GD-22).
