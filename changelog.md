@@ -14,6 +14,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
   - **What it does:** the same ⓘ on title, description, licence, SPDX code, summary, licence text, maintainer and contact, also in a read-only library.
 
 ### Changed
+- ***Toepassen* refuses a song with an Error** (no title, no language, …). It says why and goes to the field; warnings do not stop it (webappGUI draft 0.33, GD-20; the owner's look at dev.6).
+- **Every empty recommended field is advised in the editor at once:** words or music, copyright, licence, source, tag (GD-05).
+- **A library field's mark goes as soon as that field is right**, checked on leaving it (GD-22).
+- **The ⓘ buttons are out of the tab order**, so Tab goes from input to input (GD-44).
+- ***Ga naar* opens the left bar on the right tab**; *no songs* leads to *Lied toevoegen* (GD-20).
 - **No *Omhoog* and *Omlaag* in the *Sets* tab** (webappGUI draft 0.32, GD-21; the owner's choice). The order of the sets cannot be changed for now; FDS EDT-31's reorder of sets is open.
 - ***Bewerken* in a song row is a pen icon** (webappGUI draft 0.31, GD-13; the owner's look at dev.5).
 - **The left bar has the tabs *Liedgegevens* and *Bibliotheek*** (webappGUI draft 0.26, GD-22; the owner's second look, F12). The library's fields are now one click away, also while a song is shown or edited. The left strip of a folded bar offers both.

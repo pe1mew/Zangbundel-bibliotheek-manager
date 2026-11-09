@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.32, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.33, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
 
 ---
 
@@ -802,6 +802,25 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
   - **Open: FDS EDT-31 (reorder sets) is unmet** until a way to reorder them is chosen. The app shows sets in manifest order (D-22). GD-21 amended in webappGUI draft 0.32.
   - **Tested:** `node --test` passes 396 of 396; `test_build.py` and `test_bundle.py` are OK.
   - **In the browser pane (Chromium), `valid-unsigned`:** *Kampvuur* and *Demo* each showed only *Naam wijzigen* and *Set verwijderen*, and a click still opened the set. The console was clean. It is not yet in a trial.
+
+**The owner's look at dev.6, two walk-throughs (2026-11-09).** The owner chose the FDS's split: title and language required, the recommended fields advice only.
+- **The library's fields:** a field's mark now goes as soon as that field is right, checked on leaving it.
+  - Before, the maintainer's name stayed marked until the contact was filled too, because MAN-08 marks both.
+  - `library-form.js` keeps the check's marks and shows each only while its own field is still wrong (`ownOk`, on `blur`). The contact is checked with MAN-08's own pattern (`EMAIL`, now exported from `manifest.js`) and its `https:` rule. MAN-07 now marks the licence and the summary.
+- ***Toepassen* refuses a song with an Error:** `main.js` `applyEdit` checks the song in the worker (`songCheck`) before writing it. On an Error it shows *Nog niet toegepast* with the first message, and goes to its field or line. A new song is named *Nieuw lied* in it. `appliedWithErrors` is gone.
+- **The recommended fields:** `songfields.js` `fieldAdvice` marks every empty recommended field at once (SNG-16), dashed, with words and music together. Before, *Controle* reported them one by one, which took the owner five rounds.
+- **Tab:** the ⓘ buttons are out of the tab order (`tabindex=-1`). For M7.3: the help is then reachable with the mouse only.
+- ***Ga naar*:**
+  - A song field opens the left bar on *Liedgegevens*, and a library field on *Bibliotheek*. STR-02 goes to *Lied toevoegen* (`goto.js` `add`).
+  - The owner's *no copyright: nothing happens* could not be reproduced: through the bottom bar, the download dialog, with the editor open and with the *Bibliotheek* tab showing, it went to the field. A folded left bar would have hidden the field; that is now opened first.
+- **Tested:**
+  - `node --test` passes 399 of 399, with new tests in `library-form`, `songfields` and `goto`. `test_build.py`, `test_bundle.py` and `test_engine_bundle.py` (59 of 59) are OK. The container test (Node 18) passes 85 of 85. All checks ran after the last code change.
+  - **In the browser pane (Chromium), both walk-throughs:**
+    - Library marks: licence, then name, then contact, each cleared on leaving it.
+    - *Ga naar* "no songs" focused *Lied toevoegen*.
+    - *Toepassen* on an empty new song was refused with the cursor in the title, and then in the language.
+    - Six recommended fields were marked at once, Tab went from the title to the language, and *Ga naar* SNG-16 opened the words field.
+  - The mock got the same and was checked. webappGUI draft 0.33. It is not yet in a trial.
 - **Version:** `version.js` raised to `0.2.0-dev.6`, to be built from the owner's commit of it.
 - **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened; *Over* gave `0.2.0-dev.6`; *Sleutel maken* made a key. The console was clean.
 - **Built** into `dist/` from the owner's commit `3970492`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.

@@ -29,7 +29,8 @@ export function fieldHelp(lang, name, label, labelNode) {
   const id = `help-${name}`;
   const panel = el('div', { class: 'fieldhelp', id, hidden: !open.has(name) }, [t(lang, HELP[name], { other: t(lang, 'otherLanguage') })]);
   const text = t(lang, 'helpFor', { field: label });
-  const button = el('button', { type: 'button', class: 'helpbtn', title: text, 'aria-label': text, 'aria-controls': id,
+  // not in the tab order (the owner's look at dev.6): Tab goes from input to input; the mouse opens the help
+  const button = el('button', { type: 'button', class: 'helpbtn', tabindex: -1, title: text, 'aria-label': text, 'aria-controls': id,
     'aria-expanded': String(open.has(name)) }, [icon('about')]);
   listen(button, 'click', () => {
     if (open.has(name)) open.delete(name);

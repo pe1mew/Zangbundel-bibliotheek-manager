@@ -8,6 +8,7 @@
 //   { kind: 'songs', ids, title } the song list filtered to these songs (SNG-10, GD-13)
 //   { kind: 'set', name }        the set open in the centre (GD-21)
 //   { kind: 'library', field }   the library's fields, that one focused (GD-22), or none
+//   { kind: 'library', field: null, add: true }  STR-02, no songs: the library's home with *Lied toevoegen* focused
 
 import { fieldsOf } from './library-form.js';
 
@@ -32,6 +33,7 @@ export function targetOf(f) {
     return { kind: 'song', id };
   }
   if (/^SET-/.test(f.code) && f.where !== undefined) return { kind: 'set', name: String(f.where) };
+  if (f.code === 'STR-02') return { kind: 'library', field: null, add: true };
   if (f.code === 'MAN-07' || f.code === 'MAN-08' || f.code === 'MAN-02') {
     const [field] = fieldsOf(f);
     return { kind: 'library', field: field || null };

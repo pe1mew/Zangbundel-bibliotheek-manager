@@ -9,7 +9,7 @@ import { el, icon, listen, toggleClass } from './dom.js';
 import { LANGUAGES, t } from './i18n.js';
 import { messageFor } from './check.js';
 import { fieldHelp } from './fieldhelp.js';
-import { LICENSE_ID } from '../core/manifest.js';
+import { EMAIL, LICENSE_ID } from '../core/manifest.js';
 
 /** EDT-13: the short list of common licences, each with its summary in the interface language. */
 export const LICENSES = [
@@ -78,7 +78,7 @@ export function maintainerOf(previous, name, contact) {
 
 /** The form fields a finding is about: MAN-07 the licence, MAN-08 the maintainer, MAN-02 by its reasons. */
 export function fieldsOf(finding) {
-  if (finding.code === 'MAN-07') return ['license'];
+  if (finding.code === 'MAN-07') return ['license', 'summary'];
   if (finding.code === 'MAN-08') return ['maintainer', 'contact'];
   if (finding.code !== 'MAN-02') return [];
   const out = [];
@@ -164,6 +164,27 @@ export function createLibraryForm({ lang, library, readOnly, onChange }) {
     errors[name].replaceChildren(...(message ? [icon('error', 'sev sev-error'), message] : []));
   };
 
+  // The owner's look at dev.6: a field's mark from the check goes as soon as that field itself is right, checked on
+  // leaving it, also while a rule over several fields (MAN-07, MAN-08) still holds for another one. A field the
+  // check does not mark keeps no mark, and a field still wrong keeps its message.
+  let marked = {};
+  const ownOk = {
+    license: () => (select.value === OTHER ? LICENSE_ID.test(licenseId.value.trim()) : select.value !== ''),
+    summary: () => summary.value.trim() !== '',
+    maintainer: () => mName.value.trim() !== '',
+    contact: () => {
+      const v = mContact.value.trim();
+      return isUrl(v) ? /^https:\/\/[^\s/]+/.test(v) : EMAIL.test(v);
+    },
+  };
+  function showMarks() {
+    for (const name of ['description', 'license', 'summary', 'licenseText', 'maintainer', 'contact']) {
+      setError(name, marked[name] && !(ownOk[name] && ownOk[name]()) ? marked[name] : null);
+    }
+    if (marked.title && !title.value.trim()) setError('title', marked.title);
+  }
+  if (!disabled) for (const f of [title, select, licenseId, summary, mName, mContact]) listen(f, 'blur', showMarks);
+
   // the current licence from the fields, for a change of one of them
   const currentLicense = () => {
     const id = select.value === OTHER ? licenseId.value.trim() : select.value;
@@ -230,10 +251,9 @@ export function createLibraryForm({ lang, library, readOnly, onChange }) {
       if (state.library) maintainer = state.library.maintainer || null;
       const other = otherContactOf(maintainer);
       also.replaceChildren(...(other ? [t(lang, 'maintAlso', { contact: other })] : []));
-      const marked = {};
+      marked = {};
       for (const f of state.findings || []) for (const name of fieldsOf(f)) marked[name] ??= messageFor(lang, f);
-      for (const name of ['description', 'license', 'summary', 'licenseText', 'maintainer', 'contact']) setError(name, marked[name] || null);
-      if (marked.title) setError('title', marked.title);
+      showMarks();
     },
   };
 }

@@ -29,7 +29,7 @@ class FakeNode {
   focus() { this.focused = true; }
 }
 globalThis.document = { createElement: (t) => new FakeNode(t), createElementNS: (ns, t) => new FakeNode(t), createTextNode: (s) => ({ text: s }) };
-const { createSongFields, fieldProblem, splitNames, splitTags } = await import('../../src/app/songfields.js');
+const { createSongFields, fieldAdvice, fieldProblem, splitNames, splitTags } = await import('../../src/app/songfields.js');
 const { fromBlocks, toBlocks } = await import('../../src/core/blocks.js');
 
 function* walk(n) {
@@ -112,4 +112,30 @@ test('GD-44 (F8): every field in the editor has its explanation, closed until it
   assert.equal(panel.hidden, false);
   buttons[1].listeners.click();
   assert.equal(panel.hidden, true);
+});
+
+test('SNG-16 (the owner\u2019s look at dev.6): every empty recommended field is advised at once; words or music together', () => {
+  const values = (m) => (name) => m[name] || [];
+  assert.equal(fieldAdvice('nl', 'lyricist', values({})), fieldAdvice('nl', 'composer', values({})));
+  assert.match(fieldAdvice('nl', 'composer', values({})), /tekst of muziek/);
+  assert.equal(fieldAdvice('nl', 'composer', values({ lyricist: ['onbekend'] })), null);      // one of the two is enough
+  assert.match(fieldAdvice('nl', 'license', values({ license: ['CC BY'] })), /SPDX/);
+  assert.equal(fieldAdvice('nl', 'license', values({ license: ['CC0-1.0'] })), null);
+  for (const name of ['copyright', 'source', 'tag']) assert.match(fieldAdvice('nl', name, values({})), /Aanbevolen/);
+  assert.equal(fieldAdvice('nl', 'title', values({})), null);                                // a required field has its error instead
+});
+
+test('SNG-16 in the fields: a new song shows its empty recommended fields as warnings, not errors; filling one takes it away', () => {
+  let form = toBlocks('{title: Nieuw}\n{meta: language en}\n\nverse\n');
+  const fields = createSongFields({ lang: 'nl', id: null, getForm: () => form, setForm: (f) => { form = f; } });
+  const box = (id) => boxOf(fields.node, id);
+  for (const id of ['song-lyricist', 'song-composer', 'song-copyright', 'song-license', 'song-source', 'song-tag']) {
+    assert.ok(box(id).classes.has('warn') && !box(id).classes.has('invalid'), id);
+  }
+  assert.ok(!box('song-title').classes.has('warn') && !box('song-title').classes.has('invalid'));
+  const words = byId(fields.node, 'song-lyricist');
+  words.value = 'unknown';
+  words.listeners.change();
+  assert.ok(!box('song-lyricist').classes.has('warn') && !box('song-composer').classes.has('warn'), 'words or music: both satisfied');
+  assert.ok(box('song-copyright').classes.has('warn'));
 });

@@ -18,7 +18,7 @@ import { createLeaveGuard } from './leave-guard.js';
 import { createLanguage, t } from './i18n.js';
 import { createLayout } from './layout.js';
 import { aboutDialog, androidContent, androidDialog, bottomBar, privacyUrl } from './panels.js';
-import { checkDialog } from './check.js';
+import { checkDialog, messageFor } from './check.js';
 import { createLibraryClient } from './library-client.js';
 import { createCryptoClient } from './crypto-client.js';
 import { createSession } from './session.js';
@@ -278,6 +278,18 @@ function start() {
       editor.showProblem(t(lang, 'applyProblem'));       // a form the worker cannot write: nothing applied
       return false;
     }
+    // GD-20 as amended (the owner's look at dev.6): a song with an Error (no title, no language, …) is not applied;
+    // the editor says why and goes to the field or line. Warnings (recommended fields) do not stop it.
+    // a new song has no ID yet: its messages name it as the editor's heading does (*Nieuw lied*)
+    const errors = ((await session.songCheck(editing.id || t(lang, 'newSongTitle'), r.text)).findings || [])
+      .filter((f) => f.severity === 'Error' || f.severity === 'Fatal');
+    if (errors.length) {
+      editor.showProblem(t(lang, 'applyRefused', { n: errors.length, message: messageFor(lang, errors[0]) }));
+      const to = targetOf(errors[0]);
+      if (to.field) editor.focusField(to.field);
+      else if (to.line) await editor.showLine(to.line);
+      return false;
+    }
     const isNew = editing.isNew;
     let id = editing.id;
     if (isNew) {
@@ -293,11 +305,9 @@ function start() {
     }
     editing = null;
     selected = id;
-    const errors = (session.get().findings || []).filter((f) => f.where === id && (f.severity === 'Error' || f.severity === 'Fatal')).length;
     render();
-    // GD-25: a new song is never hidden by the filter
-    toast(isNew && songList && songList.reveal(id) ? t(lang, 'filtersCleared')
-      : errors ? t(lang, 'appliedWithErrors', { n: errors }) : t(lang, 'applied'));
+    // GD-25: a new song is never hidden by the filter; it has no Error, as it was refused otherwise
+    toast(isNew && songList && songList.reveal(id) ? t(lang, 'filtersCleared') : t(lang, 'applied'));
     return true;
   };
   const makeEditor = ({ id, isNew = false, text, form, title }) => {
@@ -411,7 +421,12 @@ function start() {
       await startEdit(target.id);
       if (!editing || editing.id !== target.id) return;
       if (target.line) await editing.editor.showLine(target.line);
-      else editing.editor.focusField(target.field);
+      else {
+        // the field is in the left bar: open it on the song's tab first, so the cursor is seen (the owner's look at dev.6)
+        layout.unfold('left');
+        showLeft('song');
+        editing.editor.focusField(target.field);
+      }
       return;
     }
     if (target.kind === 'set') {
@@ -422,6 +437,15 @@ function start() {
       return;
     }
     select(null);                                         // the library's home and its fields
+    if (target.field) {
+      layout.unfold('left');
+      showLeft('library');
+    }
+    if (target.add) {                                     // STR-02, no songs: to *Lied toevoegen* on the library's home
+      const add = layout.centre.querySelector('.home .addrow button:not([disabled])');
+      if (add) add.focus();
+      return;
+    }
     let field = target.field ? document.getElementById(LIBRARY_FIELD_ID[target.field]) : null;
     if (field && field.closest('[hidden]')) field = document.getElementById('lib-license');   // the SPDX field shows with Andere licentie
     if (field && !field.disabled) {

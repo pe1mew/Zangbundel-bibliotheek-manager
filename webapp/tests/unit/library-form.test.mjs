@@ -19,6 +19,10 @@ class FakeNode {
   append(...c) {
     this.children.push(...c);
     if (this.tag === 'textarea') this.value = c.map((x) => x.text ?? '').join('');
+    if (this.tag === 'select') {
+      const chosen = c.find((o) => o && o.attrs && 'selected' in o.attrs);
+      if (chosen) this.value = chosen.attrs.value;
+    }
   }
   replaceChildren(...c) { this.children = c; }
   addEventListener(t, f) { this.listeners[t] = f; }
@@ -75,7 +79,7 @@ test('GD-37: a maintainer with both contacts shows the e-mail address; the websi
 });
 
 test('the worker\'s findings say which field they are about', () => {
-  assert.deepEqual(fieldsOf({ code: 'MAN-07' }), ['license']);
+  assert.deepEqual(fieldsOf({ code: 'MAN-07' }), ['license', 'summary']);
   assert.deepEqual(fieldsOf({ code: 'MAN-08' }), ['maintainer', 'contact']);
   assert.deepEqual(fieldsOf({ code: 'MAN-02', detail: 'title is not 1–80 characters; license.text is not a string of at most 32,000 characters' }),
     ['title', 'licenseText']);
@@ -157,4 +161,25 @@ test('F11, GD-44: every field of the library form has its explanation, closed un
   buttons.at(-1).listeners.click();
   assert.equal(panel.hidden, true);
   assert.ok(byId(form.node, 'lib-title'), 'the field itself is still there');
+});
+
+test('the owner\u2019s look at dev.6: leaving a field that is now right takes its mark away, also while its rule still fails', () => {
+  const form = createLibraryForm({ lang: 'nl', library: LIB, readOnly: false, onChange() {} });
+  form.update({ findings: [{ code: 'MAN-07', severity: 'Error' }, { code: 'MAN-08', severity: 'Error' }] });
+  const box = (id) => boxOf(form.node, id);
+  const field = (id) => byId(form.node, id);
+  assert.ok(['lib-license', 'lib-summary', 'lib-mname', 'lib-mcontact'].every((id) => box(id).classes.has('invalid')));
+  field('lib-mname').value = 'new';
+  field('lib-mname').listeners.blur();
+  assert.ok(!box('lib-mname').classes.has('invalid'), 'the name is right: no mark');
+  assert.ok(box('lib-mcontact').classes.has('invalid'), 'the contact is still missing');
+  field('lib-mcontact').value = 'http://example.org';
+  field('lib-mcontact').listeners.blur();
+  assert.ok(box('lib-mcontact').classes.has('invalid'), 'http is refused, as MAN-08 does');
+  field('lib-mcontact').value = 'new@new.nl';
+  field('lib-mcontact').listeners.blur();
+  assert.ok(!box('lib-mcontact').classes.has('invalid'));
+  field('lib-summary').value = 'Vrij.';
+  field('lib-summary').listeners.blur();
+  assert.ok(!box('lib-summary').classes.has('invalid') && box('lib-license').classes.has('invalid'), 'licence still to choose');
 });

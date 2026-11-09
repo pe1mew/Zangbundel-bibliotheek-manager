@@ -37,7 +37,7 @@ test('EDT-41: a set finding leads to its set; a library finding to its field, or
   assert.deepEqual(targetOf({ code: 'MAN-07', severity: 'Error' }), { kind: 'library', field: 'license' });
   assert.deepEqual(targetOf({ code: 'MAN-08', severity: 'Error' }), { kind: 'library', field: 'maintainer' });
   assert.deepEqual(targetOf({ code: 'MAN-02', detail: 'title is not 1–80 characters' }), { kind: 'library', field: 'title' });
-  assert.deepEqual(targetOf({ code: 'STR-02', severity: 'Warning' }), { kind: 'library', field: null });
+  assert.deepEqual(targetOf({ code: 'STR-02', severity: 'Warning' }), { kind: 'library', field: null, add: true });
   assert.deepEqual(targetOf({ code: 'PKG-09', severity: 'Info' }), { kind: 'library', field: null });
   for (const field of ['title', 'description', 'license', 'summary', 'licenseText', 'maintainer']) assert.ok(LIBRARY_FIELD_ID[field], field);
 });

@@ -164,6 +164,8 @@ svg.inl { width: 18px; height: 18px; fill: var(--secondary); flex: none; }
 .field input:disabled, .field textarea:disabled, .field select:disabled { opacity: .6; }
 .field .req { color: var(--fire-orange); }
 .field.invalid input, .field.invalid textarea, .field.invalid select { border: 2px solid var(--fire-orange-light); padding: 7px 11px; }
+/* a recommended field still empty (SNG-16 as advice; the owner's look at dev.6): dashed, as it does not stop Toepassen */
+.field.warn input, .field.warn textarea, .field.warn select { border: 2px dashed var(--fire-orange-light); padding: 7px 11px; }
 .field .err:empty { display: none; }
 .field .err { color: var(--fire-orange-light); font-size: 13px; margin-top: 4px; display: flex; gap: 4px; align-items: flex-start; }
 .field .err svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }

@@ -414,18 +414,19 @@ const HELP_KEY = { title: 'helpTitle', language: 'helpLanguage', lyricist: 'help
   libTitle: 'helpLibTitle', libDescription: 'helpLibDescription', libLicense: 'helpLibLicense', libSummary: 'helpLibSummary',
   libMaintainer: 'helpLibMaintainer', libContact: 'helpLibContact' };
 const helpOpen = new Set();
-const helpBtn = (f, label) => `<button type="button" class="helpbtn" data-help="${f}" aria-expanded="${helpOpen.has(f)}" aria-controls="help-${f}" title="${esc(t('helpFor', { field: label }))}" aria-label="${esc(t('helpFor', { field: label }))}">${icon('about')}</button>`;
+const helpBtn = (f, label) => `<button type="button" class="helpbtn" tabindex="-1" data-help="${f}" aria-expanded="${helpOpen.has(f)}" aria-controls="help-${f}" title="${esc(t('helpFor', { field: label }))}" aria-label="${esc(t('helpFor', { field: label }))}">${icon('about')}</button>`;
 const helpText = (f) => `<div class="fieldhelp" id="help-${f}" ${helpOpen.has(f) ? '' : 'hidden'}>${esc(t(HELP_KEY[f], { other: t('otherLanguage') }))}</div>`;
 const labelRow = (f, label, forId, req) => `<div class="flabelrow"><label ${forId ? `for="${forId}"` : ''}>${esc(label)}${req ? ' <span class="req">*</span>' : ''}</label>${helpBtn(f, label)}</div>`;
 
 function leftEdit(d) {
   const iss = songIssues(d);
   const err = (f) => iss.find((e) => e.field === f && e.sev === 'error');
+  const rec = { lyricist: !d.lyricist && !d.composer, composer: !d.lyricist && !d.composer, copyright: !d.copyright, license: !d.license, source: !d.source };
   const inp = (f, label, req, ph = '') => `
-    <div class="field ${err(f) ? 'invalid' : ''}" id="f-${f}">
+    <div class="field ${err(f) ? 'invalid' : rec[f] ? 'warn' : ''}" id="f-${f}">
       ${labelRow(f, label, `in-${f}`, req)}
       <input id="in-${f}" data-field="${f}" value="${esc(d[f])}" placeholder="${esc(ph)}">${helpText(f)}
-      <div class="err">${err(f) ? sevIcon('error') + ' ' + esc(err(f).msg) : ''}</div>
+      <div class="err">${err(f) ? sevIcon('error') + ' ' + esc(err(f).msg) : rec[f] ? sevIcon('warning') + ' ' + esc(t(f === 'lyricist' || f === 'composer' ? 'recWho' : 'recEmpty')) : ''}</div>
     </div>`;
   return `<div class="pad"><h3>${t('songData')}</h3>
     ${inp('title', t('fTitle'), true)}
@@ -726,6 +727,15 @@ function apply() {
   if (S.textMode) leaveTextMode(); else syncLeft();
   const d = S.draft;
   d.tags = normTags(d.tags);
+  // GD-20 as amended (the owner's look at dev.6): a song with an Error is not applied; say why and go to the field
+  const errs = songIssues(d).filter((x) => x.sev === 'error');
+  if (errs.length) {
+    renderLeft();
+    toast(t('applyRefused', { n: errs.length, message: errs[0].msg }));
+    const f = $('in-' + errs[0].field) || document.querySelector('.editor');
+    if (f) f.focus();
+    return;
+  }
   const isNew = !d.id;
   if (isNew) { d.id = uniqueId(slug(d.title || 'lied')); S.lib.songs.push(clone(d)); }
   else { const k = S.lib.songs.findIndex((s) => s.id === d.id); S.lib.songs[k] = clone(d); }
@@ -734,8 +744,7 @@ function apply() {
   if (!visibleSongs().some((x) => x.id === d.id)) { S.filter = DEFAULT_FILTER(); cleared = true; }   // GD-25
   S.tab = 'songs';
   render();
-  const ne = songIssues(d).filter((x) => x.sev === 'error').length;
-  toast(cleared ? t('filtersCleared') : ne ? t('appliedWithErrors', { n: ne }) : t('applied'));
+  toast(cleared ? t('filtersCleared') : t('applied'));
 }
 
 // ---- Dialogs ----

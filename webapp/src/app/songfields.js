@@ -47,6 +47,25 @@ export function fieldProblem(lang, name, values) {
   return null;
 }
 
+// SNG-16's licence: an SPDX identifier, public-domain or proprietary (validate.js SONG_LICENSE)
+const SONG_LICENSE = /^[A-Za-z0-9.+-]+$/;
+
+/**
+ * SNG-16 in the editor (the owner's look at dev.6): every recommended field that is empty, at once, so none has to be
+ * found one by one through Controle. Words or music: both are marked while both are empty. They are advice
+ * (Warnings) and never stop *Toepassen*. values(name) gives a field's values as the song holds them.
+ */
+export function fieldAdvice(lang, name, values) {
+  if (name === 'lyricist' || name === 'composer') return values('lyricist').length || values('composer').length ? null : t(lang, 'recWho');
+  if (name === 'license') {
+    const v = values('license');
+    if (!v.length) return t(lang, 'recEmpty');
+    return v.every((x) => SONG_LICENSE.test(x)) ? null : t(lang, 'recLicense');
+  }
+  if (name === 'copyright' || name === 'source' || name === 'tag') return values(name).length ? null : t(lang, 'recEmpty');
+  return null;
+}
+
 /**
  * createSongFields({ lang, id, getForm(), setForm(form) }) → { node }. The fields read the form when
  * built; each change writes its field with setMeta and hands the new form back.
@@ -55,14 +74,20 @@ export function createSongFields({ lang, id, getForm, setForm }) {
   const form = getForm();
   const boxes = {};
   const errors = {};
+  // a field's own error, else its advice (a recommended field still empty), else nothing
   const mark = (name, message) => {
+    const advice = message ? null : fieldAdvice(lang, name, (n) => metaValues(getForm(), n));
     toggleClass(boxes[name], 'invalid', Boolean(message));
-    errors[name].replaceChildren(...(message ? [icon('error', 'sev sev-error'), message] : []));
+    toggleClass(boxes[name], 'warn', Boolean(advice));
+    errors[name].replaceChildren(...(message ? [icon('error', 'sev sev-error'), message]
+      : advice ? [icon('warning', 'sev sev-warning'), advice] : []));
   };
+  const ALL = ['title', 'language', 'lyricist', 'composer', 'copyright', 'license', 'source', 'tag'];
+  const markAll = () => { for (const name of ALL) mark(name, fieldProblem(lang, name, metaValues(getForm(), name))); };
   const write = (name, values) => {
     if (values.some((v) => valueProblem(v))) return;     // cannot be: typing keeps braces and controls out
     setForm(setMeta(getForm(), name, values));
-    mark(name, fieldProblem(lang, name, values));
+    markAll();                                           // words and music are advised together
   };
   const clean = (input) => {
     const v = input.value.replace(VALUE_FORBIDDEN, '');
@@ -127,6 +152,6 @@ export function createSongFields({ lang, id, getForm, setForm }) {
       fieldHelp(lang, 'id', t(lang, 'fSongId'), el('div', { class: 'flabel' }, [t(lang, 'fSongId')]))),
     el('p', { class: 'muted small' }, [el('span', { class: 'req' }, ['*']), ' ', t(lang, 'required')]),
   ]);
-  for (const name of ['title', 'language', 'tag']) mark(name, fieldProblem(lang, name, metaValues(form, name)));
+  markAll();
   return { node };
 }
