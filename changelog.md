@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - ***Bewerken* in a song row is a pen icon** (webappGUI draft 0.31, GD-13; the owner's look at dev.5).
 - **The left bar has the tabs *Liedgegevens* and *Bibliotheek*** (webappGUI draft 0.26, GD-22; the owner's second look, F12). The library's fields are now one click away, also while a song is shown or edited. The left strip of a folded bar offers both.
 - **A read-only library shows its fields as values**, as a song's data does, not as greyed-out inputs (F13).
+- **Version `0.2.0-dev.7`** for the seventh trial on the test instance (the fixes from the owner's look at dev.6).
 - **Version `0.2.0-dev.6`** for the sixth trial on the test instance (the lock and the pen).
 - **Version `0.2.0-dev.5`** for the fifth trial on the test instance (the photograph centred).
 - **Version `0.2.0-dev.4`** for the fourth trial on the test instance (the photograph fixed to the window).

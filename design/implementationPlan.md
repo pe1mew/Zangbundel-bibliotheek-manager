@@ -821,6 +821,14 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
     - *Toepassen* on an empty new song was refused with the cursor in the title, and then in the language.
     - Six recommended fields were marked at once, Tab went from the title to the language, and *Ga naar* SNG-16 opened the words field.
   - The mock got the same and was checked. webappGUI draft 0.33. It is not yet in a trial.
+
+**Seventh trial (2026-11-09), being prepared:** `manager-0.2.0-dev.7`, with the fixes from the owner's look at dev.6.
+- **Version:** `version.js` raised to `0.2.0-dev.7`, to be built from the owner's commit of it.
+- **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP:
+  - The banner showed and a new library opened.
+  - *Toepassen* on an empty new song was refused, with the cursor in the title.
+  - *Over* gave `0.2.0-dev.7`, and *Sleutel maken* made a key.
+  - The console was clean.
 - **Version:** `version.js` raised to `0.2.0-dev.6`, to be built from the owner's commit of it.
 - **Dry run from the uncommitted bump:** two builds were byte-identical. Under the test instance's own CSP the banner showed; a new library opened; *Over* gave `0.2.0-dev.6`; *Sleutel maken* made a key. The console was clean.
 - **Built** into `dist/` from the owner's commit `3970492`, with `source_dirty: false`. Two builds were byte-identical. It differs from the dry run only in the manifest's `source_commit` and `source_dirty`.
