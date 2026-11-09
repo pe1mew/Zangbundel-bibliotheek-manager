@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.15 |
-| **Date** | 2026-11-08 |
+| **Status** | Draft 0.16 |
+| **Date** | 2026-11-09 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
 
@@ -358,7 +358,8 @@ The test instance (`test.zangbundel.nl`) uses the same file with `root /srv/zang
 - **Certificates** come from `certbot certonly --webroot`, so certbot never edits our files. A separate port-80 server answers ACME challenges and redirects everything else.
 - **`release-manifest.json` and its signature** stay on disk for the integrity check, but nginx does not serve them.
 - **SR-27 and the CSP.** While `zangbundel.nl` serves the placeholder and the test instance the manager, the two hosts differ in one header: the placeholder's script-free CSP (SR-20 allows that form) against SR-20's full policy. Every other header is the same. When the manager goes live, both carry SR-20's policy.
-- **The placeholder** has a script-free CSP (`script-src 'none'; worker-src 'none'`). Its front door `/` redirects to `/nl/`, `/en/` or `/de/` by the first language in `Accept-Language`, else English.
+- **From v0.2.0 (2026-11-09):** the manager is live on `zangbundel.nl` too. Both hosts send SR-20's full policy, so SR-27 holds without the exception above.
+- **The placeholder** had a script-free CSP (`script-src 'none'; worker-src 'none'`). Its front door `/` redirected to `/nl/`, `/en/` or `/de/` by the first language in `Accept-Language`, else English. Both went with v0.2.0: `/` is the manager's page, and the privacy statement is part of the manager's release (`/<lang>/privacy.html`).
 
 ### 7.2 DNS records (SR-03, SR-05, SR-07)
 
@@ -610,5 +611,13 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 | Draft 0.11 | 2026-11-06 | 7.4 records the vendoring of M1.2 (`vendor.py`): SR-12 checks as run, fflate 0.8.3 without published provenance (accepted, recorded), SR-14's GitLab check by hand. |
 | Draft 0.12 | 2026-11-06 | The owner keeps `fflate` 0.8.3 although it publishes no provenance: an accepted risk in section 9, noted in 7.4. |
 | Draft 0.13 | 2026-11-07 | Section 7.3: the crypto worker's operations as implemented in M3. DNS set by the owner. Two deviations accepted: no null MX, because Openprovider refuses one, so no MX and port 25 closed (SR-07); no transfer lock, because `.nl` has none, so the registrar account's two-factor authentication protects the domain (SR-05). Section 7.2 and SC-12 follow. |
+| Draft 0.16 | 2026-11-09 | Recheck for going live (SR-91), with the release gate's first part (`design/test-results/2026-11-09-release-gate-0.2.0.md`).
+- **The CSP:** `zangbundel.nl` gets SR-20's full CSP, the same as the test instance's, which the gate checked (SC-01, SC-03). The placeholder's script-free form is no longer used.
+- **The front door:** the language redirect is removed; `/` is the manager's `index.html`.
+- **The privacy statement:** it moves into the manager's release as three static pages without script, built and checked by `build.py` like every page, and signed with the release.
+- **Nothing new reaches the server:** the manager still sends nothing.
+- **What changes:** what the public site runs. Its exposure is the test instance's, minus basic auth: the public can now load the scripts, which run only in the visitor's browser.
+- **Going back:** `zbm-release switch zangbundel.nl placeholder-0.1.0`, after putting the earlier nginx config back.
+- **Still open from the gate:** SC-05 in Firefox, Edge and Safari; HSTS above 300 s (step 9); the registrar's two-factor authentication. |
 | Draft 0.15 | 2026-11-08 | Recheck for a server-tool change (SR-91). `zbm-release activate` now checks the upload path before it creates anything in the site's directory. It reads the path with `lstat`, so a symbolic link or a directory is refused instead of being followed as root. Before, a link was followed, though a signature check would still have refused what it pointed at. A missing path is refused with the newest upload names in staging; only root runs `activate`, and root can read staging anyway. A file that is not a tar is refused without a traceback. No new input reaches the server, and no file, key or network path changes. Container test: 85 of 85. |
 | Draft 0.14 | 2026-11-07 | SR-41 clarified by the owner: the key lives until the page closes, not until *Sluiten*. M6.4 recheck (SR-91): key-file bytes reach the main thread only for the explicit download of a new key (SR-40) and are zeroed after the Blob is made; the name field has `autocomplete="off"` (SR-45); SR-44's advice is shown with M-64. |

@@ -47,7 +47,7 @@ check "bundled library engine = native engine on all 56 test libraries" sh -c "[
 check "node --test: unit tests and the test-library corpus" sh -c "{ [ -d /tmp/test-libraries ] || cp -r /repo/test-libraries /tmp/test-libraries; } && mkdir -p /tmp/design && cp /repo/design/FDS.md /tmp/design/ && node --experimental-global-webcrypto --test /tmp/webapp-rw/tests/"   # Node 18 (apt): crypto is global from Node 19
 
 # --- build: placeholder from a signed tag (SR-10, SR-90), holding page as a trial build ---
-mkdir -p $W/src/webapp && cp -r /repo/webapp/placeholder /repo/webapp/test-holding /repo/webapp/tools $W/src/webapp/
+mkdir -p $W/src/webapp && cp -r /repo/webapp/placeholder /repo/webapp/test-holding /repo/webapp/tools /repo/webapp/src /repo/webapp/vendor $W/src/webapp/
 rm -rf $W/src/webapp/tools/release-key.pub $W/src/webapp/tools/__pycache__
 git -C $W/src init -q -b main && git -C $W/src add -A && git -C $W/src commit -q -m 'test source'
 refused "build without a signed tag" "no tag with a valid signature" \
@@ -56,6 +56,11 @@ git -C $W/src tag -s v0.1.0 -m 'test tag'
 check "build placeholder from signed tag" \
   python3 $W/src/webapp/tools/build.py build --src $W/src/webapp/placeholder --name placeholder --version 0.1.0 --out $W/dist/placeholder-0.1.0
 check "manifest names the tag" grep -q '"source_tag": "v0.1.0"' $W/dist/placeholder-0.1.0/release-manifest.json
+# the manager as a release for zangbundel.nl (v0.2.0 on): from the same signed tag, never a trial
+check "build the manager from the signed tag" \
+  python3 $W/src/webapp/tools/build.py build --src $W/src/webapp/src --name manager --version "$(sed -n "s/^export const VERSION = '\(.*\)';/\1/p" /repo/webapp/src/app/version.js)" --out $W/dist/manager-release
+check "the manager's manifest names the tag" grep -q '"source_tag": "v0.1.0"' $W/dist/manager-release/release-manifest.json
+check "the manager release holds the privacy pages" sh -c "ls $W/dist/manager-release/nl/privacy.html $W/dist/manager-release/en/privacy.html $W/dist/manager-release/de/privacy.html" 
 check "trial build of test-holding" \
   python3 /repo/webapp/tools/build.py build --src /repo/webapp/test-holding --name test-holding --version 0.1.0 --out $W/dist/test-holding-0.1.0 --allow-dirty
 check "trial build of the manager (bundled, TD-22)" \
@@ -63,6 +68,7 @@ check "trial build of the manager (bundled, TD-22)" \
 check "manager release holds bundles only, no JS source (main + workers, hashed names in assets/)" sh -c "ls $W/dist/manager/assets/main.*.js && test -z \"\$(find $W/dist/manager -name '*.js' | grep -Ev '/assets/[a-z-]+\.[0-9a-f]{12}\.js\$')\""
 check "a second build of the manager is byte-identical (SR-10)" sh -c "python3 /repo/webapp/tools/build.py build --src /repo/webapp/src --name manager --version \$(sed -n \"s/^export const VERSION = '\\\\(.*\\\\)';/\\\\1/p\" /repo/webapp/src/app/version.js) --out /tmp/manager2 --allow-dirty >/dev/null && diff -r $W/dist/manager /tmp/manager2"
 check "sign and pack manager" bash $W/tools/sign-release.sh $W/dist/manager $W/rk/test-release
+check "sign and pack the manager release" bash $W/tools/sign-release.sh $W/dist/manager-release $W/rk/test-release
 for n in placeholder test-holding; do
   check "sign and pack $n" bash $W/tools/sign-release.sh $W/dist/$n-0.1.0 $W/rk/test-release
 done
@@ -233,9 +239,13 @@ check "verify: intact again after restore" as_verify zbm-release verify
 # --- nginx ---
 check "nginx -t" nginx -t
 nginx
-check "nginx answers" wait_for curl -fsk --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/nl/
+check "nginx answers" wait_for curl -fsk --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/
+# v0.2.0: the manager replaces the placeholder on zangbundel.nl, as a signed release, not a trial
+check "activate the manager release on zangbundel.nl" zbm-release activate zangbundel.nl $W/dist/manager-release.tar
+check "live on zangbundel.nl is the manager" sh -c "readlink /srv/zangbundel/live | grep -q '^releases/manager-'"
+check "/ is the manager's page, no front door" sh -c "curl -sk --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/ | grep -q 'assets/main\.'"
 echo; echo "=== SC-01 zangbundel.nl ==="
-check "SC-01 zangbundel.nl" python3 /repo/webapp/tools/check_headers.py zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure
+check "SC-01 zangbundel.nl with the manager (--app)" python3 /repo/webapp/tools/check_headers.py zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure --app
 grep -E '^(PASS|FAIL)|^        -' /tmp/out | grep -v '^PASS' | head -20
 echo; echo "=== SC-01 test.zangbundel.nl ==="
 check "SC-01 test.zangbundel.nl (holding page, app CSP)" python3 /repo/webapp/tools/check_headers.py test.zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure --auth tester:test-only-pw --app --report /tmp/report/sc01.md
@@ -255,14 +265,14 @@ html = open('/srv/zangbundel-test/live/index.html', encoding='utf-8').read()
 want = re.search(r'<script[^>]*integrity=\"([^\"]+)\"', html).group(1)
 got = 'sha384-' + base64.b64encode(hashlib.sha384(open('/tmp/bundle.js', 'rb').read()).digest()).decode()
 assert want == got and len(open('/tmp/bundle.js', 'rb').read()) > 1000, (want, got)"
-curl -skI --http2 --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/nl/ > /tmp/h2.txt
+curl -skI --http2 --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/ > /tmp/h2.txt
 check "HTTP/2 on the shared socket, headers intact" sh -c "grep -q '^HTTP/2 200' /tmp/h2.txt && grep -qi '^content-security-policy: default-src' /tmp/h2.txt && grep -qi '^cross-origin-embedder-policy: require-corp' /tmp/h2.txt"
 code=$(curl -sk -o /dev/null -w '%{http_code}' -u tester:wrong --resolve test.zangbundel.nl:443:127.0.0.1 https://test.zangbundel.nl/)
 check "wrong password: 401" test "$code" = 401
 check "a failed login is in the error log (privacy statement says so)" grep -q 'password mismatch' /var/log/nginx/zangbundel/test.error.log
 curl -sk -o /dev/null --resolve other.example:443:127.0.0.1 https://other.example/; rc=$?
 check "unknown name: default server closes (444), nginx still up" sh -c "case $rc in 52|92|16) pgrep -x nginx >/dev/null ;; *) echo curl exit $rc; exit 1 ;; esac"
-codes=$(for i in $(seq 1 80); do curl -sk -o /dev/null -w '%{http_code}\n' --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/nl/ & done; wait)
+codes=$(for i in $(seq 1 80); do curl -sk -o /dev/null -w '%{http_code}\n' --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/ & done; wait)
 check "rate limit answers 429 under 80 parallel requests" test "$(echo "$codes" | grep -c 429)" -gt 0
 check "access log written" test -s /var/log/nginx/zangbundel/access.log
 check "access log shortens the address" grep -qE '^127\.0\.0\.0 ' /var/log/nginx/zangbundel/access.log

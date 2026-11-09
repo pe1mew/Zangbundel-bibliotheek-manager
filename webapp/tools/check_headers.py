@@ -13,7 +13,8 @@ the Host header: for a local test, or for a host whose DNS does not point at it 
 --report FILE writes the result as Markdown (design/test-results/).
 
 The site's kind follows from its name: test.zangbundel.nl is the test instance, behind basic
-auth; zangbundel.nl is the placeholder. Standard library only.
+auth; zangbundel.nl is the placeholder, or with --app the manager (v0.2.0 on: its page at /, the
+privacy pages nl/en/de). Standard library only.
 """
 import argparse
 import base64
@@ -196,6 +197,10 @@ class Checker:
                 self.record('pages behind auth', '(skipped)', ['pass --auth user:password to check the pages'])
                 return
             pages = ['/']
+        elif self.a.app:
+            # the manager on zangbundel.nl (v0.2.0): its page at /, the privacy statement it took over from the placeholder
+            self.check('security.txt', '/.well-known/security.txt', 200, 'file', ctype=TYPES['.txt'])
+            pages = ['/', '/nl/privacy.html', '/en/privacy.html', '/de/privacy.html']
         else:
             for lang, where in (('nl-NL,nl;q=0.9,en;q=0.5', '/nl/'), ('de-DE,de;q=0.9', '/de/'),
                                 ('en-GB', '/en/'), ('fr-FR,fr;q=0.9', '/en/'), ('', '/en/')):
@@ -228,7 +233,7 @@ class Checker:
                 for ref in re.findall(r'''url\(\s*["']?([^"')?#]+)''', body.decode('utf-8', 'replace')):
                     if '://' not in ref and not ref.startswith('data:'):
                         assets.add(ref if ref.startswith('/') else normpath(base + ref))
-        page = '/' if self.test else '/nl/'
+        page = '/' if self.test or self.a.app else '/nl/'
         self.check('range ignored, headers once', page, 200, 'html', req={'Range': 'bytes=999999-'})
         self.check('not found', '/no-such-page', 404, 'common')
         self.check('POST refused', '/', 405, 'common', method='POST')

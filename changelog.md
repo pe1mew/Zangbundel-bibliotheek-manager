@@ -6,7 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-09
+
+The first publication of the manager on `zangbundel.nl`, replacing the placeholder: the web app of milestones M1 to M6 as tried on `test.zangbundel.nl` in seven trial releases (`0.2.0-dev.1` to `-dev.7`). The release gate's first part is in `design/test-results/2026-11-09-release-gate-0.2.0.md`. Not yet done: the rest of M7 (browser matrix, accessibility pass, testers), reordering sets (FDS EDT-31) and the manual (F9).
+
 ### Added
+- **Production on `zangbundel.nl`:** the manager replaces the placeholder.
+  - **The privacy statement** (nl, en, de) moves into the manager's own site, in the present tense.
+  - **The server:** `zangbundel.nl` gets the CSP of SR-20, as the test instance has, and loses the placeholder's front-door redirect.
+  - **`check_headers.py --app`** checks the manager's page and privacy pages on `zangbundel.nl`.
+  - **The container test** builds the manager from a signed tag and puts it live on `zangbundel.nl`.
+  - **Security:** securityAssessment draft 0.16 rechecks it (SR-91).
 - **Help for each song-data field** (webappGUI draft 0.25, GD-44; the owner's M5 review, F8).
   - **What it does:** an ⓘ beside each field opens a short explanation under it, in nl, en and de; a second click closes it. It works in view mode and in the editor.
   - **Code:** `app/fieldhelp.js`. The mock got it first.

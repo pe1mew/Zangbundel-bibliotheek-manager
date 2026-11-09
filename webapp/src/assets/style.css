@@ -1,0 +1,77 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* The privacy pages of the manager's site (nl/en/de/privacy.html, SR-52), taken over from the placeholder of
+   zangbundel.nl (webappTDS TD-20) when the manager replaced it. The app's night theme (webappGUI GD-12). No script, no inline styles. */
+
+:root {
+  --bg: #000000;
+  --sheet: #121212;
+  --divider: #2A2A2A;
+  --grey: #444444;
+  --white: #FFFFFF;
+  --secondary: #BFBFBF;
+  --fire-orange: #FF8A3D;
+  --night-blue-dark: #0B2545;
+  --sky-blue: #4FC3F7;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--white);
+  font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body { display: flex; flex-direction: column; align-items: center; padding: 24px 16px 48px; }
+
+a { color: var(--sky-blue); }
+a:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; border-radius: 4px; }
+
+.langs { align-self: flex-end; max-width: 720px; width: 100%; text-align: right; font-size: 15px; color: var(--secondary); }
+.langs a, .langs span { margin-left: 10px; }
+.langs span { color: var(--white); font-weight: 600; }
+
+main { width: 100%; max-width: 720px; }
+
+.hero { display: flex; gap: 20px; align-items: center; margin: 32px 0 24px; }
+.hero img { width: 96px; height: 96px; border-radius: 22px; flex: none; }
+.hero h1 { margin: 0; font-size: 32px; line-height: 1.2; }
+.hero p { margin: 4px 0 0; color: var(--secondary); }
+
+.card { background: var(--sheet); border: 1px solid var(--divider); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+.card h2 { margin: 0 0 12px; font-size: 20px; }
+.card p { margin: 0 0 12px; }
+.card p:last-child { margin-bottom: 0; }
+
+.badges { display: flex; flex-wrap: wrap; gap: 16px; margin: 8px 0 16px; }
+.soon { position: relative; display: inline-block; }
+.soon img { height: 56px; width: auto; display: block; filter: grayscale(1); opacity: .6; }
+.soon span {
+  position: absolute; right: -6px; top: -8px; transform: rotate(6deg);
+  background: var(--fire-orange); color: var(--night-blue-dark); font-weight: 700; font-size: 13px; padding: 2px 10px; border-radius: 6px;
+}
+
+.links { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.links h3 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--secondary); }
+.links ul { margin: 0; padding: 0; list-style: none; }
+.links li { margin: 4px 0; }
+
+.legal { font-size: 14px; color: var(--secondary); }
+.legal p { margin: 6px 0; }
+
+.prose h1 { font-size: 28px; margin: 24px 0 16px; }
+.prose h2 { font-size: 19px; margin: 24px 0 8px; }
+.prose p, .prose li { color: var(--white); }
+.prose ul { padding-left: 22px; }
+
+.testbanner {
+  width: 100%; max-width: 720px; margin-bottom: 16px; padding: 10px 16px; border-radius: 10px;
+  background: var(--fire-orange); color: var(--night-blue-dark); font-weight: 700; text-align: center;
+}
+
+@media (max-width: 560px) {
+  .hero { flex-direction: column; align-items: flex-start; }
+  .links { grid-template-columns: 1fr; }
+}

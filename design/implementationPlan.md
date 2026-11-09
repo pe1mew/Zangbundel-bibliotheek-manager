@@ -5,7 +5,7 @@
 | **Document** | Plan for implementing the bibliotheek-manager web app on the test instance, with a placeholder on the production domain |
 | **Status** | Draft 0.18 |
 | **Date** | 2026-11-08 |
-| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.33, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.15, `test-libraries/` (59 cases) |
+| **Depends on** | `design/FDS.md` draft 0.12, `design/webappGUI.md` draft 0.33, `design/webappTDS.md` draft 0.14, `design/securityAssessment.md` draft 0.16, `test-libraries/` (59 cases) |
 
 ---
 
@@ -1002,6 +1002,21 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
 ### M8 — Go live on zangbundel.nl (outside this plan)
 
 Criteria for the owner's decision: M7 complete; testers' blocking issues closed; the Songbook app's import of this format released; HSTS at one year for three months (then preload, SQ-03); the release procedure practised at least three times on the test instance. Going live is then the same signed release activated in the production directory (SR-84), replacing the placeholder.
+
+**The owner's decision (2026-11-09):** the first publication goes ahead now, as `v0.2.0`, after the release gate's first part (`design/test-results/2026-11-09-release-gate-0.2.0.md`).
+- **Criteria set aside for it:** the rest of M7 (browser matrix, accessibility pass, testers, the security re-assessment for the implementation), the app's import being released, and HSTS at one year. The release procedure was practised seven times.
+- **Prepared for it:**
+  - The privacy statement moves into the manager's site (`webapp/src/{nl,en,de}/privacy.html`, present tense).
+  - `zangbundel.nl` gets the SR-20 CSP and loses its front door.
+  - `check_headers.py --app` covers the manager on `zangbundel.nl`.
+  - The container test builds the manager from a signed tag and puts it live on `zangbundel.nl`.
+  - securityAssessment draft 0.16 is the SR-91 recheck.
+  - `version.js` is `0.2.0`, and the changelog has its `[0.2.0]` section.
+- **Tested:**
+  - `node --test` passes 399 of 399. `test_build.py`, `test_bundle.py` and `test_engine_bundle.py` (59 of 59) are OK.
+  - The container test passes 92 of 92. New in it: the manager built from the signed tag with its privacy pages, put live on `zangbundel.nl` (not a trial), `/` serving its page, and SC-01 for `zangbundel.nl` with `--app`.
+  - In the browser pane (Chromium), the 0.2.0 build under the CSP: `/nl/privacy.html` has its stylesheet, links back to `../` and is in the present tense.
+- **The owner's steps:** in `webapp/server/README.md`, *Going live with the manager*.
 
 ---
 

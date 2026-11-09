@@ -255,6 +255,15 @@ ssh -i ~/.ssh/zangbundel-deploy zbm-deploy@169.58.68.107 < dist/test-holding-0.1
 
 Building the manager needs Node.js on PATH: the build checks each bundle with `node --check` (webappTDS TD-21, TD-22). The manager is built the same way once it is tagged, from `webapp/src` with `--name manager` and the version in `webapp/src/app/version.js`. Before that, `--allow-dirty` makes a trial build of it for the test instance only (`zbm-release activate --trial test.zangbundel.nl …`).
 
+**Going live with the manager (v0.2.0, 2026-11-09):**
+1. Commit, then tag the commit with a signed tag (`git tag -s v0.2.0`); the build refuses a production build without it.
+2. Build without `--allow-dirty`, sign, and upload, as above.
+3. Install the new `conf.d/zangbundel.conf` and `sites-available/zangbundel.nl.conf` (step 4), then `nginx -t` and `systemctl reload nginx`. That gives the SR-20 CSP and no front door. The placeholder keeps working under it.
+4. `zbm-release activate zangbundel.nl <the upload>`, with no `--trial`.
+5. `check_headers.py zangbundel.nl --app` from outside (SC-01).
+
+To go back: put the earlier two nginx files back, reload, and `zbm-release switch zangbundel.nl placeholder-0.1.0`.
+
 Each upload prints its file name in the staging directory. Then, on the server as root:
 
 ```bash
