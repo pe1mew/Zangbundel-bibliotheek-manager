@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+- **HSTS ramp, step 2:** `max-age` goes from 300 s to one week (`webapp/server/README.md` step 9), in effect once installed on contabo6.
+- **The runbook's monitoring and gate commands** follow the manager on `zangbundel.nl`: the outside monitor watches `/`, and SC-01 uses `--app`.
+- **The implementation plan has a completion plan** (C1 to C12) for what is left after going live.
+
+### Added
+- ***Over* names the only address** (GD-45, SR-08): *Alleen https://zangbundel.nl is de bibliotheek-manager.*, in nl, en and de. The README's status is brought up to date.
+- **A maintenance page and an incident runbook** (SR-63, SR-93): `webapp/maintenance/`, and `webapp/server/README.md` step 11. The container test switches to the maintenance page and back (100 checks).
+- **Release order** (SR-84): every release goes to the test instance first, then the same upload to production (runbook step 7).
+- **Security re-assessment of the implementation** (SR-91, M7.4): `design/test-results/2026-11-10-sr-reassessment.md`. securityAssessment draft 0.17 adds findings SF-21 to SF-25.
+- **SR-75:** the live server files are copied into `../contabo-vps-6/zangbundel/`, with a readme.
+
 ## [0.2.1] - 2026-11-10
 
 A fix release for `zangbundel.nl`.

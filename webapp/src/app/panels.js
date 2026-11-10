@@ -67,6 +67,7 @@ export function aboutDialog(lang) {
   return openDialog({ title: t(lang, 'appName'), sub: t(lang, 'version', { v: VERSION }), logo: true, closeLabel: t(lang, 'close') }, [
     el('p', {}, [t(lang, 'privacy')]),
     el('p', {}, [extLink(privacyUrl(lang), t(lang, 'privacyLink'), t(lang, 'newTab'))]),
+    el('p', {}, [t(lang, 'onlyAddress')]),                // GD-45, SR-08: plain text, to compare with the address bar
     el('p', { class: 'muted small' }, [t(lang, 'aboutIcons')]),
   ]);
 }

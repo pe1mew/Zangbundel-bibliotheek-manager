@@ -999,6 +999,40 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
 
 **Exit:** the tagged release `v0.2.0` (IQ-04) on `test.zangbundel.nl`, with the gate's results in `design/test-results/`, and the testers' findings recorded as issues.
 
+### Completion plan (2026-11-10)
+
+The manager went live as `v0.2.0`/`v0.2.1` before M7 was done (the owner's decision under M8). This plan finishes what is left, in an order that protects the live site first.
+- **Who:** *agent* means work in this repository, staged for the owner. *Owner* means a step only the owner can take: server root, browsers the agent cannot drive, accounts, decisions.
+- **When it is done:** the plan is done when M7's exit holds: the gate, the matrix and the testers recorded under `design/test-results/`.
+
+| # | Activity | Who | Depends on | Done when |
+|---|---|---|---|---|
+| C1 | **SR-75:** the live server files copied into `../contabo-vps-6/zangbundel/`: vhosts, `conf.d`, snippets, scripts, units and logrotate. No secrets (htpasswd, push URL). | agent; owner commits there | — | Each file there equals the live file on contabo6 (SHA-256) |
+| C2 | **Step 8, integrity monitoring:** the Kuma push monitor and its URL file, `zbm-verify.timer` enabled, and an outside availability monitor and a CT watch. The runbook gets the manager's URLs (`/`, not the placeholder's `/nl/`). | owner (server, Kuma, accounts); agent: runbook | — | Kuma shows the monitor green, and a test change to a live file turns it red, then green again |
+| C3 | **Step 9, HSTS ramp:** 300 → 1 week → 1 month → 1 year, each after a clean period. | agent: config and test; owner: install and reload | — | `check_headers.py --hsts-min 31536000` passes on both hosts |
+| C4 | **DNS leftovers:** remove the Let's Encrypt staging account from CAA; confirm the registrar's two-factor authentication (SC-12). | owner | — | SC-12 rerun clean |
+| C5 | **SC-05 and M7.2:** a key made, and one library opened, edited, signed and downloaded, in Firefox, Edge and Safari (TD-15). | owner; agent: a short checklist | — | Results in `design/test-results/` |
+| C6 | **M7.4:** the security assessment repeated for the implementation (SR-91): every SR checked against the code and the server as built. | agent | — | securityAssessment's next draft records each SR as met, with where, or as a finding |
+| C7 | **M7.3, accessibility:** keyboard paths through every screen, focus order and visibility, contrast, labels, and the mouse-only ⓘ help (GD-44). | agent; owner decides the ⓘ | — | A pass recorded in `design/test-results/`, with fixes built and checked |
+| C8 | **EDT-31:** a way to reorder sets again (a drag handle, as for songs in a set), or the FDS changed. | owner decides; agent builds | — | EDT-31 met, or withdrawn in the FDS |
+| C9 | **M7.6 / F9, the wiki:** Hugo pinned as a dev tool (a TD decision, SR-91). The pages are Markdown in `wiki/<lang>/`, built into the `zangbundel.nl` release, and the help texts link to them. | agent; owner allows the Hugo download and writes or checks the content | C6 for its SR-91 part | The wiki served under `zangbundel.nl`, in nl/en/de, with every help text linked |
+| C10 | **M7.5, testers:** accounts for the requester and two or three leaders, a short tester guide, findings as GitHub issues. | owner; agent: the guide | C5, C9 helps | Testers' blocking issues closed |
+| C11 | **The app's side:** the app's import of this format released, and the two changed test cases copied into its corpus. | the app repository (owner) | — | The app imports a library made by the manager |
+| C12 | **M7's exit:** a release (`v0.3.0`) from a signed tag with the full gate rerun. Then the M8 criteria still open: HSTS a year for three months, then preload. | agent and owner | C1 to C11 | M7's exit holds |
+
+**Order of work:** C1 to C3 first, since they protect the live site; C4 and C5 alongside, as they are the owner's and short. Then C6 and C7, C8 when decided, C9, C10 and C11, and C12 last.
+
+**State (2026-11-10):**
+- **C1, done (agent):** the 14 live server files went to `../contabo-vps-6/zangbundel/`, with a `readme.md` (where each lives, the SHA-256s, what is left out and why). Staged there for the owner. Each equalled the live file on contabo6, checked by SHA-256 over SSH.
+- **C2, runbook done (agent); the server part is the owner's:** the outside availability monitor now watches `https://zangbundel.nl/` for `Zangbundel`, not the placeholder's `/nl/`. Step 10's SC-01 for `zangbundel.nl` carries `--app`. On contabo6 (2026-11-10, by the owner): a Kuma push monitor "zangbundel integrity" (3900 s, one retry), its URL in `/etc/zangbundel/kuma-push-url`, and `zbm-verify.timer` enabled. The first run gave `ok` for `zangbundel.nl` (manager-0.2.1) and `test.zangbundel.nl` (manager-0.2.0-dev.7), with no push error. Still open (owner): the outside availability monitor and the Certificate Transparency watch.
+- **C3, step 2 live (2026-11-10):** `zbm-common-headers.conf` sends `max-age=604800` (one week), after three clean days at 300. The owner installed it. Both hosts send it, and SC-01 on `zangbundel.nl` with `--hsts-min 604800` passed 21 of 21. Step 3 (one month) is due no earlier than 2026-11-17.
+- **C6, done (agent, 2026-11-10):** every SR was checked against `v0.2.1` and the server (`design/test-results/2026-11-10-sr-reassessment.md`; securityAssessment draft 0.17). There are five new findings:
+  - **SF-21 (Medium, owner):** activate the tagged release on the test instance before production (SR-84). Now: `manager-0.2.1` on `test.zangbundel.nl`. *The runbook says so (step 7, 2026-11-10).*
+  - **SF-22 (Medium, owner):** a GitHub ruleset on `main` against force pushes and deletion (SR-90).
+  - **SF-23 (Low, agent writes, owner tries):** an incident and restore runbook (SR-63, SR-93). *Written 2026-11-10: runbook step 11 and `webapp/maintenance/`, exercised in the container test. Still to do: tag, build and dry-run on the test instance.*
+  - **SF-24 (Low, agent):** the canonical address in *Over* and the README; a note for the app (SR-08). *Done in the source 2026-11-10 (GD-45), live with the next release. Still to do: the app's part (owner).*
+  - **SF-25 (Low, owner decides):** drop the unused `zbm-download` from SR-20 and the CSP.
+
 ### M8 — Go live on zangbundel.nl (outside this plan)
 
 Criteria for the owner's decision: M7 complete; testers' blocking issues closed; the Songbook app's import of this format released; HSTS at one year for three months (then preload, SQ-03); the release procedure practised at least three times on the test instance. Going live is then the same signed release activated in the production directory (SR-84), replacing the placeholder.
@@ -1025,7 +1059,8 @@ Criteria for the owner's decision: M7 complete; testers' blocking issues closed;
   - **SC-01 from outside:** 21 of 21 (`design/test-results/2026-11-09-sc01-zangbundel.nl.md`).
   - **In the browser pane:** `https://zangbundel.nl/` shows version 0.2.0 without the test banner, with a clean console.
   - **Going back:** the two backed-up nginx files, then `zbm-release switch zangbundel.nl placeholder-0.1.0` (`webapp/server/README.md`).
-- **v0.2.1 (2026-11-10), being prepared:** the narrow page on a phone cut off its top (GD-32, webappGUI draft 0.34). `version.js` is `0.2.1`, and the changelog has its section. A dry run built byte-identical twice, and `node --test` passes 399 of 399. No server change is needed.
+- **v0.2.1 (2026-11-10):** the narrow page on a phone cut off its top (GD-32, webappGUI draft 0.34). `version.js` is `0.2.1`, and the changelog has its section. A dry run built byte-identical twice, and `node --test` passes 399 of 399. No server change is needed. Built as `dist/manager-0.2.1` from commit `9fe69ee` with the signed tag `v0.2.1` (verified), `source_dirty: false`, 13 files. Two builds were byte-identical.
+  - **Live on `zangbundel.nl`:** signed and uploaded by the owner (`upload-20261110T180505Z-3317259.tar`, SHA-256 `94cb0386…`) and activated. `zbm-release verify zangbundel.nl` is `ok`, and SC-01 from outside passed.
 
 ---
 

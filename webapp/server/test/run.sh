@@ -47,7 +47,7 @@ check "bundled library engine = native engine on all 56 test libraries" sh -c "[
 check "node --test: unit tests and the test-library corpus" sh -c "{ [ -d /tmp/test-libraries ] || cp -r /repo/test-libraries /tmp/test-libraries; } && mkdir -p /tmp/design && cp /repo/design/FDS.md /tmp/design/ && node --experimental-global-webcrypto --test /tmp/webapp-rw/tests/"   # Node 18 (apt): crypto is global from Node 19
 
 # --- build: placeholder from a signed tag (SR-10, SR-90), holding page as a trial build ---
-mkdir -p $W/src/webapp && cp -r /repo/webapp/placeholder /repo/webapp/test-holding /repo/webapp/tools /repo/webapp/src /repo/webapp/vendor $W/src/webapp/
+mkdir -p $W/src/webapp && cp -r /repo/webapp/placeholder /repo/webapp/test-holding /repo/webapp/maintenance /repo/webapp/tools /repo/webapp/src /repo/webapp/vendor $W/src/webapp/
 rm -rf $W/src/webapp/tools/release-key.pub $W/src/webapp/tools/__pycache__
 git -C $W/src init -q -b main && git -C $W/src add -A && git -C $W/src commit -q -m 'test source'
 refused "build without a signed tag" "no tag with a valid signature" \
@@ -56,6 +56,8 @@ git -C $W/src tag -s v0.1.0 -m 'test tag'
 check "build placeholder from signed tag" \
   python3 $W/src/webapp/tools/build.py build --src $W/src/webapp/placeholder --name placeholder --version 0.1.0 --out $W/dist/placeholder-0.1.0
 check "manifest names the tag" grep -q '"source_tag": "v0.1.0"' $W/dist/placeholder-0.1.0/release-manifest.json
+check "build the maintenance page from the signed tag (SR-93)" \
+  python3 $W/src/webapp/tools/build.py build --src $W/src/webapp/maintenance --name maintenance --version 0.1.0 --out $W/dist/maintenance-0.1.0
 # the manager as a release for zangbundel.nl (v0.2.0 on): from the same signed tag, never a trial
 check "build the manager from the signed tag" \
   python3 $W/src/webapp/tools/build.py build --src $W/src/webapp/src --name manager --version "$(sed -n "s/^export const VERSION = '\(.*\)';/\1/p" /repo/webapp/src/app/version.js)" --out $W/dist/manager-release
@@ -69,7 +71,7 @@ check "manager release holds bundles only, no JS source (main + workers, hashed 
 check "a second build of the manager is byte-identical (SR-10)" sh -c "python3 /repo/webapp/tools/build.py build --src /repo/webapp/src --name manager --version \$(sed -n \"s/^export const VERSION = '\\\\(.*\\\\)';/\\\\1/p\" /repo/webapp/src/app/version.js) --out /tmp/manager2 --allow-dirty >/dev/null && diff -r $W/dist/manager /tmp/manager2"
 check "sign and pack manager" bash $W/tools/sign-release.sh $W/dist/manager $W/rk/test-release
 check "sign and pack the manager release" bash $W/tools/sign-release.sh $W/dist/manager-release $W/rk/test-release
-for n in placeholder test-holding; do
+for n in placeholder test-holding maintenance; do
   check "sign and pack $n" bash $W/tools/sign-release.sh $W/dist/$n-0.1.0 $W/rk/test-release
 done
 
@@ -247,6 +249,14 @@ check "/ is the manager's page, no front door" sh -c "curl -sk --resolve zangbun
 echo; echo "=== SC-01 zangbundel.nl ==="
 check "SC-01 zangbundel.nl with the manager (--app)" python3 /repo/webapp/tools/check_headers.py zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure --app
 grep -E '^(PASS|FAIL)|^        -' /tmp/out | grep -v '^PASS' | head -20
+# SR-93: the incident step. The maintenance page goes live in one command and the manager comes back with switch
+MV="$(sed -n "s/^export const VERSION = '\(.*\)';/\1/p" /repo/webapp/src/app/version.js)"
+check "incident: the maintenance page goes live on zangbundel.nl" zbm-release activate zangbundel.nl $W/dist/maintenance-0.1.0.tar
+check "incident: / says unavailable and loads no script" sh -c "curl -sk --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/ > /tmp/maint.html && grep -q 'Tijdelijk niet beschikbaar' /tmp/maint.html && ! grep -qi '<script' /tmp/maint.html"
+check "incident: the privacy statement stays reachable" sh -c "curl -sfk --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/en/privacy.html | grep -q 'Privacy'"
+check "incident: verify as zbm-verify with the maintenance page live" as_verify zbm-release verify
+check "incident: switch back to the manager" zbm-release switch zangbundel.nl manager-$MV
+check "incident: / is the manager again" sh -c "curl -sk --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/ | grep -q 'assets/main\.'"
 echo; echo "=== SC-01 test.zangbundel.nl ==="
 check "SC-01 test.zangbundel.nl (holding page, app CSP)" python3 /repo/webapp/tools/check_headers.py test.zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure --auth tester:test-only-pw --app --report /tmp/report/sc01.md
 grep -E '^(PASS|FAIL)|^        -' /tmp/out | grep -v '^PASS' | head -20

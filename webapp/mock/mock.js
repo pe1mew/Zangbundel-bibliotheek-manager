@@ -841,6 +841,7 @@ function gotoIssue(target) {
 function aboutDialog() {
   dialog(`<div style="display:flex;gap:16px;align-items:center"><img src="img/zangbundel-icon.svg" alt="" width="64" height="64" style="border-radius:14px">
     <div><h2 style="margin:0">${t('appName')}</h2><div class="muted">${t('version', { v: '0.1.0' })}</div></div></div>
+    <p>${t('onlyAddress')}</p>
     <p class="small muted">${t('aboutIcons')}</p>${btns(`<button class="btn btn-primary" data-dlg="cancel">${t('close')}</button>`)}`);
 }
 function langMenu(btn) {                                  // GD-17

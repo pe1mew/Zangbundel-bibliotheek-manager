@@ -10,14 +10,17 @@ The process it supports:
 4. Save it as a ZIP and publish it any way the user likes: e-mail, a messaging app, a website, a USB stick.
 5. The Zangbundel app imports the ZIP, checks it, and shows whether it is signed and by whom.
 
-## Status (4 November 2026)
+## Status (10 November 2026)
 
-**Version 0.1.0, design phase.** The functional design specification, [design/FDS.md](design/FDS.md), is at draft 0.7; the web app's design is in [design/webappGUI.md](design/webappGUI.md) and [design/webappTDS.md](design/webappTDS.md), with a clickable mock in `webapp/mock/`. The web app itself has no code yet.
+**The manager is live at https://zangbundel.nl, version 0.2.1.** That is its only address. Nobody connected with the project ever asks for your key file. Trial builds for testers run at `test.zangbundel.nl`.
 
-- The manager is a web app at `zangbundel.nl`, hosted on the owner's server with a test instance; libraries and keys are processed in the browser and never sent to the server (webappTDS TD-01 to TD-17).
-- `test-libraries/` holds 56 shared test libraries, one invalid case for nearly every rule of FDS section 6, with a checker (O-04). Still open: confirming the readings those cases had to make where the rules leave room (O-11).
-- The import side of the specification (FDS section 8) is built in the Zangbundel app, not here.
-- Milestone M0 of the [implementation plan](design/implementationPlan.md) is built in the repository: a placeholder page for `zangbundel.nl`, the nginx configuration for both hosts and a signed release chain, with a runbook in `webapp/server/README.md`. Nothing is installed on the server yet.
+- **The specification:** the functional design specification, [design/FDS.md](design/FDS.md), is at draft 0.12.
+- **The design:** the web app's design is in [design/webappGUI.md](design/webappGUI.md) and [design/webappTDS.md](design/webappTDS.md), and its security in [design/securityAssessment.md](design/securityAssessment.md).
+- **Where it runs:** the web app is in `webapp/src`. Libraries and keys are processed in the browser and never sent to the server (webappTDS TD-06 to TD-08).
+- **The server:** its set-up and runbook are in `webapp/server/README.md`.
+- **Test libraries:** `test-libraries/` holds 59 shared test libraries, one invalid case for nearly every rule of FDS section 6, with a checker (O-04).
+- **The import side** of the specification (FDS section 8) is built in the Zangbundel app, not here.
+- **What is left** before version 1 is in the [implementation plan](design/implementationPlan.md) (milestone M7 and the completion plan).
 
 The [changelog](changelog.md) lists what changed and when.
 

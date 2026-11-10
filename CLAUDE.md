@@ -75,6 +75,7 @@ Zangbundel-bibliotheek-manager/
 │   ├── tests/                    ← test_build.py, test_bundle.py, test_vendor.py, test_engine_bundle.py (need node); unit/, conformance.test.mjs (node --test)
 │   ├── vendor/                   ← fflate 0.8.3, @noble/ed25519 3.2.0 with licences; VENDOR.md (hashes, provenance), written by tools/vendor.py
 │   ├── test-holding/             ← test.zangbundel.nl until M1.4
+│   ├── maintenance/              ← the signed maintenance page for an incident (runbook step 11, SR-93); privacy pages copied from src/
 │   ├── tools/                    ← build.py, bundle.py, vendor.py, sign-release.sh, check_headers.py (SC-01); release-key.pub once the owner makes it
 │   └── server/                   ← nginx config, zbm-receive, zbm-release, zbm-verify timer; README.md = M0 runbook
 ├── memory/                       ← MEMORY.md index, gotcha-log.md, todo.md (committed, shared)

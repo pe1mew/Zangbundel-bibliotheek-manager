@@ -83,6 +83,7 @@ const STR = {
     delNote: 'Het lied verdwijnt ook uit alle sets.', deleted: '"{t}" verwijderd',
     delSetTitle: 'Set verwijderen', delSetNote: 'De liedjes blijven in de bibliotheek.',
     renameTitle: 'Naam van de set', setNamePh: 'bijv. Zomerkamp 2026', setDefault: 'Nieuwe set',
+    onlyAddress: 'Alleen https://zangbundel.nl is de bibliotheek-manager.',
     aboutIcons: 'Pictogrammen: Google Material Icons, Apache License 2.0. Logo en foto: de Zangbundel-app, CC BY-SA 4.0, Remko Welling, PE1MEW.',
     // keys
     keyMakeText: 'Met je sleutel onderteken je een bibliotheek. De Zangbundel-app toont dan je naam en de vingerafdruk van je sleutel, en merkt het als iemand anders de bibliotheek later wijzigt.',
@@ -178,6 +179,7 @@ const STR = {
     delNote: 'The song is removed from all sets as well.', deleted: '"{t}" deleted',
     delSetTitle: 'Delete set', delSetNote: 'The songs stay in the library.',
     renameTitle: 'Name of the set', setNamePh: 'e.g. Summer camp 2026', setDefault: 'New set',
+    onlyAddress: 'Only https://zangbundel.nl is the library manager.',
     aboutIcons: 'Icons: Google Material Icons, Apache License 2.0. Logo and photograph: the Zangbundel app, CC BY-SA 4.0, Remko Welling, PE1MEW.',
     keyMakeText: 'Your key signs a library. The Zangbundel app then shows your name and the fingerprint of your key, and notices when someone else changes the library later.',
     keyName: 'Your name as author', keyNamePh: 'e.g. Troop 12 leaders', keyMakeNote: 'The name is not checked. The key is made in your browser and stays on this computer (FDS EDT-61).',
@@ -270,6 +272,7 @@ const STR = {
     delNote: 'Das Lied wird auch aus allen Sets entfernt.', deleted: '„{t}" gelöscht',
     delSetTitle: 'Set löschen', delSetNote: 'Die Lieder bleiben in der Bibliothek.',
     renameTitle: 'Name des Sets', setNamePh: 'z. B. Sommerlager 2026', setDefault: 'Neues Set',
+    onlyAddress: 'Nur https://zangbundel.nl ist die Bibliotheksverwaltung.',
     aboutIcons: 'Symbole: Google Material Icons, Apache License 2.0. Logo und Foto: die Zangbundel-App, CC BY-SA 4.0, Remko Welling, PE1MEW.',
     keyMakeText: 'Mit deinem Schlüssel signierst du eine Bibliothek. Die Zangbundel-App zeigt dann deinen Namen und den Fingerabdruck deines Schlüssels und bemerkt, wenn jemand anders die Bibliothek später ändert.',
     keyName: 'Dein Name als Autor*in', keyNamePh: 'z. B. Leitung Trupp 12', keyMakeNote: 'Der Name wird nicht geprüft. Der Schlüssel wird in deinem Browser erstellt und bleibt auf diesem Computer (FDS EDT-61).',

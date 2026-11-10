@@ -266,6 +266,14 @@ To go back: put the earlier two nginx files back, reload, and `zbm-release switc
 
 Done on 2026-11-09: `manager-0.2.0` (tag `v0.2.0`) is live on `zangbundel.nl`. The earlier nginx files are in `/etc/nginx/zbm-backup-20261109/`, and SC-01 passed 21 of 21.
 
+**Every release, from 2026-11-10: test first, then the same upload (SR-84, SF-21).** `0.2.0` and `0.2.1` went straight to production; what the testers had seen were the trials. From now on:
+1. Build the tagged release, sign it and upload it once.
+2. `zbm-release activate test.zangbundel.nl <the upload>`, with no `--trial`.
+3. Check it on `test.zangbundel.nl`: `check_headers.py test.zangbundel.nl --auth <tester> --app` and a walk through the changed screens.
+4. Then `zbm-release activate zangbundel.nl <the same upload>`. Activation checks the signature and every hash again, so production gets byte for byte what was tested.
+
+Trials (`--trial`) stay for work in progress; they never go to production.
+
 Each upload prints its file name in the staging directory. Then, on the server as root:
 
 ```bash
@@ -319,17 +327,17 @@ Once that works, the monitor turns green. It turns red when a live file no longe
 
 Uptime Kuma runs on contabo6 itself, so it cannot see the host go down. Add from outside:
 
-- **Availability (SR-62).** An external monitor on `https://zangbundel.nl/nl/` (keyword `Zangbundel`) and on `https://test.zangbundel.nl/robots.txt`, for example a free UptimeRobot account or a Kuma on another machine. Use certificate-expiry alerts where offered.
+- **Availability (SR-62).** An external monitor on `https://zangbundel.nl/` (keyword `Zangbundel`, in the manager's page title; since v0.2.0 there is no `/nl/` page) and on `https://test.zangbundel.nl/robots.txt`, for example a free UptimeRobot account or a Kuma on another machine. Use certificate-expiry alerts where offered.
 - **Certificate Transparency (SR-06).** A watch on `zangbundel.nl` including subdomains, for example SSLMate Cert Spotter (free for one domain). Any certificate not issued by our own certbot is an incident.
 
 ## 9. HSTS ramp (SR-02, SQ-03)
 
-`snippets/zbm-common-headers.conf` starts at `max-age=300`. Raise it only after a clean period at each step, run `nginx -t && systemctl reload nginx`, and check with `check_headers.py --hsts-min <new value>`:
+`snippets/zbm-common-headers.conf` started at `max-age=300`; the table says where the ramp stands. Raise it only after a clean period at each step, run `nginx -t && systemctl reload nginx`, and check with `check_headers.py --hsts-min <new value>`:
 
 | Step | max-age | After |
 |---|---|---|
 | 1 | 300 (5 minutes) | start |
-| 2 | 604800 (1 week) | a day without problems on both hosts |
+| 2 | 604800 (1 week) | a day without problems on both hosts. *In the source 2026-11-10, after three clean days at 300.* |
 | 3 | 2592000 (1 month) | a week |
 | 4 | 31536000 (1 year) | a month |
 | 5 | add `; preload`, submit at hstspreload.org | three months at one year (SQ-03) |
@@ -341,7 +349,7 @@ Uptime Kuma runs on contabo6 itself, so it cannot see the host go down. Add from
 Run these from the owner's computer and save the results in `design/test-results/` (one file per run; `--report` creates the folder):
 
 ```bash
-python webapp/tools/check_headers.py zangbundel.nl --report design/test-results/<date>-sc01-zangbundel.nl.md
+python webapp/tools/check_headers.py zangbundel.nl --app --report design/test-results/<date>-sc01-zangbundel.nl.md
 ```
 
 ```bash
@@ -356,3 +364,70 @@ python webapp/tools/check_headers.py test.zangbundel.nl --auth <tester> --app --
 | SC-13 | `https://zangbundel.nl/.well-known/security.txt` is served and its `Expires` is in the future (renew it before 2027-11-01). The privacy statement matches the logging. The access log holds shortened addresses. The error log holds full addresses for server faults and, on the test instance, for failed logins (unknown user or wrong password) with the user name entered. `/etc/logrotate.d/zangbundel` rotates `/var/log/nginx/zangbundel/*.log` daily, also when empty, and keeps 13 old files, so no entry is older than 14 days. Check with `ls /var/log/nginx/zangbundel/` after two weeks |
 
 Finally, copy the live files into `../contabo-vps-6` (SR-75): the three vhosts, `conf.d/zangbundel.conf`, the snippets, both scripts and both systemd units. Leave out the htpasswd file and the push URL, which are secrets.
+
+## 11. Incident and restore (SR-63, SR-93)
+
+An incident is anything that makes the live files untrustworthy or the site unsafe to use. Examples: `zbm-verify` turns red, a certificate appears that our certbot did not request (step 8), a report comes in through `security.txt`, or a dependency gets an advisory that affects a used function (SR-14).
+
+### Take the manager offline
+
+The maintenance page (`webapp/maintenance/`) is a signed release like any other: one page in nl, en and de, without script, with the privacy statement. Build it once from a signed tag, sign it, and keep `dist/maintenance-0.1.0.tar` on the owner's computer.
+
+1. Upload it, and note the upload's name:
+
+   ```bash
+   ssh -i ~/.ssh/zangbundel-deploy zbm-deploy@169.58.68.107 < dist/maintenance-0.1.0.tar
+   ```
+
+2. Make it live. Replace the upload name with the one step 1 printed:
+
+   ```bash
+   ssh -t rfsee.net "sudo zbm-release activate zangbundel.nl /srv/zangbundel-staging/incoming/upload-<…>.tar"
+   ```
+
+From then on, no script of the manager is served. `zbm-verify` keeps checking the maintenance page.
+
+**If the server itself is suspect,** do not trust its files at all: take the site off nginx. The default server then closes every connection for `zangbundel.nl` (444):
+
+```bash
+ssh -t rfsee.net "sudo rm /etc/nginx/sites-enabled/zangbundel.nl.conf && sudo nginx -t && sudo systemctl reload nginx"
+```
+
+Put it back with `sudo ln -s ../sites-available/zangbundel.nl.conf /etc/nginx/sites-enabled/`, then `nginx -t` and a reload.
+
+### Find out and put it right
+
+- `sudo zbm-release verify` says which file differs or was added. `zbm-release list zangbundel.nl` shows what is installed.
+- **Files changed but the server is sound:** switch to a release that verifies; `switch` checks it again before it becomes live. For example:
+
+  ```bash
+  ssh -t rfsee.net "sudo zbm-release switch zangbundel.nl manager-0.2.1"
+  ```
+
+- **The server or the release key is suspect:** restore on a clean host, as below. A suspect release key also needs a new key pair (step 3) and the new public key in `webapp/tools/release-key.pub` and `/etc/zangbundel/allowed_signers`.
+- **Back online:** `switch` to the manager release, then `check_headers.py zangbundel.nl --app` (SC-01).
+
+### Restore from scratch (SR-63)
+
+Everything needed is outside the server: this repository with its signed tags, the copy of the live configuration in `../contabo-vps-6/zangbundel/`, and the release key.
+
+1. A host with Ubuntu 24.04 and nginx. Point the A record of both names at it (step 1), and leave the CAA records as they are.
+2. Install the server files from this repository, as in step 4. `../contabo-vps-6/zangbundel/readme.md` lists where each file goes and the SHA-256 it had when live.
+3. Put `webapp/tools/release-key.pub` into `/etc/zangbundel/allowed_signers` (step 4). Make a new htpasswd for the testers (step 6).
+4. Get certificates (step 5) and enable both sites (step 6).
+5. Rebuild the live release from its tag, for example `git checkout v0.2.1`, then build, sign, upload and activate (step 7). The build is reproducible (SR-10), so the hashes are those of the original release.
+6. Enable the hourly check and its push monitor (step 8), and set HSTS to the step the ramp had reached (step 9).
+7. Run the release gate (step 10).
+
+*To be tried once on the test instance (SF-23):* activate the maintenance page there, look at it, then `zbm-release switch test.zangbundel.nl manager-0.2.1`.
+
+### What to tell users
+
+Post a notice on the project's GitHub page (an issue pinned at the top, or a security advisory) in Dutch and English. Say:
+- when the site was unsafe, from when to when, as far as known;
+- what was affected;
+- what users should do.
+
+If library files could have been changed, users check their libraries in the manager once it is back. If script could have been changed while someone had a key loaded, that person continues under a new key through *Opslaan als kopie* (FDS limitation 4, EDT-72). Their Zangbundel app users then import the copy as a new library.
+
+> *Dutch template:* "Van <datum, tijd> tot <datum, tijd> was zangbundel.nl niet betrouwbaar: <wat er gebeurde>. Heb je in die tijd een sleutel geladen, ga dan verder met een nieuwe sleutel via *Opslaan als kopie*. Stuur je sleutelbestand nooit naar iemand; alleen https://zangbundel.nl is de bibliotheek-manager."

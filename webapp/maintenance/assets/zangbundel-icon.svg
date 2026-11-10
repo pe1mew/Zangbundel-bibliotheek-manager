@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Zangbundel app icon, master. Chosen from proposal 06 "Vuurboek in de kring" (2026-10-22),
+       replacing proposal 02. Full square: Google Play applies its own mask. All content stays
+       inside a 250 px circle around the centre, so a round mask never cuts a figure or the
+       Bluetooth sign. The adaptive launcher layers in ic_launcher_*.svg reuse the same content
+       scaled into the 66 dp safe zone. -->
+  <defs>
+    <linearGradient id="zb-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#13315C"/>
+      <stop offset="1" stop-color="#0B2545"/>
+    </linearGradient>
+    <radialGradient id="zb-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FF8A3D" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FF8A3D" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="zb-flame-outer" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF7B2E"/>
+      <stop offset="1" stop-color="#D7261E"/>
+    </linearGradient>
+    <linearGradient id="zb-flame-mid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFB02E"/>
+      <stop offset="1" stop-color="#FF6B1A"/>
+    </linearGradient>
+    <linearGradient id="zb-flame-core" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF3B0"/>
+      <stop offset="1" stop-color="#FFD166"/>
+    </linearGradient>
+    <!-- one flame tongue, 100 wide and 100 high, bottom centre at the origin -->
+    <path id="zb-tongue" d="M0,-100 C12,-74 50,-56 50,-24 C50,-8 27.5,0 0,0 C-27.5,0 -50,-8 -50,-24 C-50,-52 -16,-66 0,-100 Z"/>
+    <!-- one singer: head centre at the origin -->
+    <g id="zb-singer">
+      <path d="M-44,96 L-44,68 A44 44 0 0 1 44,68 L44,96 Q0,108 -44,96 Z"/>
+      <circle r="26"/>
+    </g>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#zb-bg)"/>
+  <circle cx="256" cy="330" r="235" fill="url(#zb-glow)"/>
+
+  <!-- Bluetooth sign alone in the top left corner, no ripples; kept inside the round mask -->
+  <circle cx="110" cy="110" r="36" fill="#1E88E5"/>
+  <path d="M95,96 L125,124 L110,139 L110,81 L125,96 L95,124" fill="none" stroke="#FFFFFF" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- content group: singers, fire and book -->
+  <g transform="translate(256 262) scale(0.9) translate(-256 -262)">
+
+    <!-- seven singers on a closed half circle behind fire and book, the farthest drawn first -->
+    <g fill="#1D4573" stroke="#FFFFFF" stroke-width="9" stroke-linejoin="round">
+      <use xlink:href="#zb-singer" href="#zb-singer" transform="translate(256 150) scale(0.82)"/>
+      <use xlink:href="#zb-singer" href="#zb-singer" transform="translate(171 170) scale(0.87)"/>
+      <use xlink:href="#zb-singer" href="#zb-singer" transform="translate(341 170) scale(0.87)"/>
+      <use xlink:href="#zb-singer" href="#zb-singer" transform="translate(105 226) scale(0.95)"/>
+      <use xlink:href="#zb-singer" href="#zb-singer" transform="translate(407 226) scale(0.95)"/>
+      <use xlink:href="#zb-singer" href="#zb-singer" transform="translate(73 305)"/>
+      <use xlink:href="#zb-singer" href="#zb-singer" transform="translate(439 305)"/>
+    </g>
+
+    <!-- the fire, rising from the centre of the book without wood: outer, middle and core layers -->
+    <g transform="translate(256 448) scale(1.12 1.15) translate(-256 -412)">
+      <g fill="url(#zb-flame-outer)">
+        <use xlink:href="#zb-tongue" href="#zb-tongue" transform="translate(196 412) rotate(-28) scale(0.55 0.95)"/>
+        <use xlink:href="#zb-tongue" href="#zb-tongue" transform="translate(318 412) rotate(26) scale(0.55 1.0)"/>
+        <use xlink:href="#zb-tongue" href="#zb-tongue" transform="translate(222 410) rotate(-14) scale(0.85 1.6)"/>
+        <use xlink:href="#zb-tongue" href="#zb-tongue" transform="translate(292 410) rotate(12) scale(0.85 1.7)"/>
+        <use xlink:href="#zb-tongue" href="#zb-tongue" transform="translate(256 412) scale(1.25 2.35)"/>
+      </g>
+      <g fill="url(#zb-flame-mid)">
+        <use xlink:href="#zb-tongue" href="#zb-tongue" transform="translate(232 414) rotate(-12) scale(0.6 1.15)"/>
+        <use xlink:href="#zb-tongue" href="#zb-tongue" transform="translate(282 414) rotate(10) scale(0.6 1.25)"/>
+        <use xlink:href="#zb-tongue" href="#zb-tongue" transform="translate(256 414) scale(0.95 1.8)"/>
+      </g>
+      <use xlink:href="#zb-tongue" href="#zb-tongue" fill="url(#zb-flame-core)" transform="translate(256 416) scale(0.6 1.15)"/>
+    </g>
+    <g fill="#FFD166">
+      <circle cx="224" cy="204" r="5"/>
+      <circle cx="294" cy="232" r="4"/>
+      <circle cx="288" cy="184" r="4"/>
+    </g>
+
+    <!-- the open songbook: white pages, black lines; drawn last so the fire rises from its centre -->
+    <g transform="translate(0 36)">
+      <g stroke="#000000" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" fill="#FFFFFF">
+        <path d="M104,412 L101,424 C156,414 212,418 256,440 C300,418 356,414 411,424 L408,412 C354,402 298,406 256,428 C214,406 158,402 104,412 Z"/>
+        <path d="M256,356 C222,334 168,330 112,342 L104,412 C158,402 214,406 256,428 Z"/>
+        <path d="M256,356 C290,334 344,330 400,342 L408,412 C354,402 298,406 256,428 Z"/>
+        <path d="M256,356 L256,428" fill="none"/>
+      </g>
+      <g fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round">
+        <path d="M130,360 C166,352 206,352 238,366"/>
+        <path d="M128,377 C165,369 205,369 237,383"/>
+        <path d="M126,394 C163,386 203,386 236,400"/>
+        <path d="M382,360 C346,352 306,352 274,366"/>
+        <path d="M384,377 C347,369 307,369 275,383"/>
+        <path d="M386,394 C349,386 309,386 276,400"/>
+      </g>
+    </g>
+  </g>
+</svg>

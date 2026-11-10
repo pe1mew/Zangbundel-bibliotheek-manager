@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.34 |
-| **Date** | 2026-11-08 |
+| **Status** | Draft 0.35 |
+| **Date** | 2026-11-10 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
 
@@ -348,6 +348,8 @@ The owner's answers to the open questions, and two further requests made during 
 - **Not in the tab order (amended 2026-11-09, the owner's look at dev.6):** Tab goes from input to input; the ⓘ opens with the mouse.
 - **The library's fields (amended 2026-11-08, F11):** the same ⓘ and explanation on each field of *Bibliotheek*, in the form and in a read-only library alike: title, description, licence, the SPDX code of another licence, licence summary, licence text, maintainer's name and contact. The texts follow FDS 4.1, EDT-13, EDT-14, MAN-07 and MAN-08.
 
+**GD-45 — *Over* names the manager's only address.** *(2026-11-10; securityAssessment SR-08, SF-24.)* The *Over* dialog says, below the link to the privacy statement, *Alleen https://zangbundel.nl is de bibliotheek-manager.* (*Only https://zangbundel.nl is the library manager.*, *Nur https://zangbundel.nl ist die Bibliotheksverwaltung.*). It is plain text, not a link, so users can compare it with the address bar. The key notice of M-64 says the same (SR-44).
+
 **GD-34 — Bar widths, folding and the language are remembered on this computer.** *(Resolves GQ-16.)* They are kept in the browser's local storage, on that computer only, and restored on the next visit (EDT-82). Nothing about a library or a key is kept there (EDT-02, EDT-64). If local storage is not available, the manager starts with the defaults.
 
 **GD-35 — Store badges say *binnenkort* until the app is there; the manager's manual is on its GitHub wiki.** *(Resolves GQ-19.)* In the Android panel (GD-15), a badge is shown greyed with *binnenkort* (*coming soon*) and no link while the app is not public in that store, except the Google Play badge, which is left out until the app is listed there: Google's badge guidelines allow it only unaltered (*amended 2026-11-07* by the owner, on the placeholder first); the GitHub APK link works now. The manager's manual lives on this repository's GitHub wiki (`github.com/pe1mew/Zangbundel-bibliotheek-manager/wiki`), like the app's.
@@ -431,6 +433,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.35 | 2026-11-10 | GD-45: *Over* states that only `https://zangbundel.nl` is the manager (securityAssessment SR-08, SF-24). |
 | Draft 0.34 | 2026-11-10 | GD-32: the narrow page no longer cuts off its top on a phone. |
 | Draft 0.33 | 2026-11-09 | After the owner's look at dev.6:
 - **GD-20:** *Toepassen* refuses a song with an Error, and *Ga naar* opens the left bar on the right tab.

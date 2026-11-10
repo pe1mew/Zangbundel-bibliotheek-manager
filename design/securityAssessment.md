@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.16 |
-| **Date** | 2026-11-09 |
+| **Status** | Draft 0.17 |
+| **Date** | 2026-11-10 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
 
@@ -153,6 +153,11 @@ From `../contabo-vps-6`. These facts drive several findings.
 | SF-18 | **Timing side channels in JavaScript cryptography.** `@noble/ed25519` targets "algorithmic constant time"; the JIT and garbage collector make true constant-time execution unattainable in JavaScript. Exploiting this needs local, repeated measurements of signing. | AT-7 | Low | SR-15, accepted (section 9) |
 | SF-19 | **Incorrect output.** A library the manager writes with a wrong hash, view or signature is refused by every Songbook app, or worse, accepted with content the user did not intend. | — | Medium | SR-34, SR-37 |
 | SF-20 | **No way to report a vulnerability or learn of an incident.** No `security.txt`, no stated contact, no incident procedure. | — | Low | SR-92, SR-93 |
+| SF-21 | **The tested release is not the released one.** *Found 2026-11-10 (SR-91).* `manager-0.2.0` and `manager-0.2.1` went to `zangbundel.nl` without first being activated on the test instance. The trials testers saw were built from different sources, so production ran code that no tester had seen. *2026-11-10: the runbook's step 7 now requires every release to be activated on the test instance first, and the same upload in production. Closed once `manager-0.2.1` runs on the test instance as well.* | — | Medium | SR-84 |
+| SF-22 | **`main` is not protected.** *Found 2026-11-10.* GitHub reports no branch protection and no ruleset on `main`. Whoever can push can rewrite its history. Signed tags still guard releases, because the build refuses an unsigned tag. | AT-5 | Medium | SR-90 |
+| SF-23 | **No incident runbook, and no tried restore.** *Found 2026-11-10.* Going back to an earlier release is written down. Taking the site offline, restoring it from scratch, and what to tell users are not. *2026-11-10: written as runbook step 11, with a signed maintenance page (`webapp/maintenance/`). The container test switches to it and back. Closed once the owner has tried it on the test instance.* | — | Low | SR-63, SR-93 |
+| SF-24 | **The canonical address is stated in too few places.** *Found 2026-11-10.* Only the key notice says that `https://zangbundel.nl` is the manager. The *Over* dialog, the README and the Zangbundel app do not, so users have nowhere independent to check the address. *2026-11-10: in *Over* (webappGUI GD-45) and the README, from the next release. The app's About screen and manual are the owner's, in the Zangbundel repository.* | AT-1 | Low | SR-08 |
+| SF-25 | **An unclaimed Trusted Types policy name.** *Found 2026-11-10.* The CSP allows a policy `zbm-download`, which the app never creates, because a `blob:` link is not a sink. Script already running on the page could claim that name and use it to pass HTML to a sink. The name protects nothing. | AT-2 | Low | SR-20, SR-32 |
 
 ---
 
@@ -619,5 +624,19 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 - **What changes:** what the public site runs. Its exposure is the test instance's, minus basic auth: the public can now load the scripts, which run only in the visitor's browser.
 - **Going back:** `zbm-release switch zangbundel.nl placeholder-0.1.0`, after putting the earlier nginx config back.
 - **Still open from the gate:** SC-05 in Firefox, Edge and Safari; HSTS above 300 s (step 9); the registrar's two-factor authentication. |
+| Draft 0.17 | 2026-11-10 | The implementation re-assessed (SR-91, implementationPlan M7.4), every SR against the code at `v0.2.1` and the server as running. The results are in `design/test-results/2026-11-10-sr-reassessment.md`.
+- **Met:** most requirements, each with where.
+- **New findings:**
+  - SF-21: production releases were not first activated on the test instance (SR-84).
+  - SF-22: `main` has no branch protection (SR-90).
+  - SF-23: no incident runbook and no tried restore (SR-63, SR-93).
+  - SF-24: the canonical address is missing from *Over*, the README and the app (SR-08).
+  - SF-25: the CSP names an unused Trusted Types policy, `zbm-download` (SR-20, SR-32).
+- **Since 0.16:** the hourly check runs and reports to Kuma (SR-73); the server files are copied to `contabo-vps-6` (SR-75); HSTS is at one week (SR-02); GitLab's advisory database has been searched (SR-14).
+- **Fixed the same day:**
+  - The runbook orders test before production (SF-21).
+  - Step 11, incident and restore, with a maintenance release in `webapp/maintenance/` (SF-23). The container test switches to it and back.
+  - *Over* and the README name the address (SF-24).
+- **Still open:** SR-03's staging CAA record, SR-06, SR-62's outside monitor, SC-05 and SR-82. |
 | Draft 0.15 | 2026-11-08 | Recheck for a server-tool change (SR-91). `zbm-release activate` now checks the upload path before it creates anything in the site's directory. It reads the path with `lstat`, so a symbolic link or a directory is refused instead of being followed as root. Before, a link was followed, though a signature check would still have refused what it pointed at. A missing path is refused with the newest upload names in staging; only root runs `activate`, and root can read staging anyway. A file that is not a tar is refused without a traceback. No new input reaches the server, and no file, key or network path changes. Container test: 85 of 85. |
 | Draft 0.14 | 2026-11-07 | SR-41 clarified by the owner: the key lives until the page closes, not until *Sluiten*. M6.4 recheck (SR-91): key-file bytes reach the main thread only for the explicit download of a new key (SR-40) and are zeroed after the Blob is made; the name field has `autocomplete="off"` (SR-45); SR-44's advice is shown with M-64. |
