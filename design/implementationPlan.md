@@ -1044,6 +1044,7 @@ The manager went live as `v0.2.0`/`v0.2.1` before M7 was done (the owner's decis
   The owner then chose to make the ⓘ help work from the keyboard, and it is built (GD-44, amended): fields refer to their explanation, and F1 opens it.
 
   Still open: a real screen reader, the other browsers (C5, F1 included), and the screens not walked: sets, the key dialogs, *Ga naar*.
+- **Trial `0.3.0-dev.1` on the test instance (2026-11-10):** built from commit `68a037f` (the C7 fixes and *Over* GD-45). It is live on `test.zangbundel.nl`, and `zbm-release verify` gives `ok`. SC-01 `--app` gave 19 of 19, run by the owner. Production stays at `0.2.1`.
 
 ### M8 — Go live on zangbundel.nl (outside this plan)
 
