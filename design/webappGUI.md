@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.33 |
+| **Status** | Draft 0.34 |
 | **Date** | 2026-11-08 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -318,6 +318,8 @@ The owner's answers to the open questions, and two further requests made during 
 
 **GD-32 — Desktop and laptop only.** *(Resolves GQ-05.)* The manager is designed for a window of at least 980 px wide. In a narrower window it shows only the message *De bibliotheek-manager heeft een groter scherm nodig: gebruik een computer of maak het venster breder*, with the Android-app links of GD-15.
 
+*Fixed 2026-11-10 (the owner's phone):* the narrow page's box is centred by its own margins, so on a screen lower than the box it starts at the top and scrolls down. Before, it was centred by the flex container and its top was cut off.
+
 **GD-33 — Sections also move with up and down buttons.** *(Resolves GQ-15.)* Each section keeps its *Omhoog* and *Omlaag* buttons next to the drag handle, reachable with Tab and usable with Enter, as the keyboard alternative to dragging (GD-08).
 
 *Amended 2026-11-08 (F5, F7):* a section, or a song of a set, moved with *Omhoog* or *Omlaag* slides past its neighbour before the order changes. Focus stays on the button. With the system's *reduce motion* setting nothing slides.
@@ -429,6 +431,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.34 | 2026-11-10 | GD-32: the narrow page no longer cuts off its top on a phone. |
 | Draft 0.33 | 2026-11-09 | After the owner's look at dev.6:
 - **GD-20:** *Toepassen* refuses a song with an Error, and *Ga naar* opens the left bar on the right tab.
 - **GD-05:** every empty recommended field is advised in the editor at once.

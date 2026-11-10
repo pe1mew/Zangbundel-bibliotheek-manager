@@ -1025,6 +1025,7 @@ Criteria for the owner's decision: M7 complete; testers' blocking issues closed;
   - **SC-01 from outside:** 21 of 21 (`design/test-results/2026-11-09-sc01-zangbundel.nl.md`).
   - **In the browser pane:** `https://zangbundel.nl/` shows version 0.2.0 without the test banner, with a clean console.
   - **Going back:** the two backed-up nginx files, then `zbm-release switch zangbundel.nl placeholder-0.1.0` (`webapp/server/README.md`).
+- **v0.2.1 (2026-11-10), being prepared:** the narrow page on a phone cut off its top (GD-32, webappGUI draft 0.34). `version.js` is `0.2.1`, and the changelog has its section. A dry run built byte-identical twice, and `node --test` passes 399 of 399. No server change is needed.
 
 ---
 

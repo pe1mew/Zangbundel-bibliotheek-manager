@@ -510,8 +510,10 @@ textarea { font: inherit; }
 .narrow { display: none; }
 @media (max-width: 979px) {
   .app { display: none; }
-  .narrow { display: flex; flex: 1; align-items: center; justify-content: center; padding: 24px 16px; overflow-y: auto; }
-  .narrowbox { max-width: 560px; background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+  /* the box is centred by its auto margins, not by align-items: on a phone it is taller than the screen, and a
+     flex-centred box then overflows above the top, where it cannot be scrolled to (the owner's phone, 2026-11-10) */
+  .narrow { display: flex; flex: 1; padding: 24px 16px; overflow-y: auto; }
+  .narrowbox { margin: auto; max-width: 560px; background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
   .narrowbox .badges img { height: 48px; }
   .narrowbox .linkgrid { grid-template-columns: 1fr; }
   .narrowbox a { color: var(--sky-blue); }

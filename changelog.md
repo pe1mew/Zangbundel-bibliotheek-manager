@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-10
+
+A fix release for `zangbundel.nl`.
+
+### Fixed
+- **The narrow page on a phone** (GD-32) cut off its top: the box overflowed above the screen, where it could not be scrolled to. It is now centred by its own margins, and starts at the top when the screen is lower than the box (webappGUI draft 0.34). Checked at 375 × 812 and 375 × 560.
+
 ## [0.2.0] - 2026-11-09
 
 The first publication of the manager on `zangbundel.nl`, replacing the placeholder: the web app of milestones M1 to M6 as tried on `test.zangbundel.nl` in seven trial releases (`0.2.0-dev.1` to `-dev.7`). The release gate's first part is in `design/test-results/2026-11-09-release-gate-0.2.0.md`. Not yet done: the rest of M7 (browser matrix, accessibility pass, testers), reordering sets (FDS EDT-31) and the manual (F9).
