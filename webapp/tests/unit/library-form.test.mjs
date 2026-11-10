@@ -163,6 +163,15 @@ test('F11, GD-44: every field of the library form has its explanation, closed un
   assert.ok(byId(form.node, 'lib-title'), 'the field itself is still there');
 });
 
+test('GD-44 (M7.3): each field of the library form refers to its explanation', () => {
+  const form = createLibraryForm({ lang: 'nl', library: LIB, readOnly: false, onChange() {} });
+  const refs = Object.fromEntries([...walk(form.node)].filter((x) => ['input', 'select', 'textarea'].includes(x.tag) && x.attrs.id)
+    .map((x) => [x.attrs.id, x.attrs['aria-describedby']]));
+  assert.deepEqual(refs, { 'lib-title': 'help-libTitle', 'lib-description': 'help-libDescription', 'lib-license': 'help-libLicense',
+    'lib-license-id': 'help-libLicenseId', 'lib-summary': 'help-libSummary', 'lib-license-text': 'help-libLicenseText',
+    'lib-mname': 'help-libMaintainer', 'lib-mcontact': 'help-libContact' });
+});
+
 test('the owner\u2019s look at dev.6: leaving a field that is now right takes its mark away, also while its rule still fails', () => {
   const form = createLibraryForm({ lang: 'nl', library: LIB, readOnly: false, onChange() {} });
   form.update({ findings: [{ code: 'MAN-07', severity: 'Error' }, { code: 'MAN-08', severity: 'Error' }] });

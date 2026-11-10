@@ -7,11 +7,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **Version `0.3.0-dev.1`** for the first trial towards 0.3.0 on the test instance: the accessibility pass (GD-46, F1 help) and the address in *Over* (GD-45).
 - **HSTS ramp, step 2:** `max-age` goes from 300 s to one week (`webapp/server/README.md` step 9), in effect once installed on contabo6.
 - **The runbook's monitoring and gate commands** follow the manager on `zangbundel.nl`: the outside monitor watches `/`, and SC-01 uses `--app`.
 - **The implementation plan has a completion plan** (C1 to C12) for what is left after going live.
 
 ### Added
+- **Accessibility pass (M7.3, GD-46):**
+  - The keyboard keeps its place when part of the screen is redrawn (`app/focus.js`), and opening the editor moves the focus to its heading.
+  - Notices are read out through one status region.
+  - The side-bar tabs name their panels.
+  - Placeholders are `#8F8F8F`, and the editor's block-type select has the usual focus ring.
+  - The ⓘ help works from the keyboard (GD-44): a screen reader reads each field's explanation, and F1 opens it.
+  - Results: `design/test-results/2026-11-10-accessibility-m7.3.md`.
 - ***Over* names the only address** (GD-45, SR-08): *Alleen https://zangbundel.nl is de bibliotheek-manager.*, in nl, en and de. The README's status is brought up to date.
 - **A maintenance page and an incident runbook** (SR-63, SR-93): `webapp/maintenance/`, and `webapp/server/README.md` step 11. The container test switches to the maintenance page and back (100 checks).
 - **Release order** (SR-84): every release goes to the test instance first, then the same upload to production (runbook step 7).

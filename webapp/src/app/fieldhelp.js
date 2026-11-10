@@ -3,6 +3,8 @@
 // F11): an ⓘ beside a field's label opens a short explanation under the field, and a second click closes it. Which explanations are open lasts while the
 // page is open, so a redrawn left bar keeps them; nothing is stored (EDT-02). Used by the song's data in view mode
 // (songview.js), its fields in the editor (songfields.js) and the library's fields (library-form.js).
+// From the keyboard (GD-44, amended 2026-11-10, M7.3): the field refers to its explanation (aria-describedby),
+// so a screen reader reads it when the field gets the focus, and F1 in the field opens or closes it.
 
 import { el, icon, listen, setAttrs } from './dom.js';
 import { t } from './i18n.js';
@@ -17,26 +19,53 @@ export const HELP = Object.freeze({
 });
 
 const open = new Set();                                  // the explanations open on this page
+const toggles = new Map();                               // explanation id -> its toggle, the latest drawn
+const HELP_KEY = 'F1';
+const FIELD_TAGS = new Set(['INPUT', 'SELECT', 'TEXTAREA']);
+/** The inputs, selects and textareas in a node, the node itself included. */
+const fieldsIn = (n) => (FIELD_TAGS.has(String(n.tagName || n.tag || '').toUpperCase()) ? [n] : [...(n.children || [])].flatMap(fieldsIn));
 
 /** Whether a field's explanation is open (tests). */
 export const helpOpen = (name) => open.has(name);
 
 /**
- * GD-44: { row, panel } for field name: row is labelNode with the ⓘ beside it, panel the explanation, to go under
- * the field's value. label names the field for the button's accessible name.
+ * GD-44: { row, panel, describe } for field name: row is labelNode with the ⓘ beside it, panel the explanation, to
+ * go under the field's value; describe(control) makes each input, select or textarea in control refer to it.
+ * label names the field for the button's accessible name.
  */
 export function fieldHelp(lang, name, label, labelNode) {
   const id = `help-${name}`;
   const panel = el('div', { class: 'fieldhelp', id, hidden: !open.has(name) }, [t(lang, HELP[name], { other: t(lang, 'otherLanguage') })]);
   const text = t(lang, 'helpFor', { field: label });
   // not in the tab order (the owner's look at dev.6): Tab goes from input to input; the mouse opens the help
-  const button = el('button', { type: 'button', class: 'helpbtn', tabindex: -1, title: text, 'aria-label': text, 'aria-controls': id,
-    'aria-expanded': String(open.has(name)) }, [icon('about')]);
-  listen(button, 'click', () => {
+  const button = el('button', { type: 'button', class: 'helpbtn', tabindex: -1, title: `${text} (${HELP_KEY})`, 'aria-label': text,
+    'aria-controls': id, 'aria-expanded': String(open.has(name)) }, [icon('about')]);
+  const toggle = () => {
     if (open.has(name)) open.delete(name);
     else open.add(name);
     setAttrs(button, { 'aria-expanded': String(open.has(name)) });
     panel.hidden = !open.has(name);
+  };
+  listen(button, 'click', toggle);
+  toggles.set(id, toggle);
+  const describe = (control) => {
+    for (const c of fieldsIn(control)) {
+      const had = ((c.getAttribute && c.getAttribute('aria-describedby')) || '').split(/\s+/).filter((x) => x && x !== id);
+      setAttrs(c, { 'aria-describedby': [...had, id].join(' ') });
+    }
+    return control;
+  };
+  return { row: el('div', { class: 'flabelrow' }, [labelNode, button]), panel, describe };
+}
+
+/** GD-44 from the keyboard: F1 in a field opens or closes that field's explanation (once, at start). */
+export function installHelpKey(doc = document) {
+  listen(doc, 'keydown', (event) => {
+    if (event.key !== HELP_KEY) return;
+    const field = doc.activeElement;
+    const id = field && (field.getAttribute('aria-describedby') || '').split(/\s+/).find((x) => toggles.has(x));
+    if (!id || !doc.getElementById(id)) return;
+    event.preventDefault();                               // not the browser's own help
+    toggles.get(id)();
   });
-  return { row: el('div', { class: 'flabelrow' }, [labelNode, button]), panel };
 }

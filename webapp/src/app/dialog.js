@@ -66,12 +66,29 @@ export function openDialog({ title, sub, logo = false, wide = false, closeLabel,
 }
 
 let toastNode = null;
+let liveRegion = null;
+/**
+ * M7.3, WCAG 4.1.3: read a notice out. Screen readers announce a change inside a live region that already
+ * exists, not reliably a new region that arrives with its text; so one hidden region stays in the page,
+ * and the text goes into it a moment after it was emptied (the same notice twice is read twice).
+ */
+function announce(text) {
+  if (!liveRegion || !liveRegion.isConnected) {
+    liveRegion = el('div', { class: 'sr', role: 'status', 'aria-live': 'polite' }, []);
+    document.body.append(liveRegion);
+  }
+  const region = liveRegion;
+  region.replaceChildren();
+  setTimeout(() => region.replaceChildren(text), 100);
+}
+
 /** A short notice at the bottom that goes by itself (GD-39 *Sleutel vergeten*), read out politely. */
 export function toast(text, ms = 4000) {
   if (toastNode) toastNode.remove();
-  const node = el('div', { class: 'toast', role: 'status', 'aria-live': 'polite' }, [text]);
+  const node = el('div', { class: 'toast', 'aria-hidden': 'true' }, [text]);   // seen here, heard through announce
   toastNode = node;
   document.body.append(node);
+  announce(text);
   setTimeout(() => {
     node.remove();
     if (toastNode === node) toastNode = null;

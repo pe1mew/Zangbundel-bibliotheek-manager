@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.35 |
+| **Status** | Draft 0.36 |
 | **Date** | 2026-11-10 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
@@ -57,6 +57,7 @@ The manager uses the app's night theme, as its songbook, setlist and campfire sc
 | Error and attention text (until GQ-02) | Fire orange light | `#FFB36B` |
 | The selected row, as the leader's current-song bar | Night blue | `#13315C` |
 | Links, keyboard focus ring | Sky blue | `#4FC3F7` |
+| Placeholder text in fields | *(the manager's own, GD-46)* | `#8F8F8F` |
 
 The configuration scheme of the app (night blue background, `ConfigurationScheme`) is not used; whether the app's background photograph has a place, for example on the splash, is GQ-01.
 
@@ -346,9 +347,18 @@ The owner's answers to the open questions, and two further requests made during 
 - **While the page is open:** which explanations are open lasts until the page closes, also when the bar is drawn again. Nothing is stored.
 - **Later:** each explanation gets a link to its page of the manual on `zangbundel.nl` once that exists (implementationPlan M7.6).
 - **Not in the tab order (amended 2026-11-09, the owner's look at dev.6):** Tab goes from input to input; the ⓘ opens with the mouse.
+- **From the keyboard (amended 2026-11-10, the owner's choice after the M7.3 pass):** the ⓘ stays out of the tab order. Each field refers to its explanation (`aria-describedby`), so a screen reader reads it when the field gets the focus, open or closed. **F1** in a field opens or closes that field's explanation, as the ⓘ does; the ⓘ's tooltip names the key (*Uitleg bij Titel (F1)*). The fields shown as values (view mode, a read-only library) have no keyboard stop and keep the ⓘ for the mouse.
 - **The library's fields (amended 2026-11-08, F11):** the same ⓘ and explanation on each field of *Bibliotheek*, in the form and in a read-only library alike: title, description, licence, the SPDX code of another licence, licence summary, licence text, maintainer's name and contact. The texts follow FDS 4.1, EDT-13, EDT-14, MAN-07 and MAN-08.
 
 **GD-45 — *Over* names the manager's only address.** *(2026-11-10; securityAssessment SR-08, SF-24.)* The *Over* dialog says, below the link to the privacy statement, *Alleen https://zangbundel.nl is de bibliotheek-manager.* (*Only https://zangbundel.nl is the library manager.*, *Nur https://zangbundel.nl ist die Bibliotheksverwaltung.*). It is plain text, not a link, so users can compare it with the address bar. The key notice of M-64 says the same (SR-44).
+
+**GD-46 — The keyboard keeps its place.** *(2026-11-10, implementationPlan M7.3, WCAG 2.2 AA.)* For users who work with the keyboard or a screen reader:
+- **After a redraw:** when an action redraws a part of the screen and removes the control that had the focus, the focus goes to the same control in its new form. That is the same tab, the same bottom-bar button (*Controle* with new counts), or the same field. If the control is gone, the focus goes to the heading of that part. Examples: after *Toepassen*, the song's title; after *Annuleren*, the library's or the song's title; after *Maken*, the new library's title. The heading takes the focus without a ring; Tab continues from there.
+- **When the editor opens:** the focus goes to its heading (*Nieuw lied*, *Bewerken: …*), also when it was opened from the list's pen or from the right bar.
+- **Notices:** what a toast says (*Wijzigingen toegepast*, *Sleutel vergeten*, …) is also read out, through one status region that stays in the page.
+- **Tabs and panels:** the tabs of both side bars name the panel they show (`aria-controls`, `aria-labelledby`).
+- **Placeholders:** placeholder text is `#8F8F8F`, at least 4.5:1 on black and on the sheet grey.
+- **Focus ring:** every control shows the sky-blue ring when it has the keyboard focus, the block-type select in the editor included.
 
 **GD-34 — Bar widths, folding and the language are remembered on this computer.** *(Resolves GQ-16.)* They are kept in the browser's local storage, on that computer only, and restored on the next visit (EDT-82). Nothing about a library or a key is kept there (EDT-02, EDT-64). If local storage is not available, the manager starts with the defaults.
 
@@ -433,6 +443,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.17 | 2026-11-07 | GD-14 amended by the owner: *Sleutel downloaden* only for a new key not yet downloaded, once, because the key is non-extractable afterwards (SR-16). The key stays in memory until the page closes, through *Sluiten* (securityAssessment SR-41). |
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
+| Draft 0.36 | 2026-11-10 | GD-46 (M7.3, the accessibility pass): where the focus goes after a redraw, when a view opens, and with a notice; placeholder text `#8F8F8F`; the tabs name their panels. GD-44 amended (the owner): each field refers to its explanation, and F1 opens it from the keyboard. |
 | Draft 0.35 | 2026-11-10 | GD-45: *Over* states that only `https://zangbundel.nl` is the manager (securityAssessment SR-08, SF-24). |
 | Draft 0.34 | 2026-11-10 | GD-32: the narrow page no longer cuts off its top on a phone. |
 | Draft 0.33 | 2026-11-09 | After the owner's look at dev.6:

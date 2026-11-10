@@ -12,6 +12,8 @@
 
 import { el, extLink, icon, replace, setAttrs } from './dom.js';
 import { toast } from './dialog.js';
+import { focusHeading, markFocus, restoreFocus, trackFocus } from './focus.js';
+import { installHelpKey } from './fieldhelp.js';
 import { createIdleWatch } from './idle.js';
 import { createLibraryForm } from './library-form.js';
 import { createLeaveGuard } from './leave-guard.js';
@@ -328,6 +330,7 @@ function start() {
     selected = id;
     editing = makeEditor({ id, text: session.get().library.songs.get(id), form, title });
     render();
+    focusHeading(layout.centre);                          // M7.3: also when opened from the list's pen
   };
   // EDT-32: *Lied toevoegen* opens the editor on an empty verse; the song joins the library on Toepassen
   const NEW_SONG = { blocks: [{ type: 'section', kind: 'verse', label: null, lines: [''], implicit: false }] };
@@ -336,6 +339,7 @@ function start() {
     selected = null;
     editing = makeEditor({ id: null, isNew: true, text: '', form: NEW_SONG, title: t(language.get(), 'newSongTitle') });
     render();
+    focusHeading(layout.centre);                          // M7.3: also when opened from the right bar
   };
   // EDT-32: a .cho file joins the library at once and shows; its problems are in Controle (GD-20)
   const importFile = () => pickFile(async (file) => {
@@ -458,7 +462,7 @@ function start() {
   let lastCentre;
   let lastView = null;
   let guard = null;
-  const render = () => {
+  const draw = () => {
     const lang = language.get();
     const state = session.get();
     document.documentElement.lang = lang;
@@ -512,9 +516,10 @@ function start() {
       // GD-21: two tabs, *Liedjes* and *Sets*; both lists stay built, so switching keeps the search
       setList = state.library ? createSetList({ lang, readOnly, onOpen: chooseSet, onNew: onNewSet, onRename: onRenameSet,
         onDelete: onDeleteSet }) : null;
-      const tab = (name) => el('button', { type: 'button', role: 'tab', class: 'tab', 'data-tab': name, on: { click: () => showTab(name) } }, []);
+      const tab = (name) => el('button', { type: 'button', role: 'tab', class: 'tab', id: `rtab-${name}`, 'aria-controls': 'rpane', 'data-tab': name,
+        on: { click: () => showTab(name) } }, []);
       tabs = state.library ? el('div', { class: 'tabs', role: 'tablist', 'aria-label': t(lang, 'rightTabs') }, [tab('songs'), tab('sets')]) : null;
-      pane = el('div', { class: 'tabpane', role: 'tabpanel' }, []);
+      pane = el('div', { class: 'tabpane', role: 'tabpanel', id: 'rpane' }, []);
       replace(layout.right, head, ...(state.library ? [tabs, pane] : [el('p', { class: 'empty' }, [t(lang, 'noLibrary')])]));
     }
     replace(head, ...libHead(lang, state, () => choose(null), readOnly));
@@ -525,6 +530,7 @@ function start() {
         b.replaceChildren(`${t(lang, name)} (${count})`);
         setAttrs(b, { 'aria-selected': name === rightTab ? 'true' : 'false', class: name === rightTab ? 'tab on' : 'tab' });
       }
+      setAttrs(pane, { 'aria-labelledby': `rtab-${rightTab === 'sets' ? 'sets' : 'songs'}` });
       const want = rightTab === 'sets' ? setList.node : songList.node;
       if (pane.firstChild !== want) pane.replaceChildren(want);
     }
@@ -543,10 +549,11 @@ function start() {
     const shellKey = state.library ? `${state.generation}|${lang}` : null;
     if (shellKey !== leftShellKey) {
       leftShellKey = shellKey;
-      const ltab = (name, label) => el('button', { type: 'button', role: 'tab', class: 'tab', 'data-tab': name, on: { click: () => showLeft(name) } }, [label]);
+      const ltab = (name, label) => el('button', { type: 'button', role: 'tab', class: 'tab', id: `ltab-${name}`, 'aria-controls': 'lpane', 'data-tab': name,
+        on: { click: () => showLeft(name) } }, [label]);
       leftTabs = state.library ? el('div', { class: 'tabs', role: 'tablist', 'aria-label': t(lang, 'leftTabs') },
         [ltab('song', t(lang, 'songData')), ltab('library', t(lang, 'library'))]) : null;
-      leftPane = el('div', { class: 'tabpane', role: state.library ? 'tabpanel' : null }, []);
+      leftPane = el('div', { class: 'tabpane', role: state.library ? 'tabpanel' : null, id: 'lpane' }, []);
       replace(layout.left, leftTabs, leftPane);
       leftKey = undefined;                                // the pane is new: draw its content again
     }
@@ -554,6 +561,7 @@ function start() {
       for (const b of leftTabs.children) {
         const name = b.getAttribute('data-tab');
         const on = name === (showSong ? 'song' : 'library');
+        if (on) setAttrs(leftPane, { 'aria-labelledby': `ltab-${name}` });
         setAttrs(b, { 'aria-selected': String(on), class: on ? 'tab on' : 'tab', disabled: name === 'song' && !songKey,
           title: name === 'song' && !songKey ? t(lang, 'chooseSong') : null });
       }
@@ -594,6 +602,15 @@ function start() {
       findings: state.library ? state.findings || [] : null }));
     replace(narrow, narrowPage(lang));
     if (guard) guard.sync();
+  };
+  // M7.3, WCAG 2.4.3: a redraw that removes the focused control keeps the keyboard's place (focus.js)
+  const regions = [layout.left, layout.centre, layout.right, layout.bottom];
+  trackFocus(regions);
+  installHelpKey();                                       // GD-44: F1 in a field opens its explanation
+  const render = () => {
+    const mark = markFocus(regions);
+    draw();
+    restoreFocus(mark);
   };
   replace(root, banner, layout.app, narrow);
   language.onChange(render);                              // GD-17: at once, without losing work

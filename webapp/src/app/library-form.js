@@ -136,7 +136,7 @@ export function createLibraryForm({ lang, library, readOnly, onChange }) {
   // F11 (GD-44): a field with its ⓘ beside the label and its explanation under the control
   const hbox = (name, help, id, text, required, controls) => {
     const h = fieldHelp(lang, help, text, label(id, text, required));
-    return box(name, [h.row, ...controls, h.panel]);
+    return box(name, [h.row, ...controls.map((c) => (c ? h.describe(c) : c)), h.panel]);
   };
   const input = (id, value, attrs = {}) => el('input', { id, type: 'text', value: value || '', disabled, autocomplete: 'off', ...attrs }, []);
   const area = (id, value, attrs = {}) => el('textarea', { id, disabled, ...attrs }, [value || '']);

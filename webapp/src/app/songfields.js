@@ -99,7 +99,7 @@ export function createSongFields({ lang, id, getForm, setForm }) {
     const help = fieldHelp(lang, name, label,
       el('label', { for: `song-${name}` }, [label, required ? el('span', { class: 'req', 'aria-hidden': 'true' }, [' *']) : null]));
     boxes[name] = el('div', { class: 'field' }, [
-      help.row, control, note ? el('div', { class: 'muted small' }, [note]) : null, help.panel, errors[name]]);
+      help.row, help.describe(control), note ? el('div', { class: 'muted small' }, [note]) : null, help.panel, errors[name]]);
     return boxes[name];
   };
   const input = (name, placeholder) => {

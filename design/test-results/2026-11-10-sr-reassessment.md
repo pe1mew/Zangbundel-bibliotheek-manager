@@ -112,3 +112,8 @@ Not re-run here, because nothing they cover has changed since the gate of 2026-1
 - **SF-21:** runbook step 7 says: activate the tagged release on the test instance first, then the same upload in production. Still to do (owner): activate `manager-0.2.1` on `test.zangbundel.nl`.
 - **SF-23:** runbook step 11 covers going offline, finding the cause, restoring from scratch, and what to tell users. The maintenance page is in `webapp/maintenance/`: no script, nl/en/de, and the privacy statement. In the container test (100 of 100), the maintenance page is activated on `zangbundel.nl`, serves no script, keeps the privacy statement reachable and passes `verify`; the manager then comes back with `switch`. Still to do (owner): tag and build it, then the dry run on the test instance.
 - **SF-24:** *Over* says *Alleen https://zangbundel.nl is de bibliotheek-manager.* in nl, en and de (webappGUI GD-45). Checked in the browser with the CSP in force: no console errors. The README's status says the same. Live from the next release. Still to do (owner): the app's About screen and manual.
+
+## Closed by the owner (2026-11-10)
+
+- **SF-21:** the production upload of `manager-0.2.1` was activated on `test.zangbundel.nl`, so both hosts run the same signed release.
+- **SF-23:** `maintenance-0.1.0` was built from its signed tag (commit `3168701`) and uploaded (SHA-256 `f315b6bd…`). On the test instance it was activated and checked, then `zbm-release switch test.zangbundel.nl manager-0.2.1` brought the manager back. `zbm-release verify` gave `ok` for both sites (13 files each). The release stays installed on the test instance; for production, the upload goes in at the moment of an incident (runbook step 11).

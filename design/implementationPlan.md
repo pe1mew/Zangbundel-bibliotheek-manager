@@ -1027,11 +1027,23 @@ The manager went live as `v0.2.0`/`v0.2.1` before M7 was done (the owner's decis
 - **C2, runbook done (agent); the server part is the owner's:** the outside availability monitor now watches `https://zangbundel.nl/` for `Zangbundel`, not the placeholder's `/nl/`. Step 10's SC-01 for `zangbundel.nl` carries `--app`. On contabo6 (2026-11-10, by the owner): a Kuma push monitor "zangbundel integrity" (3900 s, one retry), its URL in `/etc/zangbundel/kuma-push-url`, and `zbm-verify.timer` enabled. The first run gave `ok` for `zangbundel.nl` (manager-0.2.1) and `test.zangbundel.nl` (manager-0.2.0-dev.7), with no push error. Still open (owner): the outside availability monitor and the Certificate Transparency watch.
 - **C3, step 2 live (2026-11-10):** `zbm-common-headers.conf` sends `max-age=604800` (one week), after three clean days at 300. The owner installed it. Both hosts send it, and SC-01 on `zangbundel.nl` with `--hsts-min 604800` passed 21 of 21. Step 3 (one month) is due no earlier than 2026-11-17.
 - **C6, done (agent, 2026-11-10):** every SR was checked against `v0.2.1` and the server (`design/test-results/2026-11-10-sr-reassessment.md`; securityAssessment draft 0.17). There are five new findings:
-  - **SF-21 (Medium, owner):** activate the tagged release on the test instance before production (SR-84). Now: `manager-0.2.1` on `test.zangbundel.nl`. *The runbook says so (step 7, 2026-11-10).*
+  - **SF-21 (Medium, owner):** activate the tagged release on the test instance before production (SR-84). *The runbook says so (step 7). Closed 2026-11-10: `manager-0.2.1` runs on both hosts.*
   - **SF-22 (Medium, owner):** a GitHub ruleset on `main` against force pushes and deletion (SR-90).
-  - **SF-23 (Low, agent writes, owner tries):** an incident and restore runbook (SR-63, SR-93). *Written 2026-11-10: runbook step 11 and `webapp/maintenance/`, exercised in the container test. Still to do: tag, build and dry-run on the test instance.*
+  - **SF-23 (Low, agent writes, owner tries):** an incident and restore runbook (SR-63, SR-93). *Written 2026-11-10: runbook step 11 and `webapp/maintenance/`, exercised in the container test. Closed 2026-11-10: the owner's dry run of `maintenance-0.1.0` on the test instance.*
   - **SF-24 (Low, agent):** the canonical address in *Over* and the README; a note for the app (SR-08). *Done in the source 2026-11-10 (GD-45), live with the next release. Still to do: the app's part (owner).*
   - **SF-25 (Low, owner decides):** drop the unused `zbm-download` from SR-20 and the CSP.
+- **C7, done (agent, 2026-11-10):** the accessibility pass against WCAG 2.2 AA, in Chromium (`design/test-results/2026-11-10-accessibility-m7.3.md`). Six findings, all fixed and checked in the browser:
+  - the focus is kept after a redraw (new module `app/focus.js`), and goes to the editor's heading when the editor opens;
+  - toasts are read out through one status region;
+  - the tab panels are named;
+  - placeholder text is `#8F8F8F`;
+  - the editor's block-type select has the sky-blue ring.
+
+  The design is webappGUI GD-46.
+
+  The owner then chose to make the ⓘ help work from the keyboard, and it is built (GD-44, amended): fields refer to their explanation, and F1 opens it.
+
+  Still open: a real screen reader, the other browsers (C5, F1 included), and the screens not walked: sets, the key dialogs, *Ga naar*.
 
 ### M8 — Go live on zangbundel.nl (outside this plan)
 

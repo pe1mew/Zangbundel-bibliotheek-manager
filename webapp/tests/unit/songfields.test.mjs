@@ -114,6 +114,16 @@ test('GD-44 (F8): every field in the editor has its explanation, closed until it
   assert.equal(panel.hidden, true);
 });
 
+test('GD-44 (M7.3): each field refers to its explanation, so a screen reader reads it when the field gets the focus', () => {
+  let form = toBlocks(SONG);
+  const fields = createSongFields({ lang: 'en', id: 'vader-jacob', getForm: () => form, setForm: (f) => { form = f; } });
+  const refs = Object.fromEntries([...walk(fields.node)].filter((n) => ['input', 'select'].includes(n.tag) && n.attrs.id)
+    .map((n) => [n.attrs.id, n.attrs['aria-describedby']]));
+  assert.deepEqual(refs, { 'song-title': 'help-title', 'song-language': 'help-language', 'song-language-code': 'help-language',
+    'song-lyricist': 'help-lyricist', 'song-composer': 'help-composer', 'song-copyright': 'help-copyright', 'song-license': 'help-license',
+    'song-source': 'help-source', 'song-tag': 'help-tag' });
+});
+
 test('SNG-16 (the owner\u2019s look at dev.6): every empty recommended field is advised at once; words or music together', () => {
   const values = (m) => (name) => m[name] || [];
   assert.equal(fieldAdvice('nl', 'lyricist', values({})), fieldAdvice('nl', 'composer', values({})));

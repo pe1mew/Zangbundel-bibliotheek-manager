@@ -26,8 +26,10 @@
 html, body { margin: 0; height: 100%; }
 body { background: var(--bg); color: var(--white); font: 16px/1.45 var(--font); }
 button { font: inherit; color: inherit; }
+::placeholder { color: #8F8F8F; opacity: 1; }   /* M7.3: at least 4.5:1 on black and on the sheet grey; Firefox would dim it */
 a { color: var(--sky-blue); }
 a:focus-visible, .splash:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
+.focusdest:focus { outline: none; }            /* a heading that only receives the focus after a redraw (focus.js) */
 #app { height: 100%; display: flex; flex-direction: column; }
 .noscript { padding: 24px; max-width: 640px; }
 
@@ -429,6 +431,7 @@ svg.sev-ok { fill: var(--fire-orange); }
   background: transparent; color: var(--white); border: 1px solid var(--line); border-radius: 8px;
   min-height: 36px; padding: 0 8px; font: inherit; font-weight: 600; margin-right: 6px;
 }
+.secbar select:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }   /* M7.3: the ring every control has */
 .secbar select option { background: var(--sheet); }
 .secbar .grow { flex: 1; }
 .kindlbl { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; margin-right: 6px; }

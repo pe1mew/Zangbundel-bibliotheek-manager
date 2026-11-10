@@ -22,10 +22,10 @@ export const LINKS = Object.freeze({
 /** SR-52: the privacy statement on zangbundel.nl, in the interface language; it covers both sites. */
 export const privacyUrl = (lang) => `https://zangbundel.nl/${lang}/privacy.html`;
 
-/** A bottom-bar button: icon above its label. */
+/** A bottom-bar button: icon above its label; data-key finds it again after a redraw (focus.js). */
 function navButton(name, label, { onClick, disabled, title, dot, ariaLabel, extraClass, popup } = {}) {
   return el('button', { type: 'button', class: ['navbtn', dot ? 'dirty' : null, extraClass].filter(Boolean).join(' '), disabled: Boolean(disabled),
-    title: title || label, 'aria-label': ariaLabel || null, 'aria-haspopup': popup || null, 'aria-expanded': popup ? 'false' : null, on: onClick ? { click: onClick } : undefined }, [dot ? el('span', { class: 'dot' }, []) : null, icon(name), el('span', {}, [label])]);
+    title: title || label, 'aria-label': ariaLabel || null, 'data-key': label, 'aria-haspopup': popup || null, 'aria-expanded': popup ? 'false' : null, on: onClick ? { click: onClick } : undefined }, [dot ? el('span', { class: 'dot' }, []) : null, icon(name), el('span', {}, [label])]);
 }
 
 /**
@@ -82,7 +82,7 @@ function checkButton(lang, findings, onCheck) {
   }
   const { e, w } = counts(findings);
   const label = `${t(lang, 'check')} (${t(lang, 'checkCounts', { e, w })})`;
-  return el('button', { type: 'button', class: 'navbtn', title: label, 'aria-label': label, on: { click: onCheck } }, [
+  return el('button', { type: 'button', class: 'navbtn', title: label, 'aria-label': label, 'data-key': t(lang, 'check'), on: { click: onCheck } }, [
     el('span', { class: 'ckcount', 'aria-hidden': 'true' }, [e ? el('b', { class: 'e' }, [String(e)]) : null, w ? el('b', { class: 'w' }, [String(w)]) : null]),
     icon(e ? 'error' : w ? 'warning' : 'check'), el('span', {}, [t(lang, 'check')]),
   ]);
