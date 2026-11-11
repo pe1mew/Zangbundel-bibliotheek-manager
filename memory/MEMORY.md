@@ -22,9 +22,9 @@
 
 ## Current State
 
-- **Handoff 2026-11-11 (latest; read this first).** Live: `zangbundel.nl` = `manager-0.2.1`, `test.zangbundel.nl` = trial `0.3.0-dev.3` (commit `4f65fe4`). The completion plan C1 to C12 (implementationPlan, "Completion plan") holds the state per item.
-  - **Staged, not committed:** the second accessibility walk (A8 to A10: set buttons name their song; focus beside a disabled button; the *Sleutel maken* note) and these memory updates. They go to the test instance with the next trial.
-  - **Agent work left:** none unblocked. Next on the owner's word: a trial with the staged fixes, then C12 (v0.3.0 from a signed tag, the full gate SC-01 to SC-13, `wiki.py check --need-hugo`, the long fuzz only if a reader changed).
+- **Handoff 2026-11-11 (latest; read this first).** Live: `zangbundel.nl` = `manager-0.2.1`, `test.zangbundel.nl` = trial `0.3.0-dev.4` (commit `a986fb2`). The completion plan C1 to C12 (implementationPlan, "Completion plan") holds the state per item.
+  - **The second accessibility walk** (A8 to A10) is committed and on the test instance in dev.4.
+  - **Agent work left:** none unblocked. Next on the owner's word: C12 (v0.3.0 from a signed tag, the full gate SC-01 to SC-13, `wiki.py check --need-hugo`, the long fuzz only if a reader changed).
   - **The owner's open items:** C2 (outside monitor, CT watch), C4 (staging CAA record, registrar 2FA check), C5 (Firefox, Edge, Safari; F1 included), C10 (tester accounts, send `docs/tester-guide.md`), C11 (the app's import), SF-22 (ruleset on `main`), HSTS step 3 not before 2026-11-17, reading the wiki's text.
   - **Habits that held:**
     - **Trials:** a trial is version bump, then the owner commits, then the agent builds, then the owner signs, uploads and activates with `--trial`.

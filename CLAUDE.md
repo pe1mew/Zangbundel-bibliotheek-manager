@@ -1,6 +1,6 @@
 ---
 stack: Static web app in webapp/ on the host nginx of contabo6 (no server-side code; webappTDS TD-06 to TD-08); Markdown design specifications; ZIP, JSON, SHA-256, Ed25519; ChordPro; Hugo for the wiki (TD-24)
-status: Live as v0.2.1 on zangbundel.nl; trial 0.3.0-dev.3 on test.zangbundel.nl; M7 by the completion plan C1 to C12 in design/implementationPlan.md
+status: Live as v0.2.1 on zangbundel.nl; trial 0.3.0-dev.4 on test.zangbundel.nl; M7 by the completion plan C1 to C12 in design/implementationPlan.md
 repo: github.com/pe1mew/Zangbundel-bibliotheek-manager
 framework: agent-ready-projects v1.49.2
 ---
@@ -11,7 +11,7 @@ framework: agent-ready-projects v1.49.2
      added later, this file stays canonical and AGENTS.md should say so. -->
 
 The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.12. The Editor is a static web app in `webapp/`, built and checked through M0 to M6 (checked in Chromium only).
-- **Live:** `zangbundel.nl` serves `manager-0.2.1` (since 2026-11-10); `test.zangbundel.nl` serves the trial `0.3.0-dev.3`, with the wiki at `/wiki/`. Hourly integrity check with Kuma push; HSTS at one week (ramp step 2).
+- **Live:** `zangbundel.nl` serves `manager-0.2.1` (since 2026-11-10); `test.zangbundel.nl` serves the trial `0.3.0-dev.4`, with the wiki at `/wiki/`. Hourly integrity check with Kuma push; HSTS at one week (ramp step 2).
 - **M7 runs as the completion plan C1 to C12** (`design/implementationPlan.md`):
   - **Done by the agent:** C1 (SR-75 copy), C3 (HSTS step), C6 (SR re-assessment, SA draft 0.18), C7 (accessibility), C8 (sets reorder), C9 (the wiki, content to be read by the owner) and C10's guide (`docs/tester-guide.md`).
   - **Open, the owner's:** C2 (outside monitor, CT watch), C4 (DNS), C5 (other browsers), C10 (testers), C11 (the app's import), SF-22 (a ruleset on `main`).

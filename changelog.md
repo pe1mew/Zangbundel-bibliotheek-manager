@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **A dry run of the release gate for 0.3.0 on trial dev.4:** every check the agent can run passed (`design/test-results/2026-11-11-pre-gate-0.3.0-dev.4.md`).
 - **Version `0.3.0-dev.4`** for the fourth trial towards 0.3.0 on the test instance: the accessibility fixes of the second walk.
 - **Accessibility, second walk (M7.3):**
   - The buttons of a set's songs name the song, and the focus stays with the moved song.
