@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **Version `0.3.0-dev.3`** for the third trial towards 0.3.0 on the test instance: the wiki's *Goede gewoonten* page.
 - **The wiki has *Goede gewoonten*** (good practice: the file, song IDs, tags, sets, versions, keys) in nl, en and de.
 - **A tester guide** in Dutch, `docs/tester-guide.md` (M7.5, C10): test files only, what to try, how to report.
 - **Version `0.3.0-dev.2`** for the second trial towards 0.3.0 on the test instance: the wiki (M7.6), reordering sets (EDT-31) and the help links.
