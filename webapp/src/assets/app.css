@@ -249,7 +249,8 @@ svg.inl { width: 18px; height: 18px; fill: var(--secondary); flex: none; }
   width: 40px; height: 40px; border-radius: 50%; border: none; background: none;
   display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--secondary);
 }
-.iconbtn:hover { background: rgba(255, 255, 255, .12); color: var(--white); }
+.iconbtn:hover:not(:disabled) { background: rgba(255, 255, 255, .12); color: var(--white); }
+.iconbtn:disabled { opacity: .45; cursor: not-allowed; }   /* a read-only library's bins, Omhoog at the top: visibly not usable */
 .iconbtn svg { width: 22px; height: 22px; fill: currentColor; }
 .btn:focus-visible, .iconbtn:focus-visible, .navbtn:focus-visible, .tile:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
 

@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **Disabled round buttons look disabled** (the bins of a read-only library, *Omhoog* at the top): dimmed, with no hover highlight. Found by the owner on a manager-made signed library.
 - **A dry run of the release gate for 0.3.0 on trial dev.4:** every check the agent can run passed (`design/test-results/2026-11-11-pre-gate-0.3.0-dev.4.md`).
 - **Version `0.3.0-dev.4`** for the fourth trial towards 0.3.0 on the test instance: the accessibility fixes of the second walk.
 - **Accessibility, second walk (M7.3):**
