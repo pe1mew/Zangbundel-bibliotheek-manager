@@ -6,7 +6,7 @@
 // From the keyboard (GD-44, amended 2026-11-10, M7.3): the field refers to its explanation (aria-describedby),
 // so a screen reader reads it when the field gets the focus, and F1 in the field opens or closes it.
 
-import { el, icon, listen, setAttrs } from './dom.js';
+import { el, icon, listen, pageLink, setAttrs } from './dom.js';
 import { t } from './i18n.js';
 
 /** The text of each field's explanation (texts.js), by the field's name. */
@@ -17,6 +17,22 @@ export const HELP = Object.freeze({
   libTitle: 'helpLibTitle', libDescription: 'helpLibDescription', libLicense: 'helpLibLicense', libLicenseId: 'helpLibLicenseId',
   libSummary: 'helpLibSummary', libLicenseText: 'helpLibLicenseText', libMaintainer: 'helpLibMaintainer', libContact: 'helpLibContact',
 });
+
+/**
+ * M7.6 (C9): each explanation's page and anchor in the wiki, /wiki/<lang>/<page>/#<anchor>. wiki.py check
+ * refuses a link whose page or anchor is missing in any language.
+ */
+export const WIKI = Object.freeze({
+  title: ['song-data', 'title'], language: ['song-data', 'language'], lyricist: ['song-data', 'lyricist'],
+  composer: ['song-data', 'composer'], copyright: ['song-data', 'copyright'], license: ['song-data', 'license'],
+  source: ['song-data', 'source'], tag: ['song-data', 'tags'], id: ['song-data', 'song-id'],
+  libTitle: ['library-data', 'title'], libDescription: ['library-data', 'description'], libLicense: ['library-data', 'license'],
+  libLicenseId: ['library-data', 'license-id'], libSummary: ['library-data', 'summary'], libLicenseText: ['library-data', 'license-text'],
+  libMaintainer: ['library-data', 'maintainer-name'], libContact: ['library-data', 'maintainer-contact'],
+});
+
+/** The wiki page of an explanation, in the interface language. */
+export const wikiPath = (lang, name) => (WIKI[name] ? `/wiki/${lang}/${WIKI[name][0]}/#${WIKI[name][1]}` : null);
 
 const open = new Set();                                  // the explanations open on this page
 const toggles = new Map();                               // explanation id -> its toggle, the latest drawn
@@ -35,7 +51,9 @@ export const helpOpen = (name) => open.has(name);
  */
 export function fieldHelp(lang, name, label, labelNode) {
   const id = `help-${name}`;
-  const panel = el('div', { class: 'fieldhelp', id, hidden: !open.has(name) }, [t(lang, HELP[name], { other: t(lang, 'otherLanguage') })]);
+  const more = wikiPath(lang, name);                    // M7.6: the field's page in the wiki
+  const panel = el('div', { class: 'fieldhelp', id, hidden: !open.has(name) }, [t(lang, HELP[name], { other: t(lang, 'otherLanguage') }),
+    more ? ' ' : null, more ? pageLink(more, t(lang, 'helpMore'), t(lang, 'newTab')) : null]);
   const text = t(lang, 'helpFor', { field: label });
   // not in the tab order (the owner's look at dev.6): Tab goes from input to input; the mouse opens the help
   const button = el('button', { type: 'button', class: 'helpbtn', tabindex: -1, title: `${text} (${HELP_KEY})`, 'aria-label': text,

@@ -44,6 +44,7 @@ check "build.py refuses unsafe pages, builds a valid one" python3 /repo/webapp/t
 check "bundler: same as native ES modules, refusals (test_bundle.py)" python3 /repo/webapp/tests/test_bundle.py
 check "vendored packages match VENDOR.md and work bundled (test_vendor.py)" sh -c "cp -r /repo/webapp /tmp/webapp-rw && python3 /tmp/webapp-rw/tests/test_vendor.py"
 check "bundled library engine = native engine on all 56 test libraries" sh -c "[ -d /tmp/test-libraries ] || cp -r /repo/test-libraries /tmp/test-libraries; NODE_OPTIONS=--experimental-global-webcrypto python3 /tmp/webapp-rw/tests/test_engine_bundle.py"
+check "wiki: every language has every page, every help link its anchor (wiki.py check)" python3 /repo/webapp/tools/wiki.py check
 check "node --test: unit tests and the test-library corpus" sh -c "{ [ -d /tmp/test-libraries ] || cp -r /repo/test-libraries /tmp/test-libraries; } && mkdir -p /tmp/design && cp /repo/design/FDS.md /tmp/design/ && node --experimental-global-webcrypto --test /tmp/webapp-rw/tests/"   # Node 18 (apt): crypto is global from Node 19
 
 # --- build: placeholder from a signed tag (SR-10, SR-90), holding page as a trial build ---
@@ -246,6 +247,8 @@ check "nginx answers" wait_for curl -fsk --resolve zangbundel.nl:443:127.0.0.1 h
 check "activate the manager release on zangbundel.nl" zbm-release activate zangbundel.nl $W/dist/manager-release.tar
 check "live on zangbundel.nl is the manager" sh -c "readlink /srv/zangbundel/live | grep -q '^releases/manager-'"
 check "/ is the manager's page, no front door" sh -c "curl -sk --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/ | grep -q 'assets/main\.'"
+# M7.6 (C9): the wiki is in the manager's release; a folder URL serves its index.html with the page headers
+check "the wiki's page is served with the page CSP" sh -c "curl -sk -D /tmp/wiki.h --resolve zangbundel.nl:443:127.0.0.1 https://zangbundel.nl/wiki/nl/song-data/ -o /tmp/wiki.html && grep -q '^HTTP/[0-9.]* 200' /tmp/wiki.h && grep -qi '^content-security-policy: default-src' /tmp/wiki.h && grep -q 'id=\"title\"' /tmp/wiki.html && grep -q 'assets/wiki\.[0-9a-f]*\.css' /tmp/wiki.html"
 echo; echo "=== SC-01 zangbundel.nl ==="
 check "SC-01 zangbundel.nl with the manager (--app)" python3 /repo/webapp/tools/check_headers.py zangbundel.nl --connect 127.0.0.1:443 --http-connect 127.0.0.1:80 --insecure --app
 grep -E '^(PASS|FAIL)|^        -' /tmp/out | grep -v '^PASS' | head -20

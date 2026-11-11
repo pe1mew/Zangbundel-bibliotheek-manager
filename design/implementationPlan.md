@@ -799,7 +799,7 @@ Then a new trial build on the test instance and the rest of the M5 exit look.
 - **The owner's look at dev.6: no *Omhoog* and *Omlaag* in the *Sets* tab.**
   - Asked what should reorder the sets instead (a drag handle was recommended, or sorting A–Z), the owner chose to remove them with no replacement.
   - `sets.js` `createSetList` has no `onMove`, `main.js` no `onMoveSet`, and the mock's two buttons are gone. `moveSet` stays in `sets.js`, tested, for a later way to reorder.
-  - **Open: FDS EDT-31 (reorder sets) is unmet** until a way to reorder them is chosen. The app shows sets in manifest order (D-22). GD-21 amended in webappGUI draft 0.32.
+  - **Open: FDS EDT-31 (reorder sets) is unmet** until a way to reorder them is chosen. The app shows sets in manifest order (D-22). GD-21 amended in webappGUI draft 0.32. *Met again 2026-11-11 (C8): a drag handle and Alt+↑/↓, webappGUI draft 0.37.*
   - **Tested:** `node --test` passes 396 of 396; `test_build.py` and `test_bundle.py` are OK.
   - **In the browser pane (Chromium), `valid-unsigned`:** *Kampvuur* and *Demo* each showed only *Naam wijzigen* and *Set verwijderen*, and a click still opened the set. The console was clean. It is not yet in a trial.
 
@@ -1044,6 +1044,19 @@ The manager went live as `v0.2.0`/`v0.2.1` before M7 was done (the owner's decis
   The owner then chose to make the ⓘ help work from the keyboard, and it is built (GD-44, amended): fields refer to their explanation, and F1 opens it.
 
   Still open: a real screen reader, the other browsers (C5, F1 included), and the screens not walked: sets, the key dialogs, *Ga naar*.
+- **C8, done (2026-11-11), the owner's choice of a drag handle:**
+  - Each set in the *Sets* tab has a handle and is dragged like the songs of a set. Alt+↑/↓ move it from the keyboard (webappGUI GD-21, draft 0.37), and the open set follows (`indexAfterMove`, unit-tested).
+  - Checked in the browser on three sets: two moves by keyboard, one by drag, with no console errors. The open set stayed open each time.
+  - FDS EDT-31 is met again.
+- **C9, first part done (2026-11-11), the owner allowed the download:**
+  - **The tool:** Hugo v0.169.0 is unpacked from its zip into `C:\Apps\hugo` and pinned by SHA-256 (webappTDS TD-24).
+  - **Source and output:** the source is `wiki/`: config, own templates without script, and `nl`/`en`/`de` pages (home, *Aan de slag*, *Liedgegevens*, *Bibliotheek*). The two field pages are made from the help texts in `texts.js`, so the help and the wiki agree. The output is `webapp/src/wiki/` (`webapp/tools/wiki.py build`), committed and released with the manager.
+  - **Links:** each explanation links to its field in the wiki (*Meer in de handleiding*). The Android panel's manager manual is `/wiki/<lang>/`.
+  - **Checks:** `wiki.py check` refuses a missing page or language, a help link without its anchor, and drift from a fresh build; each was tried. `build.py` accepts the pages; two Hugo builds are identical. In the browser under the CSP: the pages, the anchors, the language links, the phone width and `/wiki/`, with no console errors. The container test passes 102 of 102, including the wiki's page headers.
+  - **Still to do:** the owner reads or rewrites the content; more pages (best practices: song IDs, tags, sets, keys); after that, a release.
+- **SF-25, done in the source (2026-11-11), the owner's choice:**
+  - The CSP is `trusted-types zbm-worker` on both hosts, in `conf.d/zangbundel.conf`, `check_headers.py`, SR-20 (SA draft 0.18) and TD-23 (TDS draft 0.15). The container test passes 100 of 100.
+  - In effect once the owner installs `conf.d/zangbundel.conf` on contabo6 and the `contabo-vps-6` copy is refreshed.
 - **Trial `0.3.0-dev.1` on the test instance (2026-11-10):** built from commit `68a037f` (the C7 fixes and *Over* GD-45). It is live on `test.zangbundel.nl`, and `zbm-release verify` gives `ok`. SC-01 `--app` gave 19 of 19, run by the owner. Production stays at `0.2.1`.
 
 ### M8 — Go live on zangbundel.nl (outside this plan)

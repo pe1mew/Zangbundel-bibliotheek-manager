@@ -2,7 +2,7 @@
 // Offering a file for download (FDS EDT-59, PF-04; securityAssessment SR-36; implementationPlan M6.2).
 // The bytes become a blob: URL of the given MIME type, a temporary link downloads it under the given
 // name, and the URL is revoked right after. Nothing goes to the server (TD-06). Assigning a blob: URL
-// to a link is not a Trusted Types sink, so no policy is needed here (plan M4.1, zbm-download).
+// to a link is not a Trusted Types sink, so no policy is needed here (securityAssessment SF-25).
 
 import { el } from './dom.js';
 

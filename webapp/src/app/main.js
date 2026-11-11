@@ -29,7 +29,7 @@ import { libraryHomeNode, songDataNode, songViewNode } from './songview.js';
 import { createSongEditor } from './editor.js';
 import { LIBRARY_FIELD_ID, targetOf } from './goto.js';
 import { toggleLanguageMenu } from './langmenu.js';
-import { addEntry, addSet, createSetList, deleteSet, moveEntry, removeEntry, renameSet, setNameProblem, setViewNode } from './sets.js';
+import { addEntry, addSet, createSetList, deleteSet, indexAfterMove, moveEntry, moveSet, removeEntry, renameSet, setNameProblem, setViewNode } from './sets.js';
 import { closeConfirm, convertedDialog, copyDialog, deleteSetConfirm, deleteSongConfirm, downloadDialog, importFailedDialog, leaveEditorDialog, setNameDialog, idleDialog, keyFailedDialog, keyForgetConfirm, keyMakeDialog,
   keyReplaceConfirm, keySaveDialog, manifestConfirm, newLibraryDialog, openFailedDialog, pickFile, saveFailedDialog,
   savedDialog } from './library-ui.js';
@@ -393,6 +393,11 @@ function start() {
     onOk: async (n) => { if (await applySets(addSet(sets(), n))) chooseSet(sets().length - 1); } });
   const onRenameSet = (i) => setNameDialog(language.get(), { name: sets()[i].name, problem: (n) => setNameProblem(n, sets(), i),
     onOk: (n) => applySets(renameSet(sets(), i, n)) });
+  // EDT-31 (C8): a set moved in the Sets tab; the open set stays open wherever it lands
+  const onMoveSet = (from, to) => {
+    if (openSet !== null) openSet = indexAfterMove(openSet, from, to);
+    applySets(moveSet(sets(), from, to));
+  };
   const onDeleteSet = (i) => deleteSetConfirm(language.get(), sets()[i].name, async () => {
     if (!(await applySets(deleteSet(sets(), i)))) return;
     if (openSet === i) openSet = null;
@@ -515,7 +520,7 @@ function start() {
         onAdd: onAddSong, onImport: onImportSong, onAddToSet }) : null;
       // GD-21: two tabs, *Liedjes* and *Sets*; both lists stay built, so switching keeps the search
       setList = state.library ? createSetList({ lang, readOnly, onOpen: chooseSet, onNew: onNewSet, onRename: onRenameSet,
-        onDelete: onDeleteSet }) : null;
+        onDelete: onDeleteSet, onMove: onMoveSet }) : null;
       const tab = (name) => el('button', { type: 'button', role: 'tab', class: 'tab', id: `rtab-${name}`, 'aria-controls': 'rpane', 'data-tab': name,
         on: { click: () => showTab(name) } }, []);
       tabs = state.library ? el('div', { class: 'tabs', role: 'tablist', 'aria-label': t(lang, 'rightTabs') }, [tab('songs'), tab('sets')]) : null;

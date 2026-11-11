@@ -68,6 +68,7 @@ Zangbundel-bibliotheek-manager/
 │   ├── webappTDS.md              ← web app technical design: server, mock, deployment (TD-nn, TQ-nn)
 │   ├── securityAssessment.md     ← security and privacy: findings SF, requirements SR, release gate SC
 │   └── implementationPlan.md     ← milestones M0 to M7 for the test instance and the placeholder
+├── wiki/                         ← the manual's source: hugo.toml, layouts/, nl/ en/ de/ Markdown (TD-24); built into webapp/src/wiki/
 ├── webapp/
 │   ├── mock/                     ← clickable mock of webappGUI (static HTML, CSS, JS; app icon CC BY-SA 4.0); never deployed
 │   ├── placeholder/              ← zangbundel.nl until go-live: nl/en/de pages, privacy, security.txt (no script)
@@ -76,7 +77,7 @@ Zangbundel-bibliotheek-manager/
 │   ├── vendor/                   ← fflate 0.8.3, @noble/ed25519 3.2.0 with licences; VENDOR.md (hashes, provenance), written by tools/vendor.py
 │   ├── test-holding/             ← test.zangbundel.nl until M1.4
 │   ├── maintenance/              ← the signed maintenance page for an incident (runbook step 11, SR-93); privacy pages copied from src/
-│   ├── tools/                    ← build.py, bundle.py, vendor.py, sign-release.sh, check_headers.py (SC-01); release-key.pub once the owner makes it
+│   ├── tools/                    ← build.py, bundle.py, vendor.py, wiki.py, sign-release.sh, check_headers.py (SC-01); release-key.pub once the owner makes it
 │   └── server/                   ← nginx config, zbm-receive, zbm-release, zbm-verify timer; README.md = M0 runbook
 ├── memory/                       ← MEMORY.md index, gotcha-log.md, todo.md (committed, shared)
 ├── .claude/                      ← review-profile.md, launch.json (preview server webapp-mock)
@@ -105,6 +106,10 @@ python webapp/tests/test_engine_bundle.py           # the bundled engine = the n
 node --test webapp/tests/                          # unit tests + test-library conformance (SC-04: all 59 cases, every rule family) + a short fuzz
 node webapp/tests/fuzz.mjs --iterations 20000      # the long fuzz (SR-35, SC-11): before a release and after changing a reader
 python webapp/tools/vendor.py check                # vendored files against VENDOR.md (vendor.py add needs npm and the network)
+
+# The wiki (TD-24): Hugo v0.169.0 in C:\Apps\hugo; commit webapp/src/wiki/ after a build; check before a release
+python webapp/tools/wiki.py build
+python webapp/tools/wiki.py check --need-hugo
 
 # Trial build of the web app (the version must equal webapp/src/app/version.js; needs node on PATH for its syntax check)
 python webapp/tools/build.py build --src webapp/src --name manager --version 0.2.1 --allow-dirty --force

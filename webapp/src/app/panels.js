@@ -3,7 +3,7 @@
 // (GD-15, GD-35) and *Over* (SR-52); implementationPlan M4.4. The library and key buttons are
 // drawn now and work from M5 and M6; until then they say so. *Controle* works from M4.5.
 
-import { el, extLink, icon } from './dom.js';
+import { el, extLink, icon, pageLink } from './dom.js';
 import { openDialog } from './dialog.js';
 import { counts } from './check.js';
 import { t, tParts } from './i18n.js';
@@ -16,7 +16,6 @@ export const LINKS = Object.freeze({
   managerRepo: 'https://github.com/pe1mew/Zangbundel-bibliotheek-manager',
   manualNl: 'https://github.com/pe1mew/Zangbundel/wiki/Handleiding',
   manualEn: 'https://github.com/pe1mew/Zangbundel/wiki/Manual',
-  managerManual: 'https://github.com/pe1mew/Zangbundel-bibliotheek-manager/wiki',
 });
 
 /** SR-52: the privacy statement on zangbundel.nl, in the interface language; it covers both sites. */
@@ -46,7 +45,7 @@ export function androidContent(lang) {
       el('div', {}, [
         el('h3', {}, [t(lang, 'manual')]),
         el('p', {}, [`${t(lang, 'manualApp')}: `, ext(LINKS.manualNl, 'Nederlands'), ' · ', ext(LINKS.manualEn, 'English')]),
-        el('p', {}, [`${t(lang, 'manualManager')}: `, ext(LINKS.managerManual, t(lang, 'manualWord'))]),
+        el('p', {}, [`${t(lang, 'manualManager')}: `, pageLink(`/wiki/${lang}/`, t(lang, 'manualWord'), t(lang, 'newTab'))]),   // M7.6: the wiki on this site
       ]),
       el('div', {}, [
         el('h3', {}, [t(lang, 'sources')]),

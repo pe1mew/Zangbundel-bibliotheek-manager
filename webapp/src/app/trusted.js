@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Trusted Types policy zbm-worker (webappTDS TD-23; securityAssessment SR-20, SR-32). With
 // require-trusted-types-for 'script', new Worker(url) needs a TrustedScriptURL; this policy creates
-// one only for the release's two worker bundles on this origin. The policy zbm-download comes with
-// the download (M6).
+// one only for the release's two worker bundles on this origin. It is the only policy: a download's
+// blob: URL on a link is not a sink (securityAssessment SF-25).
 
 const WORKER_PATH = /^\/assets\/(library-worker|crypto-worker)\.[0-9a-f]{12}\.js$/;
 let policy = null;

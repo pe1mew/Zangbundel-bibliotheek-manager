@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 globalThis.document = { createElement: () => ({}), createElementNS: () => ({}), createTextNode: (s) => ({ text: s }) };
-const { addEntry, addSet, cleanSetName, deleteSet, moveEntry, moveSet, removeEntry, renameSet, setNameProblem } = await import('../../src/app/sets.js');
+const { addEntry, addSet, cleanSetName, deleteSet, indexAfterMove, moveEntry, moveSet, removeEntry, renameSet, setNameProblem } = await import('../../src/app/sets.js');
 const { createSession } = await import('../../src/app/session.js');
 const { handleMessage } = await import('../../src/workers/library-handler.js');
 const { validateLibrary } = await import('../../src/core/validate.js');
@@ -45,6 +45,14 @@ test('EDT-31: adding, renaming, moving and deleting sets and their songs leaves 
   assert.deepEqual(removeEntry(SETS, 0, 0)[0].songs, ['b']);
   assert.deepEqual(moveEntry(SETS, 0, 0, 1)[0].songs, ['b', 'a']);
   assert.equal(JSON.stringify(SETS), before);
+});
+
+test('EDT-31 (C8): the open set follows a move; every other set keeps or shifts its place', () => {
+  const list = ['a', 'b', 'c', 'd', 'e'];
+  for (const [from, to] of [[0, 4], [4, 0], [1, 3], [3, 1], [2, 2], [0, 1], [1, 0]]) {
+    const after = moveSet(list, from, to);
+    list.forEach((name, i) => assert.equal(after[indexAfterMove(i, from, to)], name, `${name} after ${from} -> ${to}`));
+  }
 });
 
 test('EDT-31, PF-40: sets made in the session are saved in the manifest and as setlists of the view, without set errors', async () => {

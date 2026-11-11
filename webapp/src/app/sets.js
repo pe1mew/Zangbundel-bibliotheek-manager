@@ -40,6 +40,8 @@ export const renameSet = (sets, i, name) => withSet(sets, i, (s) => ({ ...s, nam
 export const deleteSet = (sets, i) => sets.filter((s, k) => k !== i);
 /** Move set or entry from place `from` to place `to` (both in the list as it is). */
 export const moveSet = (sets, from, to) => move(sets, from, to);
+/** EDT-31 (C8): where the item at place i is after move(list, from, to). */
+export const indexAfterMove = (i, from, to) => (i === from ? to : from < i && i <= to ? i - 1 : to <= i && i < from ? i + 1 : i);
 /** SET-04: a song is in a set at most once. */
 export const addEntry = (sets, i, id) => withSet(sets, i, (s) => (s.songs.includes(id) ? s : { ...s, songs: [...s.songs, id] }));
 export const removeEntry = (sets, i, k) => withSet(sets, i, (s) => ({ ...s, songs: s.songs.filter((x, n) => n !== k) }));
@@ -50,10 +52,13 @@ const iconButton = (name, text, disabled, click) => el('button', { type: 'button
 
 /**
  * GD-21: the *Sets* tab: the sets in order, each with its number of songs, *Naam wijzigen* and *Set verwijderen*,
- * and *Nieuwe set* below. No *Omhoog* and *Omlaag* (the owner's look at dev.6): the order of the sets is not changed
- * here. createSetList({ lang, readOnly, onOpen(i), onNew(), onRename(i), onDelete(i) }) → { node, update(state, openSet) }.
+ * and *Nieuwe set* below. No *Omhoog* and *Omlaag* buttons (the owner's look at dev.6). The order changes by
+ * dragging a set by its handle, as the songs of a set move (EDT-31, C8, the owner 2026-11-11), or from the
+ * keyboard with Alt+Up and Alt+Down on a set.
+ * createSetList({ lang, readOnly, onOpen(i), onNew(), onRename(i), onDelete(i), onMove(from, to) }) →
+ * { node, update(state, openSet) }.
  */
-export function createSetList({ lang, readOnly, onOpen, onNew, onRename, onDelete }) {
+export function createSetList({ lang, readOnly, onOpen, onNew, onRename, onDelete, onMove }) {
   const list = el('ul', { class: 'songlist setlist', 'aria-label': t(lang, 'sets') }, []);
   const empty = el('p', { class: 'empty' }, [t(lang, 'noSets')]);
   const foot = el('div', { class: 'listfoot' }, [el('button', { type: 'button', class: 'btn btn-outline btn-small', disabled: readOnly,
@@ -65,9 +70,12 @@ export function createSetList({ lang, readOnly, onOpen, onNew, onRename, onDelet
       const sets = (state.library && state.library.sets) || [];
       empty.hidden = sets.length > 0;
       list.hidden = sets.length === 0;
+      const movable = !readOnly && Boolean(onMove) && sets.length > 1;
       list.replaceChildren(...sets.map((s, i) => {
-        const li = el('li', { class: i === openSet ? 'song setrow selected' : 'song setrow', tabindex: 0,
-          'aria-current': i === openSet ? 'true' : null }, [
+        const handle = movable ? el('span', { class: 'handle', title: t(lang, 'dragTitle'), 'aria-hidden': 'true' }, [icon('drag')]) : null;
+        const li = el('li', { class: ['song', 'setrow', movable ? 'movable' : null, i === openSet ? 'selected' : null].filter(Boolean).join(' '),
+          tabindex: 0, 'aria-current': i === openSet ? 'true' : null, 'aria-keyshortcuts': movable ? 'Alt+ArrowUp Alt+ArrowDown' : null }, [
+          handle,
           el('span', { class: 't' }, [s.songs.length ? icon('playlist', 'inl') : severityIcon('warning'), s.name]),
           el('span', { class: 'actions' }, [
             iconButton('edit', t(lang, 'rename'), readOnly, () => onRename(i)),
@@ -76,7 +84,22 @@ export function createSetList({ lang, readOnly, onOpen, onNew, onRename, onDelet
           el('span', { class: 's' }, [s.songs.length === 1 ? t(lang, 'setSongsOne') : t(lang, 'setSongs', { n: s.songs.length })]),
         ]);
         listen(li, 'click', () => onOpen(i));
-        listen(li, 'keydown', (e) => { if (e.target === li && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onOpen(i); } });
+        listen(li, 'keydown', (e) => {
+          if (e.target !== li) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onOpen(i);
+          } else if (movable && e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+            e.preventDefault();                           // EDT-31 from the keyboard: the set and its neighbour slide past each other
+            const to = e.key === 'ArrowUp' ? i - 1 : i + 1;
+            if (to >= 0 && to < sets.length) slideMove(list, li, to, () => onMove(i, to));
+          }
+        });
+        if (handle) {
+          listen(handle, 'click', (e) => e.stopPropagation());   // grabbing the handle does not open the set
+          listen(handle, 'pointerdown', (e) => startDrag(e, { handle, card: li, list, scroller: list.closest('.right') || list,
+            onDrop: (from, to) => onMove(from, to) }));
+        }
         return li;
       }));
     },

@@ -124,6 +124,16 @@ test('GD-44 (M7.3): each field refers to its explanation, so a screen reader rea
     'song-source': 'help-source', 'song-tag': 'help-tag' });
 });
 
+test('M7.6 (C9): each explanation links to its field in the wiki, in the interface language, in a new tab', () => {
+  let form = toBlocks(SONG);
+  const fields = createSongFields({ lang: 'de', id: 'vader-jacob', getForm: () => form, setForm: (f) => { form = f; } });
+  const link = (id) => [...walk(byId(fields.node, id))].find((n) => n.tag === 'a');
+  assert.equal(link('help-title').attrs.href, '/wiki/de/song-data/#title');
+  assert.equal(link('help-tag').attrs.href, '/wiki/de/song-data/#tags');
+  assert.equal(link('help-id').attrs.href, '/wiki/de/song-data/#song-id');
+  assert.equal(link('help-title').attrs.target, '_blank');
+});
+
 test('SNG-16 (the owner\u2019s look at dev.6): every empty recommended field is advised at once; words or music together', () => {
   const values = (m) => (name) => m[name] || [];
   assert.equal(fieldAdvice('nl', 'lyricist', values({})), fieldAdvice('nl', 'composer', values({})));

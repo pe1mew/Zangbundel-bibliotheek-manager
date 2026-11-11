@@ -4,7 +4,7 @@
 // the builder sets. The browser check (SC-03) covers the real DOM. Run: node --test webapp/tests/
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { el, icon, replace, setVar } from '../../src/app/dom.js';
+import { el, icon, pageLink, replace, setVar } from '../../src/app/dom.js';
 
 class FakeNode {
   constructor(tag, ns) { Object.assign(this, { tag, ns, attrs: {}, children: [], listeners: {}, props: {} }); }
@@ -40,6 +40,15 @@ test('el refuses script-carrying attributes, elements and URLs (SR-32)', () => {
   assert.throws(() => el('button', { on: { click: 'x()' } }, []), /not a function/);
   for (const href of ['https://zangbundel.nl/', 'privacy.html', '../nl/', '#top', 'mailto:a@example.org', 'blob:https://x/1', 'nl/index.html?x=1']) {
     assert.equal(el('a', { href }, []).attrs.href, href);
+  }
+});
+
+test('M7.6: pageLink takes only a path of this site, opens a new tab', () => {
+  const a = pageLink('/wiki/nl/song-data/#title', 'Meer');
+  assert.equal(a.attrs.href, '/wiki/nl/song-data/#title');
+  assert.equal(a.attrs.target, '_blank');
+  for (const bad of ['https://example.org/', '//example.org/', 'javascript:alert(1)', 'wiki/nl/', '/wiki/"x']) {
+    assert.throws(() => pageLink(bad, 'x'), /path of this site/, bad);
   }
 });
 

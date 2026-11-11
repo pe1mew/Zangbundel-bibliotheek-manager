@@ -1,0 +1,6 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{ define "main" }}
+<p class="crumb"><a href="{{ site.Home.RelPermalink }}">{{ site.Home.Title }}</a></p>
+<h1>{{ .Title }}</h1>
+{{ .Content }}
+{{ end }}

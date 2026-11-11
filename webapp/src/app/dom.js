@@ -74,6 +74,12 @@ export function icon(name, cls) {
   return svg;
 }
 
+/** M7.6: a link to a page of this site (the wiki), in a new tab so the open library is not left. */
+export function pageLink(path, text, newTabHint) {
+  if (!/^\/[a-z0-9/_.#-]*$/i.test(path) || path.startsWith('//')) throw new Error(`dom: a page link is a path of this site: ${path}`);
+  return el('a', { href: path, target: '_blank', rel: 'noopener' }, [text, newTabHint ? el('span', { class: 'sr' }, [` ${newTabHint}`]) : null]);
+}
+
 /** GD-15: a link to another site, opening in a new tab without telling it where the visitor came from. */
 export function extLink(href, text, newTabHint) {
   if (!/^https:\/\//.test(href)) throw new Error(`dom: an external link must be https: ${href}`);

@@ -501,6 +501,17 @@ svg.sev-ok { fill: var(--fire-orange); }
 .sorting > .section:not(.dragging):not(.settle) { transform: translateY(var(--shift, 0px)); transition: transform .15s ease; }
 .section.settle { position: relative; z-index: 3; transform: translateY(var(--dy, 0px)); transition: transform .15s ease; }
 @media (prefers-reduced-motion: reduce) { .sorting > .section, .section.settle { transition: none; } }
+/* C8 (EDT-31): a set in the Sets tab moves the same way, by its handle */
+.setrow.movable { grid-template-columns: auto 1fr auto; padding-left: 8px; }
+.setrow.movable .handle { grid-column: 1; grid-row: 1 / span 2; padding: 4px; }
+.setrow.movable .t, .setrow.movable .s { grid-column: 2; }
+.setrow.movable .actions { grid-column: 3; }
+.setrow.dragging { position: relative; z-index: 3; opacity: .92; transform: translateY(var(--dy, 0px)); background: var(--sheet);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .5); border-left-color: var(--fire-orange); }
+.setrow.dragging .handle { cursor: grabbing; }
+.sorting > .setrow:not(.dragging):not(.settle) { transform: translateY(var(--shift, 0px)); transition: transform .15s ease; }
+.setrow.settle { position: relative; z-index: 3; transform: translateY(var(--dy, 0px)); transition: transform .15s ease; background: var(--sheet); }
+@media (prefers-reduced-motion: reduce) { .sorting > .setrow, .setrow.settle { transition: none; } }
 .edithelp svg.inl { width: 16px; height: 16px; fill: currentColor; vertical-align: -3px; }
 
 /* M5.5: sets (GD-21), as the mock */

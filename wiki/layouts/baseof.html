@@ -1,0 +1,27 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- /* $root: from this page up to the site's root, where the manager's assets/ are (the wiki is served under /wiki/) */ -}}
+{{- $root := print (strings.Repeat (len (split (strings.Trim .RelPermalink "/") "/")) "../") "../" -}}
+<!doctype html>
+<html lang="{{ .Language.Lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ if not .IsHome }}{{ .Title }} · {{ end }}{{ site.Title }}</title>
+  <link rel="icon" href="{{ $root }}assets/zangbundel-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ $root }}assets/wiki.css">
+</head>
+<body>
+  <header class="top">
+    <a class="home" href="{{ site.Home.RelPermalink }}"><img src="{{ $root }}assets/zangbundel-icon.svg" alt="" width="32" height="32">{{ site.Title }}</a>
+    <nav class="langs" aria-label="Language">
+      {{- range .AllTranslations }}{{ if eq .Language.Lang $.Language.Lang }}<span lang="{{ .Language.Lang }}">{{ upper .Language.Lang }}</span>{{ else }}<a href="{{ .RelPermalink }}" lang="{{ .Language.Lang }}" hreflang="{{ .Language.Lang }}">{{ upper .Language.Lang }}</a>{{ end }}{{ end -}}
+    </nav>
+  </header>
+  <main class="prose">
+    {{- block "main" . }}{{ end -}}
+  </main>
+  <footer class="foot">
+    <p><a href="{{ $root }}">zangbundel.nl</a></p>
+  </footer>
+</body>
+</html>

@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **The manual is a wiki on `zangbundel.nl`** (M7.6, C9; webappTDS TD-24):
+  - The Markdown is in `wiki/`, built with the pinned Hugo v0.169.0 by `webapp/tools/wiki.py` into `webapp/src/wiki/`, and served at `/wiki/<lang>/`. It is in nl, en and de: home, getting started, song details and library details.
+  - Each field's explanation links to its page, and the Android panel links to the wiki instead of a GitHub wiki.
+  - `wiki.py check` and the container test (102 checks) guard it.
+- **Sets can be reordered again** (FDS EDT-31, GD-21): each set in the *Sets* tab has a drag handle, and Alt+↑/↓ move a set from the keyboard.
+- **The CSP drops the unused Trusted Types policy `zbm-download`** (securityAssessment SF-25, draft 0.18; webappTDS TD-23, draft 0.15). It takes effect on both hosts once `conf.d/zangbundel.conf` is installed.
 - **Version `0.3.0-dev.1`** for the first trial towards 0.3.0 on the test instance: the accessibility pass (GD-46, F1 help) and the address in *Over* (GD-45).
 - **HSTS ramp, step 2:** `max-age` goes from 300 s to one week (`webapp/server/README.md` step 9), in effect once installed on contabo6.
 - **The runbook's monitoring and gate commands** follow the manager on `zangbundel.nl`: the outside monitor watches `/`, and SC-01 uses `--app`.

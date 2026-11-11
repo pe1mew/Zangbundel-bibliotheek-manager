@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: Apache-2.0
+# The manager's wiki (implementationPlan M7.6, C9; webappTDS TD-24). Built by webapp/tools/wiki.py with the
+# pinned Hugo into webapp/src/wiki/, so it is served under https://zangbundel.nl/wiki/<lang>/ with the
+# manager's release. Own minimal templates, no theme and no JavaScript, so every page passes build.py and
+# the CSP of SR-20. No feeds, sitemap or taxonomies; raw HTML in Markdown is not passed through.
+
+baseURL = '/'
+relativeURLs = true
+defaultContentLanguage = 'nl'
+defaultContentLanguageInSubdir = true
+disableKinds = ['taxonomy', 'term', 'rss', 'sitemap', 'robotsTXT', '404']
+enableRobotsTXT = false
+enableGitInfo = false
+enableEmoji = false
+disableHugoGeneratorInject = true
+disableDefaultLanguageRedirect = true
+timeZone = 'UTC'
+
+[markup.goldmark.renderer]
+unsafe = false
+
+[markup.goldmark.parser.attribute]
+title = true
+block = false
+
+[languages.nl]
+contentDir = 'nl'
+languageName = 'Nederlands'
+title = 'Handleiding · Zangbundel bibliotheek-manager'
+weight = 1
+
+[languages.en]
+contentDir = 'en'
+languageName = 'English'
+title = 'Manual · Zangbundel library manager'
+weight = 2
+
+[languages.de]
+contentDir = 'de'
+languageName = 'Deutsch'
+title = 'Handbuch · Zangbundel Bibliotheksverwaltung'
+weight = 3

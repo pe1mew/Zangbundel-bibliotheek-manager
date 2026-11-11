@@ -35,15 +35,19 @@ test('tParts puts elements in place of placeholders, and keeps the rest as text'
   assert.throws(() => tParts('nl', 'noSuchKey'), /no text/);
 });
 
-test('GD-15, GD-35: every link of the Android panel is https, opens a new tab and sends no referrer; no Google Play', () => {
+test('GD-15, GD-35, M7.6: the Android panel links other sites by https without a referrer, and the manager’s manual on this site; all in a new tab; no Google Play', () => {
   for (const lang of LANGUAGES) {
     const nodes = androidContent(lang).flatMap((n) => [...walk(n)]);
     const links = nodes.filter((n) => n.tag === 'a');
-    assert.deepEqual(links.map((a) => a.attrs.href).sort(), Object.values(LINKS).sort(), lang);
+    assert.deepEqual(links.map((a) => a.attrs.href).sort(), [...Object.values(LINKS), `/wiki/${lang}/`].sort(), lang);
     for (const a of links) {
-      assert.match(a.attrs.href, /^https:\/\//);
       assert.equal(a.attrs.target, '_blank');
-      assert.equal(a.attrs.rel, 'noopener noreferrer');
+      if (a.attrs.href.startsWith('/')) {
+        assert.equal(a.attrs.rel, 'noopener');           // our own site: the manual
+      } else {
+        assert.match(a.attrs.href, /^https:\/\//);
+        assert.equal(a.attrs.rel, 'noopener noreferrer');
+      }
     }
     assert.ok(nodes.some((n) => n.attrs && n.attrs.class === 'fdroid' && n.attrs.role === 'img' && n.attrs['aria-label']));
     assert.doesNotMatch(androidContent(lang).map(textOf).join(' '), /google/i);

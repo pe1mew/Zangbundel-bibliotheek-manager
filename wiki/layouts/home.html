@@ -1,0 +1,10 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{ define "main" }}
+<h1>{{ .Title }}</h1>
+{{ .Content }}
+<ul class="pages">
+  {{- range .Site.RegularPages.ByWeight }}
+  <li><a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ with .Description }} — {{ . }}{{ end }}</li>
+  {{- end }}
+</ul>
+{{ end }}
