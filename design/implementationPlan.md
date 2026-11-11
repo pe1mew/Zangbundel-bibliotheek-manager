@@ -1056,7 +1056,7 @@ The manager went live as `v0.2.0`/`v0.2.1` before M7 was done (the owner's decis
   - **Still to do:** the owner reads or rewrites the content; more pages (best practices: song IDs, tags, sets, keys); after that, a release.
 - **SF-25, done in the source (2026-11-11), the owner's choice:**
   - The CSP is `trusted-types zbm-worker` on both hosts, in `conf.d/zangbundel.conf`, `check_headers.py`, SR-20 (SA draft 0.18) and TD-23 (TDS draft 0.15). The container test passes 100 of 100.
-  - In effect once the owner installs `conf.d/zangbundel.conf` on contabo6 and the `contabo-vps-6` copy is refreshed.
+  - **Live 2026-11-11:** the owner installed `conf.d/zangbundel.conf`; its SHA-256 on contabo6 equals the repository's. SC-01 on `zangbundel.nl` gave 21 of 21, and the `contabo-vps-6` copy is refreshed.
 - **Trial `0.3.0-dev.1` on the test instance (2026-11-10):** built from commit `68a037f` (the C7 fixes and *Over* GD-45). It is live on `test.zangbundel.nl`, and `zbm-release verify` gives `ok`. SC-01 `--app` gave 19 of 19, run by the owner. Production stays at `0.2.1`.
 
 ### M8 — Go live on zangbundel.nl (outside this plan)
