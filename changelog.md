@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **Version `0.3.0-dev.4`** for the fourth trial towards 0.3.0 on the test instance: the accessibility fixes of the second walk.
+- **Accessibility, second walk (M7.3):**
+  - The buttons of a set's songs name the song, and the focus stays with the moved song.
+  - A button that becomes disabled passes the focus beside it.
+  - The *Sleutel maken* note is read with the name field.
 - **Version `0.3.0-dev.3`** for the third trial towards 0.3.0 on the test instance: the wiki's *Goede gewoonten* page.
 - **The wiki has *Goede gewoonten*** (good practice: the file, song IDs, tags, sets, versions, keys) in nl, en and de.
 - **A tester guide** in Dutch, `docs/tester-guide.md` (M7.5, C10): test files only, what to try, how to report.

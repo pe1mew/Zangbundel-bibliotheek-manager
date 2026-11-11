@@ -63,6 +63,13 @@ export function restoreFocus(mark, doc = document) {
     found.focus({ preventScroll: true });
     return;
   }
+  // the same control, now disabled (*Omlaag* of a song that reached the bottom): a usable control beside it
+  const same = [...mark.region.querySelectorAll('button:disabled')].find((c) => label(c) === mark.text && shown(c));
+  const beside = same && [...same.parentElement.querySelectorAll(FOCUSABLE)].find(shown);
+  if (beside) {
+    beside.focus({ preventScroll: true });
+    return;
+  }
   toHeading([...mark.region.querySelectorAll('h1, h2, h3')].find(shown) || mark.region);
 }
 

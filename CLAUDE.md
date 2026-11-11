@@ -1,6 +1,6 @@
 ---
-stack: Web app in webapp/ on nginx or Apache with PHP (webappTDS TD-01 to TD-03); Markdown design specifications; ZIP, JSON, SHA-256, Ed25519; ChordPro
-status: M0 in progress — repository part done (placeholder, nginx, release chain, runbook webapp/server/README.md); the owner's server steps and the web app itself to do
+stack: Static web app in webapp/ on the host nginx of contabo6 (no server-side code; webappTDS TD-06 to TD-08); Markdown design specifications; ZIP, JSON, SHA-256, Ed25519; ChordPro; Hugo for the wiki (TD-24)
+status: Live as v0.2.1 on zangbundel.nl; trial 0.3.0-dev.3 on test.zangbundel.nl; M7 by the completion plan C1 to C12 in design/implementationPlan.md
 repo: github.com/pe1mew/Zangbundel-bibliotheek-manager
 framework: agent-ready-projects v1.49.2
 ---
@@ -10,7 +10,12 @@ framework: agent-ready-projects v1.49.2
 <!-- Canonical project file for Claude Code. No AGENTS.md exists; if one is
      added later, this file stays canonical and AGENTS.md should say so. -->
 
-The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.11. The Editor is built as a web app in `webapp/` (static files on nginx); its designs are written. In the repository: M0 (placeholder, server set-up, signed release chain), M1 (bundler, minimal app, vendoring, test runner), M2 (the library engine: every rule of FDS section 6, open, save, conversion and the block form), M3 (keys and signing in the crypto worker), M4 (the shell, *Controle*; the owner's exit look is pending) and M6 (open, new, close, download, sign, read-only, copy, the key group with the idle timeout); checked in Chromium only. M5 (song list, view, editor, the library's fields, sets, *Ga naar*; the owner's exit look pending). Not yet: M7. `zangbundel.nl` serves the manager v0.2.0 (since 2026-11-09, replacing the placeholder) and `test.zangbundel.nl` the trial builds (runbook steps 1 to 7); steps 8 to 10 are open.
+The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.12. The Editor is a static web app in `webapp/`, built and checked through M0 to M6 (checked in Chromium only).
+- **Live:** `zangbundel.nl` serves `manager-0.2.1` (since 2026-11-10); `test.zangbundel.nl` serves the trial `0.3.0-dev.3`, with the wiki at `/wiki/`. Hourly integrity check with Kuma push; HSTS at one week (ramp step 2).
+- **M7 runs as the completion plan C1 to C12** (`design/implementationPlan.md`):
+  - **Done by the agent:** C1 (SR-75 copy), C3 (HSTS step), C6 (SR re-assessment, SA draft 0.18), C7 (accessibility), C8 (sets reorder), C9 (the wiki, content to be read by the owner) and C10's guide (`docs/tester-guide.md`).
+  - **Open, the owner's:** C2 (outside monitor, CT watch), C4 (DNS), C5 (other browsers), C10 (testers), C11 (the app's import), SF-22 (a ruleset on `main`).
+  - **Then C12:** v0.3.0 with the full gate.
 
 ## Before You Start
 
@@ -22,12 +27,12 @@ The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in 
 | Touching how the Zangbundel app reads songs or libraries today | The app repository `../Zangbundel` (github.com/pe1mew/Zangbundel): `design/song-format.md` defines the current `.zbl` release archive and the ChordPro profile. The FDS package format is a different, new format; the app reads both (FDS D-23). |
 | Designing a screen, a control, a colour, an icon, or what happens when the user does something | `design/webappGUI.md` — decisions `GD-nn` and open questions `GQ-nn`; screens **and behaviour**. Colours, buttons and icons come from the app (GD-01). Every design is checked in the mock before it is built. |
 | Choosing how the web app is built, served, tested or deployed, or adding a library or server dependency | `design/webappTDS.md` — decisions `TD-nn` and open questions `TQ-nn`. Libraries and keys are processed in the browser only; the server never receives them (TD-06 to TD-08). Domain `zangbundel.nl` and a test instance, both hosted on contabo6 (TD-09, TD-10; its config lives in `../contabo-vps-6`). |
-| Planning or doing implementation work, or asking what comes next | `design/implementationPlan.md` — milestones M0 to M7 with work, requirements and exit checks; the manager on `test.zangbundel.nl`, a placeholder on `zangbundel.nl` (TD-20). |
+| Planning or doing implementation work, or asking what comes next | `design/implementationPlan.md` — milestones M0 to M7 with work, requirements and exit checks, and the completion plan C1 to C12 with the state of each item. |
 | Touching keys, files, the network, a dependency, headers, the server, DNS or the deployment | `design/securityAssessment.md` — findings SF-nn, requirements SR-nn (binding, TD-18), release gate SC-nn, open questions SQ-nn. Repeat the assessment for any such change (SR-91). |
 | Stuck or debugging something weird | `memory/gotcha-log.md` — problem-fix archive |
 | **Before committing** | Diff-driven review, lenses chosen by what changed — `/review-changes`. It needs the per-repo **review profile** at `.claude/review-profile.md`; without one it STOPS rather than reviewing at LOW. |
 | Ending a session | `memory/gotcha-log.md` — review, promote patterns, retire stale entries. Then `/curate`. |
-| Periodic — monthly, after restructuring, and when cutting a release | `/audit-context` (structural health across the layers). No `/release` skill is installed: the project cuts no versioned releases yet. |
+| Periodic — monthly, after restructuring, and when cutting a release | `/audit-context` (structural health across the layers). No `/release` skill is installed: releases are cut by hand, from a signed tag, test instance first (`webapp/server/README.md` step 7). |
 
 ## Hard Constraints
 

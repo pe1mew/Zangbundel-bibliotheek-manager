@@ -1043,7 +1043,8 @@ The manager went live as `v0.2.0`/`v0.2.1` before M7 was done (the owner's decis
 
   The owner then chose to make the ⓘ help work from the keyboard, and it is built (GD-44, amended): fields refer to their explanation, and F1 opens it.
 
-  Still open: a real screen reader, the other browsers (C5, F1 included), and the screens not walked: sets, the key dialogs, *Ga naar*.
+  Still open: a real screen reader, and the other browsers (C5, F1 included).
+  - **Second walk (2026-11-11):** the screens not walked before. Covered: an open set with *Omhoog*/*Omlaag*, the key dialogs, *Controle* and *Ga naar*. Three more findings, all fixed and checked in the browser: the set's buttons name their song (A8), a disabled control passes the focus beside it (A9), and the *Sleutel maken* note is tied to its field (A10).
 - **C8, done (2026-11-11), the owner's choice of a drag handle:**
   - Each set in the *Sets* tab has a handle and is dragged like the songs of a set. Alt+↑/↓ move it from the keyboard (webappGUI GD-21, draft 0.37), and the open set follows (`indexAfterMove`, unit-tested).
   - Checked in the browser on three sets: two moves by keyboard, one by drag, with no console errors. The open set stayed open each time.
@@ -1059,6 +1060,7 @@ The manager went live as `v0.2.0`/`v0.2.1` before M7 was done (the owner's decis
 - **SF-25, done in the source (2026-11-11), the owner's choice:**
   - The CSP is `trusted-types zbm-worker` on both hosts, in `conf.d/zangbundel.conf`, `check_headers.py`, SR-20 (SA draft 0.18) and TD-23 (TDS draft 0.15). The container test passes 100 of 100.
   - **Live 2026-11-11:** the owner installed `conf.d/zangbundel.conf`; its SHA-256 on contabo6 equals the repository's. SC-01 on `zangbundel.nl` gave 21 of 21, and the `contabo-vps-6` copy is refreshed.
+- **Trial `0.3.0-dev.3` on the test instance (2026-11-11):** built from commit `4f65fe4` and adds the wiki's *Goede gewoonten*. 30 files, 16 of them the wiki. It is live, and `zbm-release verify` gives `ok`. Production stays at `0.2.1`.
 - **Trial `0.3.0-dev.2` on the test instance (2026-11-11):** built from commit `6811774` with the wiki, sets that can be reordered, and the help links. 27 files, 13 of them the wiki. It is live on `test.zangbundel.nl` and `zbm-release verify` gives `ok`. The wiki is at `/wiki/` behind the tester login. Production stays at `0.2.1`.
 - **Trial `0.3.0-dev.1` on the test instance (2026-11-10):** built from commit `68a037f` (the C7 fixes and *Over* GD-45). It is live on `test.zangbundel.nl`, and `zbm-release verify` gives `ok`. SC-01 `--app` gave 19 of 19, run by the owner. Production stays at `0.2.1`.
 

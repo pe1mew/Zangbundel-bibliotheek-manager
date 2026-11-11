@@ -126,13 +126,18 @@
 **Root cause**: Not yet known. Likely the test's slow upload finished before the second one started while the machine was busy (`node --test` and the build had just run).
 **Fix**: None yet. Rule until then: a failure of only these three checks is rerun once before it is reported as a fault; report both runs. Fix by making the slow upload wait on a signal instead of a delay.
 
-### A Python patch in a bash heredoc decodes the escapes meant for JS (2026-11-08)
+### A Python patch in a bash heredoc decodes the escapes meant for JS (2026-11-08) [x3]
 **Problem**: In M5.6, five scripted patches broke their target.
 - **In JS:** `\n` in a replacement became a real line break, `\'` became a bare quote that ended the string, and `\u0000` became a NUL byte. It showed only as a syntax error in the next test run.
 - **In Python itself:** the patch writing this entry failed on `\u…`.
 
 **Root cause**: The quoted heredoc keeps the backslashes, but Python's own string literal then decodes them, so the target gets the decoded character instead of the escape.
 **Fix**: Edit those lines with the Edit tool. Rule: an escape that must reach a source file (`\n`, `\'`, `\u…`) goes through the Edit tool or a raw string, never through a plain Python literal. Run `node --check` on the file right after a scripted patch.
+**Recurrences**:
+- 2026-11-11: a `\` plus newline meant for `run.sh` was eaten in a heredoc.
+- 2026-11-11: a long heredoc with nested quotes failed to parse at all (`unexpected EOF`).
+
+Both were avoided by writing the patch script with the Write tool and running it as a file.
 
 ### A temporary edit to a tracked file ends up in the owner's commit (2026-11-08)
 **Problem**: Twice on 2026-11-08 the owner's commit took in files the agent had changed but not staged.
@@ -141,6 +146,21 @@
 
 **Root cause**: The owner's Git client commits every changed file, not only the staged ones. A file the agent means to restore later is committed as it is when the owner commits.
 **Fix**: Rule: leave no temporary edit in a tracked file between turns. Restore `.claude/launch.json` right after `preview_start` has started the server, since the running server does not need it, and stage only finished work. When it happens anyway, restore the file, stage it, and tell the owner.
+
+### Hugo's `relativeURLs` with a path in `baseURL` doubles the path (2026-11-11)
+**Problem**: With `baseURL = '/wiki/'` and `relativeURLs = true`, Hugo wrote `../../wiki/icon.svg` from `/wiki/nl/song-data/`. That resolves to `/wiki/wiki/icon.svg`.
+**Root cause**: Hugo makes links relative to its output's root but keeps the base path in them. The output is then served under that same path, so the path appears twice.
+**Fix**: `baseURL = '/'`, so every link is relative to the page wherever the folder is served. Links outside the wiki (the manager's `assets/`) are built in the template from the page's depth (`$root`). Also `disableDefaultLanguageRedirect = true`: Hugo's root redirect is a `meta http-equiv` page, which `build.py` refuses.
+
+### The browser tool's `type` into a `<select>` lands in another field (2026-11-10)
+**Problem**: With a `<select>` focused, `type "Ned"` put the text into the title field that had the focus before. That looked like a focus bug in the app.
+**Root cause**: The tool inserts text, and a closed `<select>` takes no inserted text. A focus log showed the focus did stay on the select.
+**Fix**: Rule: drive a `<select>` with `key` presses (a letter, the arrows), never with `type`. Before reporting a focus bug, log `focusin` and `focus()` calls to see who moved the focus.
+
+### Focus restored by label lands on the first of identical labels (2026-11-11)
+**Problem**: After *Omlaag* in a set, the focus went to the first song's *Omlaag*, so a second Enter moved a different song.
+**Root cause**: `focus.js` finds the redrawn control by its accessible name. Every row's buttons had the same name (*Omlaag*).
+**Fix**: Controls repeated per row name their row (*Omlaag: Vader Jacob*), which also tells a screen reader which item it acts on. Rule: never restore focus by position or by a name that repeats; a control that may be redrawn needs an id, a `data-key`, or a unique name.
 
 ## Promoted
 
@@ -159,6 +179,7 @@
 
 | Date | Gotcha | Occurrences | Promoted to |
 |------|--------|-------------|-------------|
+| 2026-11-08 | A scripted patch through a heredoc mangles what it writes | 3 (2026-11-08, 2026-11-11 twice) | memory/MEMORY.md handoff: write patch scripts with the Write tool and run them as files |
 
 ## Mechanized
 

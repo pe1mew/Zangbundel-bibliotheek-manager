@@ -202,7 +202,7 @@ export function keyReplaceConfirm(lang, key, onYes) {
 /** EDT-61, GD-14, SR-45: the author's name for a new key; it is not checked (1 to 100 characters). */
 export function keyMakeDialog(lang, onMake) {
   const input = el('input', { id: 'key-name', type: 'text', maxlength: 100, autocomplete: 'off', spellcheck: 'false',
-    placeholder: t(lang, 'keyNamePh') }, []);
+    placeholder: t(lang, 'keyNamePh'), 'aria-required': 'true', 'aria-describedby': 'key-name-note' }, []);   // M7.3: the note is read with the field
   const go = (close) => {
     const name = input.value.trim();
     if (!name) {
@@ -216,7 +216,7 @@ export function keyMakeDialog(lang, onMake) {
     actions: [{ label: t(lang, 'create'), primary: true, onClick: go }] }, [
     el('p', {}, [t(lang, 'keyMakeText')]),
     el('div', { class: 'field' }, [el('label', { for: 'key-name' }, [t(lang, 'keyName')]), input]),
-    el('p', { class: 'muted small' }, [t(lang, 'keyMakeNote')]),
+    el('p', { class: 'muted small', id: 'key-name-note' }, [t(lang, 'keyMakeNote')]),
   ]);
 }
 

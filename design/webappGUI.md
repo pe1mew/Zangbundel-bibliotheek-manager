@@ -361,6 +361,7 @@ The owner's answers to the open questions, and two further requests made during 
 - **Tabs and panels:** the tabs of both side bars name the panel they show (`aria-controls`, `aria-labelledby`).
 - **Placeholders:** placeholder text is `#8F8F8F`, at least 4.5:1 on black and on the sheet grey.
 - **Focus ring:** every control shows the sky-blue ring when it has the keyboard focus, the block-type select in the editor included.
+- **The buttons of a set's songs name the song** (*Omhoog: Vader Jacob*), so a screen reader says which song moves, and the focus stays with that song. A button that becomes disabled where it was (*Omlaag* at the bottom, *Sleutel vergeten* once the key is gone) passes the focus to the control beside it. *(Added 2026-11-11, the second walk of M7.3.)*
 
 **GD-34 — Bar widths, folding and the language are remembered on this computer.** *(Resolves GQ-16.)* They are kept in the browser's local storage, on that computer only, and restored on the next visit (EDT-82). Nothing about a library or a key is kept there (EDT-02, EDT-64). If local storage is not available, the manager starts with the defaults.
 

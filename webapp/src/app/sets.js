@@ -117,6 +117,7 @@ export function setViewNode(lang, { set, songs, readOnly, onRename, onRemove, on
   const entries = el('div', { class: 'sections setentries' }, []);
   const rows = set.songs.map((id, k) => {
     const song = byId.get(id);
+    const name = song ? song.title || t(lang, 'noTitle') : id;
     const handle = el('span', { class: 'handle', title: t(lang, 'dragTitle'), 'aria-hidden': 'true' }, [icon('drag')]);
     const card = el('div', { class: 'section setentry' }, [el('div', { class: 'secbar' }, [
       readOnly ? null : handle,
@@ -124,10 +125,11 @@ export function setViewNode(lang, { set, songs, readOnly, onRename, onRemove, on
       el('span', { class: 'grow' }, song
         ? [el('b', {}, [song.title || t(lang, 'noTitle')]), ' ', el('span', { class: 'muted small' }, [languageName(lang, song.language)])]
         : [severityIcon('error'), ' ', messageFor(lang, { code: 'SET-01', severity: 'Error', params: { set: set.name, song: id } })]),
-      // F5: the song and its neighbour slide past each other first (drag.js)
-      iconButton('up', t(lang, 'up'), readOnly || k === 0, () => slideMove(entries, card, k - 1, () => onMoveEntry(k, k - 1))),
-      iconButton('down', t(lang, 'down'), readOnly || k === set.songs.length - 1, () => slideMove(entries, card, k + 1, () => onMoveEntry(k, k + 1))),
-      iconButton('delete', t(lang, 'removeFromSet'), readOnly, () => onRemove(k)),
+      // F5: the song and its neighbour slide past each other first (drag.js). M7.3: each button names its song,
+      // for a screen reader and so the focus finds the moved song's button again after the redraw (focus.js)
+      iconButton('up', `${t(lang, 'up')}: ${name}`, readOnly || k === 0, () => slideMove(entries, card, k - 1, () => onMoveEntry(k, k - 1))),
+      iconButton('down', `${t(lang, 'down')}: ${name}`, readOnly || k === set.songs.length - 1, () => slideMove(entries, card, k + 1, () => onMoveEntry(k, k + 1))),
+      iconButton('delete', `${t(lang, 'removeFromSet')}: ${name}`, readOnly, () => onRemove(k)),
     ])]);
     if (!readOnly && set.songs.length > 1) {
       listen(handle, 'pointerdown', (e) => startDrag(e, { handle, card, list: entries, scroller: card.closest('.centre') || entries,

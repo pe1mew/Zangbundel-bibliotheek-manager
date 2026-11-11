@@ -69,3 +69,26 @@
 **Checked in Chromium:** in *Titel* of the library, F1 opened *De naam van de bibliotheek…*, and a second F1 closed it. The focus stayed in the field, and the browser opened no help of its own.
 
 **Still to check** with the other browsers (C5): whether Firefox, Edge or Safari keep F1 for themselves.
+
+## Second walk: the screens not walked (2026-11-11)
+
+**Setup:** the trial source `0.3.0-dev.3` (commit `4f65fe4`) plus the fixes below, in Chromium at 1400 × 850, with the production CSP. The public test files were opened through a test hook in place of the file picker: `valid-unsigned.zbl`, `song-chorus-early.zbl` and `test-key-rfc8032.zbkey`. Real key presses throughout.
+
+| # | WCAG | Found | Fix |
+|---|---|---|---|
+| A8 | 2.4.3, 2.4.6 | **An open set, *Omlaag*:** after the move, the focus went to the *Omlaag* of the first song, not to the song that moved. Every song's buttons had the same label, so the focus took the first match, and a second Enter moved a different song. | Each button names its song: *Omhoog: Vader Jacob*, *Omlaag: …*, *Uit de set: …* (`app/sets.js`). The focus stays on the moved song's button. Checked: two presses moved the same song twice. |
+| A9 | 2.4.3 | When that song reached the bottom, its *Omlaag* was disabled, and the focus fell back to the set's heading. | `focus.js`: if the same control is still there but disabled, the focus goes to the first usable control beside it, here *Omhoog: Vader Jacob*. *Sleutel vergeten*, disabled once the key is forgotten, likewise passes the focus to *Sleutel maken*. |
+| A10 | 1.3.1, 3.3.2 | ***Sleutel maken*:** the note under the name field (the name is not checked; the key stays in the browser) was not tied to the field, and the field was not marked required. | `aria-describedby` to the note, and `aria-required="true"` (`app/library-ui.js`). |
+
+**Met as found:**
+- ***Sleutel laden*** with the keyboard: the notice *Sleutel geladen: …* is read out, and the focus stays on the button.
+- ***Sleutel vergeten*** gives its notice.
+- **The *Sleutel maken* dialog** is modal and named, the focus goes into the labelled name field, and Escape gives the focus back to the button.
+- ***Controle*** opens on *Sluiten*. Each finding is a button.
+- ***Ga naar*:**
+  - On an error in a song, it opens that song in *Code (ChordPro)* with the cursor on the line (41).
+  - On a warning, it opens the song with the focus in the field to fill (*Tekst*), which carries its explanation.
+- **Opening a set** keeps the focus on its row in the list, the same list-and-detail pattern as a song.
+- No console errors.
+
+**Still not covered:** a real screen reader, the other browsers (C5), and making a key all the way to its download, which would save a file to the owner's disk.
