@@ -68,6 +68,7 @@ Zangbundel-bibliotheek-manager/
 │   ├── webappTDS.md              ← web app technical design: server, mock, deployment (TD-nn, TQ-nn)
 │   ├── securityAssessment.md     ← security and privacy: findings SF, requirements SR, release gate SC
 │   └── implementationPlan.md     ← milestones M0 to M7 for the test instance and the placeholder
+├── docs/                         ← tester-guide.md (Dutch, for testers of test.zangbundel.nl; M7.5)
 ├── wiki/                         ← the manual's source: hugo.toml, layouts/, nl/ en/ de/ Markdown (TD-24); built into webapp/src/wiki/
 ├── webapp/
 │   ├── mock/                     ← clickable mock of webappGUI (static HTML, CSS, JS; app icon CC BY-SA 4.0); never deployed

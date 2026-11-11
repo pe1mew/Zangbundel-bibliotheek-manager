@@ -1048,15 +1048,18 @@ The manager went live as `v0.2.0`/`v0.2.1` before M7 was done (the owner's decis
   - Each set in the *Sets* tab has a handle and is dragged like the songs of a set. Alt+↑/↓ move it from the keyboard (webappGUI GD-21, draft 0.37), and the open set follows (`indexAfterMove`, unit-tested).
   - Checked in the browser on three sets: two moves by keyboard, one by drag, with no console errors. The open set stayed open each time.
   - FDS EDT-31 is met again.
+- **C10, the agent's part done (2026-11-11):** the tester guide, `docs/tester-guide.md`, in Dutch. It covers the test instance and its banner, test files only (SR-82: `valid-signed`, `valid-unsigned`, the RFC 8032 test key), ten things to try, reporting as GitHub issues, and privacy. Still to do (owner): the testers' accounts, sending the guide, and the issues.
 - **C9, first part done (2026-11-11), the owner allowed the download:**
   - **The tool:** Hugo v0.169.0 is unpacked from its zip into `C:\Apps\hugo` and pinned by SHA-256 (webappTDS TD-24).
   - **Source and output:** the source is `wiki/`: config, own templates without script, and `nl`/`en`/`de` pages (home, *Aan de slag*, *Liedgegevens*, *Bibliotheek*). The two field pages are made from the help texts in `texts.js`, so the help and the wiki agree. The output is `webapp/src/wiki/` (`webapp/tools/wiki.py build`), committed and released with the manager.
   - **Links:** each explanation links to its field in the wiki (*Meer in de handleiding*). The Android panel's manager manual is `/wiki/<lang>/`.
   - **Checks:** `wiki.py check` refuses a missing page or language, a help link without its anchor, and drift from a fresh build; each was tried. `build.py` accepts the pages; two Hugo builds are identical. In the browser under the CSP: the pages, the anchors, the language links, the phone width and `/wiki/`, with no console errors. The container test passes 102 of 102, including the wiki's page headers.
-  - **Still to do:** the owner reads or rewrites the content; more pages (best practices: song IDs, tags, sets, keys); after that, a release.
+  - **2026-11-11, later:** the page *Goede gewoonten* (good practice) in nl, en and de: keep the file, song IDs, titles, tags, sets, versions, keys, sharing. It follows the FDS: EDT-23, EDT-63, EDT-72, SNG-10, SET-03 and the decision table of 8.3. The wiki has 16 files.
+  - **Still to do:** the owner reads or rewrites the content; after that, a release.
 - **SF-25, done in the source (2026-11-11), the owner's choice:**
   - The CSP is `trusted-types zbm-worker` on both hosts, in `conf.d/zangbundel.conf`, `check_headers.py`, SR-20 (SA draft 0.18) and TD-23 (TDS draft 0.15). The container test passes 100 of 100.
   - **Live 2026-11-11:** the owner installed `conf.d/zangbundel.conf`; its SHA-256 on contabo6 equals the repository's. SC-01 on `zangbundel.nl` gave 21 of 21, and the `contabo-vps-6` copy is refreshed.
+- **Trial `0.3.0-dev.2` on the test instance (2026-11-11):** built from commit `6811774` with the wiki, sets that can be reordered, and the help links. 27 files, 13 of them the wiki. It is live on `test.zangbundel.nl` and `zbm-release verify` gives `ok`. The wiki is at `/wiki/` behind the tester login. Production stays at `0.2.1`.
 - **Trial `0.3.0-dev.1` on the test instance (2026-11-10):** built from commit `68a037f` (the C7 fixes and *Over* GD-45). It is live on `test.zangbundel.nl`, and `zbm-release verify` gives `ok`. SC-01 `--app` gave 19 of 19, run by the owner. Production stays at `0.2.1`.
 
 ### M8 — Go live on zangbundel.nl (outside this plan)

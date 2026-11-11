@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **The wiki has *Goede gewoonten*** (good practice: the file, song IDs, tags, sets, versions, keys) in nl, en and de.
+- **A tester guide** in Dutch, `docs/tester-guide.md` (M7.5, C10): test files only, what to try, how to report.
 - **Version `0.3.0-dev.2`** for the second trial towards 0.3.0 on the test instance: the wiki (M7.6), reordering sets (EDT-31) and the help links.
 - **The manual is a wiki on `zangbundel.nl`** (M7.6, C9; webappTDS TD-24):
   - The Markdown is in `wiki/`, built with the pinned Hugo v0.169.0 by `webapp/tools/wiki.py` into `webapp/src/wiki/`, and served at `/wiki/<lang>/`. It is in nl, en and de: home, getting started, song details and library details.
