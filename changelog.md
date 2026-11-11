@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **The browser check is in the repository**, `webapp/tests/browsers/`: `node webapp/tests/browsers/drive.mjs all <release dir>` runs the key and signing cycle in headless Edge and Firefox with fresh profiles, using the CSP from `conf.d/zangbundel.conf`.
+- **C5, the browser matrix:** the full key and signing cycle, F1, storage and CSP pass in Edge 157 and Firefox 159 (`design/test-results/2026-11-11-c5-browsers.md`). Safari is not tested.
 - **Version `0.3.0-dev.5`** for the fifth trial towards 0.3.0 on the test instance: disabled round buttons look disabled.
 - **Disabled round buttons look disabled** (the bins of a read-only library, *Omhoog* at the top): dimmed, with no hover highlight. Found by the owner on a manager-made signed library.
 - **A dry run of the release gate for 0.3.0 on trial dev.4:** every check the agent can run passed (`design/test-results/2026-11-11-pre-gate-0.3.0-dev.4.md`).
