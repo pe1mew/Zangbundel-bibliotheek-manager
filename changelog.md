@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **C11, the app's import:** the app imports both libraries made by the manager. The signed one shows the test key's fingerprint `21FE-31DF-A154-A261`; the unsigned one gets W013. Left: the app's public 0.5.0 release.
 - **The browser check is in the repository**, `webapp/tests/browsers/`: `node webapp/tests/browsers/drive.mjs all <release dir>` runs the key and signing cycle in headless Edge and Firefox with fresh profiles, using the CSP from `conf.d/zangbundel.conf`.
 - **C5, the browser matrix:** the full key and signing cycle, F1, storage and CSP pass in Edge 157 and Firefox 159 (`design/test-results/2026-11-11-c5-browsers.md`). Safari is not tested.
 - **Version `0.3.0-dev.5`** for the fifth trial towards 0.3.0 on the test instance: disabled round buttons look disabled.

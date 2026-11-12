@@ -14,7 +14,7 @@ The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in 
 - **Live:** `zangbundel.nl` serves `manager-0.2.1` (since 2026-11-10); `test.zangbundel.nl` serves the trial `0.3.0-dev.5`, with the wiki at `/wiki/`. Hourly integrity check with Kuma push; HSTS at one week (ramp step 2).
 - **M7 runs as the completion plan C1 to C12** (`design/implementationPlan.md`):
   - **Done by the agent:** C1 (SR-75 copy), C3 (HSTS step), C6 (SR re-assessment, SA draft 0.18), C7 (accessibility), C8 (sets reorder), C9 (the wiki, content to be read by the owner) and C10's guide (`docs/tester-guide.md`).
-  - **Open, the owner's:** C2 (outside monitor, CT watch), C4 (DNS), C5 (other browsers), C10 (testers), C11 (the app's import), SF-22 (a ruleset on `main`).
+  - **Open, the owner's:** C2 (outside monitor, CT watch), C4 (DNS), C5 (other browsers), C10 (testers), C11 (only the app's public 0.5.0 release; the import passed 2026-11-12), SF-22 (a ruleset on `main`).
   - **Then C12:** v0.3.0 with the full gate.
 
 ## Before You Start
