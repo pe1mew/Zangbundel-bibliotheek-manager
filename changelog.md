@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-12
+
+The second publication of the manager on `zangbundel.nl`, tried on `test.zangbundel.nl` in five trial releases (`0.3.0-dev.1` to `-dev.5`). New: the manual as a wiki at `/wiki/<lang>/` in nl, en and de, sets that can be reordered again (EDT-31), the accessibility pass (keyboard, screen reader, F1 help), and *Over* naming the only address. Checked in Chromium, Edge and Firefox; Safari is accepted as untested. Released at the owner's decision with C2, C4, C10 and the app's public 0.5.0 release still open (completion plan C12).
+
 ### Changed
+- **Version `0.3.0`.**
+- **C5 closed:** Safari is accepted as untested (the owner, 2026-11-12).
 - **C11, the app's import:** the app imports both libraries made by the manager. The signed one shows the test key's fingerprint `21FE-31DF-A154-A261`; the unsigned one gets W013. Left: the app's public 0.5.0 release.
 - **The browser check is in the repository**, `webapp/tests/browsers/`: `node webapp/tests/browsers/drive.mjs all <release dir>` runs the key and signing cycle in headless Edge and Firefox with fresh profiles, using the CSP from `conf.d/zangbundel.conf`.
 - **C5, the browser matrix:** the full key and signing cycle, F1, storage and CSP pass in Edge 157 and Firefox 159 (`design/test-results/2026-11-11-c5-browsers.md`). Safari is not tested.

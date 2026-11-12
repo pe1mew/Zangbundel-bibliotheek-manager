@@ -10,12 +10,12 @@ framework: agent-ready-projects v1.49.2
 <!-- Canonical project file for Claude Code. No AGENTS.md exists; if one is
      added later, this file stays canonical and AGENTS.md should say so. -->
 
-The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.12. The Editor is a static web app in `webapp/`, built and checked through M0 to M6 (checked in Chromium only).
+The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.12. The Editor is a static web app in `webapp/`, built and checked through M0 to M6 (checked in Chromium, Edge and Firefox; Safari accepted as untested).
 - **Live:** `zangbundel.nl` serves `manager-0.2.1` (since 2026-11-10); `test.zangbundel.nl` serves the trial `0.3.0-dev.5`, with the wiki at `/wiki/`. Hourly integrity check with Kuma push; HSTS at one week (ramp step 2).
 - **M7 runs as the completion plan C1 to C12** (`design/implementationPlan.md`):
-  - **Done by the agent:** C1 (SR-75 copy), C3 (HSTS step), C6 (SR re-assessment, SA draft 0.18), C7 (accessibility), C8 (sets reorder), C9 (the wiki, content to be read by the owner) and C10's guide (`docs/tester-guide.md`).
-  - **Open, the owner's:** C2 (outside monitor, CT watch), C4 (DNS), C5 (other browsers), C10 (testers), C11 (only the app's public 0.5.0 release; the import passed 2026-11-12), SF-22 (a ruleset on `main`).
-  - **Then C12:** v0.3.0 with the full gate.
+  - **Done by the agent:** C1 (SR-75 copy), C3 (HSTS step), C6 (SR re-assessment, SA draft 0.18), C7 (accessibility), C8 (sets reorder), C9 (the wiki, content to be read by the owner), C10's guide (`docs/tester-guide.md`) and C5 (Edge and Firefox; Safari accepted as untested).
+  - **Open, the owner's:** C2 (outside monitor, CT watch), C4 (DNS), C10 (testers), C11 (only the app's public 0.5.0 release; the import passed 2026-11-12), SF-22 (a ruleset on `main`).
+  - **C12 under way:** v0.3.0 with the full gate, to production now with the items above still open (the owner's decision, 2026-11-12).
 
 ## Before You Start
 
