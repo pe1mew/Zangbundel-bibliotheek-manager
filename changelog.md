@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+- **Chorus repeats can no longer blow up a song** (FDS draft 0.13: SNG-19, M-76, D-47; song format v0.29, the app's S013; its assessment SP-41). The canonical line list is at most 32 768 lines, checked before each repeat is copied, so a song of a few kilobytes whose choruses repeat each other is refused at once. A `{chorus}` inside a chorus definition is now part of that chorus, as the app reads it, in the line list and in the song view.
+- **A shared test library for SNG-19,** `song-chorus-repeat-bound`, so there are 60 (FDS O-04). The independent checker `check_test_libraries.py` now counts the line list with its chorus repeats. All 60 pass in the checker, in the library repository's `release.py verify` for format 1.1, and in the manager's engine.
+- **The browser check sets Edge's window size itself:** headless Edge began to ignore `--window-size` and showed the narrow layout. `drive.mjs` now uses the DevTools Protocol for it, and its first step checks for 1400 × 900.
+
 ## [0.3.0] - 2026-11-12
 
 The second publication of the manager on `zangbundel.nl`, tried on `test.zangbundel.nl` in five trial releases (`0.3.0-dev.1` to `-dev.5`). New: the manual as a wiki at `/wiki/<lang>/` in nl, en and de, sets that can be reordered again (EDT-31), the accessibility pass (keyboard, screen reader, F1 help), and *Over* naming the only address. Checked in Chromium, Edge and Firefox; Safari is accepted as untested. Released at the owner's decision with C2, C4, C10 and the app's public 0.5.0 release still open (completion plan C12).

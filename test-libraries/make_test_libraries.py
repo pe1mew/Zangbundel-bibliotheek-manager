@@ -771,6 +771,16 @@ def rule_cases(base):
               ['SNG-18'], skipped('S002', 'larger than 64 KiB'), extra=[finding('SNG-17', 'Warning', 'lorem-ipsum')])
     by_file, by_compressed = ratio(zip_bytes(cases['song-too-large'][0]))
     assert by_file < 20 and by_compressed < 20, (by_file, by_compressed)
+    # SNG-19 (FDS draft 0.13, song format v0.29 5.5 and 7.2): a {chorus} inside a chorus definition is part of that
+    # chorus, so each block below doubles the most recent chorus; 14 blocks pass 32 768 lines.
+    doubling = b'\n# Elk refrein herhaalt het vorige twee keer (SNG-19).\n' + b'{start_of_chorus}\n{chorus}\n{chorus}\n{end_of_chorus}\n' * 14
+    song_case('song-chorus-repeat-bound', lorem + doubling, 'SNG-19', 'Error',
+              '14 chorus blocks appended to lorem-ipsum, each holding {chorus} twice: a repeat inside a chorus '
+              'definition is part of that chorus (song format 7.2), so every block doubles the chorus, and the '
+              'canonical line list would pass 32 768 lines (5.5). The file is %d bytes. It is also over the '
+              '254-line recommendation, so SNG-17 comes with it.' % len(lorem + doubling),
+              ['SNG-19'], skipped('S013', 'its line list would pass 32 768 lines'),
+              extra=[finding('SNG-17', 'Warning', 'lorem-ipsum')])
 
     # SNG-07 and SNG-16 are the two findings every case shares (fire-in-the-night, vader-jacob).
 

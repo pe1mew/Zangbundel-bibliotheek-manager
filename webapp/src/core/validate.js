@@ -68,6 +68,7 @@ function checkSong(id, bytes, add) {
   if (get('id').length !== 1 || get('id')[0] !== id) add('SNG-12', 'Info', id, { folder: id });
   if (problems.chorusEarly) add('SNG-13', 'Error', id, at('chorusEarly'));
   if (problems.newSong) add('SNG-14', 'Error', id, { song, ...problems.at.newSong });
+  if (problems.tooLong) add('SNG-19', 'Error', id, at('tooLong'));   // 5.5: the line list's hard bound
   // SNG-15: the first value that breaks its rule, with its directive and line
   const badValue = [
     ['redistribute', (v) => v !== 'yes' && v !== 'no'], ['year', (v) => !/^\d{4}$/.test(v)],

@@ -52,6 +52,7 @@ export const RULE_MESSAGE = Object.freeze({
   "SNG-16": "M-44",
   "SNG-17": "M-43",
   "SNG-18": "M-19",
+  "SNG-19": "M-76",
   "SET-01": "M-32",
   "SET-02": "M-33",
   "SET-03": "M-13",
@@ -117,6 +118,7 @@ export const MESSAGES = {
     "M-57": "Line {line} of \"{song}\": \"{chord}\" does not look like a chord.",
     "M-58": "The song \"{song}\" has no lyrics.",
     "M-59": "The library contains more than one song titled \"{title}\" with the same subtitle and language.",
+    "M-76": "Line {line} of \"{song}\": with its chorus repeats written out the song would have more than 32 768 lines. Do not repeat a chorus inside a chorus.",
   },
   nl: {
     "M-01": "Dit bestand is geen geldig ZIP-bestand.",
@@ -172,6 +174,7 @@ export const MESSAGES = {
     "M-57": "Regel {line} van \"{song}\": \"{chord}\" lijkt geen akkoord.",
     "M-58": "Het lied \"{song}\" heeft geen tekst.",
     "M-59": "De bibliotheek bevat meer dan één lied met de titel \"{title}\", met dezelfde ondertitel en taal.",
+    "M-76": "Regel {line} van \"{song}\": met de herhaalde refreinen uitgeschreven zou het lied meer dan 32 768 regels hebben. Herhaal geen refrein binnen een refrein.",
   },
   de: {
     "M-01": "Diese Datei ist keine gültige ZIP-Datei.",
@@ -227,5 +230,6 @@ export const MESSAGES = {
     "M-57": "Zeile {line} von „{song}\": „{chord}\" sieht nicht wie ein Akkord aus.",
     "M-58": "Das Lied „{song}\" hat keinen Text.",
     "M-59": "Die Bibliothek enthält mehr als ein Lied mit dem Titel „{title}\" mit gleichem Untertitel und gleicher Sprache.",
+    "M-76": "Zeile {line} von „{song}\": mit ausgeschriebenen Refrainwiederholungen hätte das Lied mehr als 32 768 Zeilen. Wiederhole keinen Refrain innerhalb eines Refrains.",
   },
 };

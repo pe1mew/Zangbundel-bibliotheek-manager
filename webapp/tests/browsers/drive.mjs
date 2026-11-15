@@ -66,6 +66,8 @@ async function edge(url, port) {
   const ws = await connect(target.webSocketDebuggerUrl);
   const call = rpc(ws);
   const evaluate = async (expression) => (await call('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })).result.value;
+  // headless Edge may ignore --window-size (seen 2026-11-12: 500 x 320, the narrow layout), so set the viewport here
+  await call('Emulation.setDeviceMetricsOverride', { width: 1400, height: 900, deviceScaleFactor: 1, mobile: false });
   await call('Page.navigate', { url }); await sleep(1500);
   await evaluate("localStorage.setItem('zbm.lang', 'nl'); 1");
   await call('Page.navigate', { url }); await sleep(2500);
@@ -75,6 +77,7 @@ async function edge(url, port) {
   for (const type of ['rawKeyDown', 'keyUp']) await call('Input.dispatchKeyEvent', { type, key: 'F1', code: 'F1', windowsVirtualKeyCode: 112, nativeVirtualKeyCode: 112 });
   await sleep(500);
   report.f1 = JSON.parse(await evaluate(F1_CHECK));
+  report.viewport = await evaluate('`${innerWidth}x${innerHeight}`');
   report.browser = (await evaluate('navigator.userAgent')).match(/Edg\/[\d.]+/)?.[0] || 'Edge';
   ws.close();
   return report;
@@ -100,6 +103,7 @@ async function firefox(url, port) {
   await call('input.performActions', { context, actions: [{ type: 'key', id: 'kb', actions: [{ type: 'keyDown', value: '\uE031' }, { type: 'keyUp', value: '\uE031' }] }] });
   await sleep(500);
   report.f1 = JSON.parse(await evaluate(F1_CHECK));
+  report.viewport = await evaluate('`${innerWidth}x${innerHeight}`');
   report.browser = `Firefox ${session.capabilities.browserVersion}`;
   try { await call('session.end', {}); } catch { /* closing */ }
   ws.close();
@@ -116,6 +120,8 @@ async function runBrowser(name, url) {
   try {
     const report = await (name === 'edge' ? edge(url, port) : firefox(url, port));
     const f1 = report.f1 || {};
+    // the cycle and F1 need the wide layout; a smaller window hides the left bar and its fields
+    report.steps.unshift({ name: 'the window is 1400 x 900 (the wide layout)', ok: report.viewport === '1400x900', detail: report.viewport });
     report.steps.push({ name: 'F1 in a field opens its explanation, not the browser\u2019s help', ok: f1.focused === 'lib-title' && f1.open && (f1.keys || []).includes('F1 (prevented)'), detail: JSON.stringify(f1) });
     report.ok = report.steps.every((s) => s.ok);
     return report;

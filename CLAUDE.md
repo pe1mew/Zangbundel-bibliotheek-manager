@@ -10,12 +10,12 @@ framework: agent-ready-projects v1.49.2
 <!-- Canonical project file for Claude Code. No AGENTS.md exists; if one is
      added later, this file stays canonical and AGENTS.md should say so. -->
 
-The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.12. The Editor is a static web app in `webapp/`, built and checked through M0 to M6 (checked in Chromium, Edge and Firefox; Safari accepted as untested).
-- **Live:** `zangbundel.nl` serves `manager-0.2.1` (since 2026-11-10); `test.zangbundel.nl` serves the trial `0.3.0-dev.5`, with the wiki at `/wiki/`. Hourly integrity check with Kuma push; HSTS at one week (ramp step 2).
+The bibliotheek-manager is the **Editor** of `design/FDS.md`: an application in which scout leaders with average computer skills create, check, edit and optionally sign song libraries for the Zangbundel app, and save them as one ZIP. The Zangbundel app imports that ZIP, applies the same validation rules and shows whether it is signed and by which key. The FDS is at draft 0.13. The Editor is a static web app in `webapp/`, built and checked through M0 to M6 (checked in Chromium, Edge and Firefox; Safari accepted as untested).
+- **Live:** `zangbundel.nl` and `test.zangbundel.nl` both serve `manager-0.3.0` (tag `v0.3.0`, since 2026-11-12), with the wiki at `/wiki/<lang>/`. Hourly integrity check with Kuma push; HSTS at one week (ramp step 2).
 - **M7 runs as the completion plan C1 to C12** (`design/implementationPlan.md`):
-  - **Done by the agent:** C1 (SR-75 copy), C3 (HSTS step), C6 (SR re-assessment, SA draft 0.18), C7 (accessibility), C8 (sets reorder), C9 (the wiki, content to be read by the owner), C10's guide (`docs/tester-guide.md`) and C5 (Edge and Firefox; Safari accepted as untested).
+  - **Done by the agent:** C1 (SR-75 copy), C3 (HSTS step), C6 (SR re-assessment, SA draft 0.19), C7 (accessibility), C8 (sets reorder), C9 (the wiki, content to be read by the owner), C10's guide (`docs/tester-guide.md`) and C5 (Edge and Firefox; Safari accepted as untested).
   - **Open, the owner's:** C2 (outside monitor, CT watch), C4 (DNS), C10 (testers), C11 (only the app's public 0.5.0 release; the import passed 2026-11-12), SF-22 (a ruleset on `main`).
-  - **C12 under way:** v0.3.0 with the full gate, to production now with the items above still open (the owner's decision, 2026-11-12).
+  - **C12:** `v0.3.0` released on 2026-11-12 with the full gate (`design/test-results/2026-11-12-release-gate-0.3.0.md`), with the items above still open (the owner's decision). M7's exit waits for them.
 
 ## Before You Start
 
@@ -108,8 +108,8 @@ python webapp/tools/build.py build --src webapp/placeholder --name placeholder -
 python webapp/tests/test_build.py
 python webapp/tests/test_bundle.py
 python webapp/tests/test_vendor.py
-python webapp/tests/test_engine_bundle.py           # the bundled engine = the native engine on all 59 test libraries
-node --test webapp/tests/                          # unit tests + test-library conformance (SC-04: all 59 cases, every rule family) + a short fuzz
+python webapp/tests/test_engine_bundle.py           # the bundled engine = the native engine on all 60 test libraries
+node --test webapp/tests/                          # unit tests + test-library conformance (SC-04: all 60 cases, every rule family) + a short fuzz
 node webapp/tests/fuzz.mjs --iterations 20000      # the long fuzz (SR-35, SC-11): before a release and after changing a reader
 python webapp/tools/vendor.py check                # vendored files against VENDOR.md (vendor.py add needs npm and the network)
 node webapp/tests/browsers/drive.mjs all dist/manager-<version>   # C5/SC-05: key and signing cycle, F1, storage, CSP in headless Edge and Firefox (fresh profiles); exit 1 on a failure

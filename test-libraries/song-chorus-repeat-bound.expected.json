@@ -1,0 +1,43 @@
+{
+  "description": "14 chorus blocks appended to lorem-ipsum, each holding {chorus} twice: a repeat inside a chorus definition is part of that chorus (song format 7.2), so every block doubles the chorus, and the canonical line list would pass 32 768 lines (5.5). The file is 2821 bytes. It is also over the 254-line recommendation, so SNG-17 comes with it.",
+  "app": {
+    "verdict": "refused",
+    "codes": [
+      "SNG-19"
+    ]
+  },
+  "editor": {
+    "codes": [
+      {
+        "code": "SNG-19",
+        "severity": "Error",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-17",
+        "severity": "Warning",
+        "where": "lorem-ipsum"
+      },
+      {
+        "code": "SNG-16",
+        "severity": "Warning",
+        "where": "vader-jacob"
+      },
+      {
+        "code": "SNG-07",
+        "severity": "Info",
+        "where": "fire-in-the-night"
+      }
+    ]
+  },
+  "format_1_1": {
+    "verdict": "accepted as snapshot",
+    "codes": [
+      "A102",
+      "S013",
+      "SL101"
+    ],
+    "note": "The song is skipped (its line list would pass 32 768 lines); its entry in setlists/set-2.zbs is not found."
+  },
+  "sha256": "e56c8fe02da7088807c2cc7775906b0d1674735fc3d179c69534a5d32e462e29"
+}

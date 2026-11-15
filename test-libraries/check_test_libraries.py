@@ -53,6 +53,7 @@ MAX_ENTRIES = 10000
 SHARING = 16 * 1024 * 1024
 SONG_MAX = 64 * 1024
 SONG_RECOMMENDED = 8 * 1024
+LINES_MAX = 32 * 1024     # song format v0.29 5.5, SNG-19
 
 SONG_ID = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
 UUID4 = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')
@@ -123,8 +124,20 @@ def check_song(song_id, data):
     unknown = set()
     malformed = chord_bracket = chord_name = env_error = chorus_early = new_song = False
     env = None
-    choruses = 0
+    choruses = []           # (label, size) of each chorus defined, in file order
+    defining = None         # [label, size] of the chorus being defined
+    total = 0               # the canonical line list's length, repeats written out (counted, not built)
+    too_long = False        # SNG-19: it would pass LINES_MAX (song format v0.29, 5.5)
     lyric = []
+
+    def grow(n):
+        nonlocal total, too_long
+        if too_long or total + n > LINES_MAX:
+            too_long = True
+            return
+        total += n
+        if defining is not None:
+            defining[1] += n    # 7.2 (v0.29): a repeat inside a chorus definition is part of that chorus
     for raw in lines:
         line = raw.strip()
         if not line or line.startswith('#'):
@@ -150,15 +163,20 @@ def check_song(song_id, data):
                 if env is not None:
                     env_error = True
                 env = name[len('start_of_'):]
+                defining = [value, 0] if env == 'chorus' else None
             elif name.startswith('end_of_'):
                 if env != name[len('end_of_'):]:
                     env_error = True
-                if env == 'chorus':
-                    choruses += 1
+                if env == 'chorus' and defining is not None:
+                    choruses.append(tuple(defining))
                 env = None
+                defining = None
             elif name == 'chorus':
-                if choruses == 0:
+                if not choruses:
                     chorus_early = True
+                else:
+                    labelled = [size for label, size in choruses if value and label == value]
+                    grow(labelled[-1] if labelled else choruses[-1][1])
             elif name == 'new_song':
                 new_song = True
             elif name in OTHER or name in LAYOUT:
@@ -197,6 +215,7 @@ def check_song(song_id, data):
         shown = ''.join(display).replace('\t', ' ').rstrip()
         if shown:
             lyric.append(shown)
+            grow(1)
     if env is not None:
         env_error = True
 
@@ -235,7 +254,9 @@ def check_song(song_id, data):
         meta.get('license') and meta.get('source') and meta.get('tag')
     if not recommended or any(not LICENSE_ID.match(v) for v in meta.get('license', [])):
         add('SNG-16', 'Warning')
-    if len(title) > 60 or any(len(l) > 120 for l in lyric) or len(lyric) > 254 or len(data) > SONG_RECOMMENDED:
+    if too_long:
+        add('SNG-19', 'Error')
+    if len(title) > 60 or any(len(l) > 120 for l in lyric) or total > 254 or len(data) > SONG_RECOMMENDED:
         add('SNG-17', 'Warning')
     subtitle = (meta.get('subtitle') or [''])[0]
     return out, (title, subtitle, language[0] if language else '') if title else None

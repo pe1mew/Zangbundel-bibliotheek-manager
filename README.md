@@ -18,7 +18,7 @@ The process it supports:
 - **The design:** the web app's design is in [design/webappGUI.md](design/webappGUI.md) and [design/webappTDS.md](design/webappTDS.md), and its security in [design/securityAssessment.md](design/securityAssessment.md).
 - **Where it runs:** the web app is in `webapp/src`. Libraries and keys are processed in the browser and never sent to the server (webappTDS TD-06 to TD-08).
 - **The server:** its set-up and runbook are in `webapp/server/README.md`.
-- **Test libraries:** `test-libraries/` holds 59 shared test libraries, one invalid case for nearly every rule of FDS section 6, with a checker (O-04).
+- **Test libraries:** `test-libraries/` holds 60 shared test libraries, one invalid case for nearly every rule of FDS section 6, with a checker (O-04).
 - **The import side** of the specification (FDS section 8) is built in the Zangbundel app, not here.
 - **What is left** before version 1 is in the [implementation plan](design/implementationPlan.md) (milestone M7 and the completion plan).
 

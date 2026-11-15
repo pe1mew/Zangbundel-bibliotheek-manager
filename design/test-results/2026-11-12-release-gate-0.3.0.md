@@ -28,6 +28,14 @@ These checks ran on the working tree with `version.js` at `0.3.0`. They used a t
 
 ## After the tag
 
-- **SC-08 SRI** and the release build: still to run, on `dist/manager-0.3.0` built from the signed tag `v0.3.0`.
-- **SC-09 manifest:** still to run, `zbm-release verify` on both hosts after activation.
-- **SC-01 headers:** still to run on both hosts after activation (owner).
+| Check | Result | How |
+|---|---|---|
+| Release build | **Passed.** `dist/manager-0.3.0`, 30 files, from commit `2a42b6c` with the signed tag `v0.3.0` (good signature). `source_dirty: false`. Built twice: every file was byte-identical (SR-10). | `build.py build --src webapp/src --name manager --version 0.3.0`, with no `--allow-dirty` |
+| SC-08 SRI | **Passed.** 21 integrity attributes in the release's pages, all matching their files. | Recomputed from `dist/manager-0.3.0` |
+| SC-03, SC-05, SC-06 on the release | **Passed in Edge 157 and Firefox 160,** 15 of 15 steps each. | `drive.mjs all dist/manager-0.3.0` |
+| SC-09 manifest | **Passed.** `zbm-release verify` gives `ok` for `test.zangbundel.nl manager-0.3.0 (30 files)` and `zangbundel.nl manager-0.3.0 (30 files)`. Both hosts run the one upload, `upload-20261112T183021Z-4043821.tar`, whose SHA-256 `38a313f4…02f2` equals the pack's. | On contabo6, read-only, as the owner's user |
+| SC-01 headers | **Passed on both hosts.** Test instance: 19 of 19 (the owner, 2026-11-12). Production: 21 of 21 (the agent, 2026-11-12). Production serves `assets/main.7d5d3a6f3876.js`, the release's bundle. `/wiki/nl/` and `/wiki/de/good-practice/` answer 200. | `check_headers.py test.zangbundel.nl --auth remko --app`; `check_headers.py zangbundel.nl --app` |
+
+**Released 2026-11-12, as SR-84 says:** the owner activated the upload on `test.zangbundel.nl` first, and after its checks activated the same upload on `zangbundel.nl`.
+
+**The browser check's own fault, fixed (2026-11-12):** on the first run on the release, F1 failed in Edge. Headless Edge had started ignoring `--window-size` and opened at 500 × 320. At that size the manager shows the narrow layout, which hides the title field. dev.5, which had passed the day before, failed the same way, so the fault was in the check, not in the release. `drive.mjs` now sets the viewport through `Emulation.setDeviceMetricsOverride`, and its first step checks for 1400 × 900. The release was not changed.

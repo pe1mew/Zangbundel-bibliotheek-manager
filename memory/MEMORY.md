@@ -22,10 +22,10 @@
 
 ## Current State
 
-- **Handoff 2026-11-11 (latest; read this first).** Live: `zangbundel.nl` = `manager-0.2.1`, `test.zangbundel.nl` = trial `0.3.0-dev.5` (commit `090b84c`). The completion plan C1 to C12 (implementationPlan, "Completion plan") holds the state per item.
+- **Handoff 2026-11-12 (latest; read this first).** Live: `zangbundel.nl` and `test.zangbundel.nl` = `manager-0.3.0` (tag `v0.3.0`, commit `2a42b6c`, upload `upload-20261112T183021Z-4043821.tar`), with the wiki. C12's release is done; the gate is in `design/test-results/2026-11-12-release-gate-0.3.0.md`. The completion plan C1 to C12 (implementationPlan, "Completion plan") holds the state per item.
   - **The second accessibility walk** (A8 to A10) is committed and on the test instance in dev.4.
-  - **Agent work left:** none unblocked. Next on the owner's word: C12 (v0.3.0 from a signed tag, the full gate SC-01 to SC-13, `wiki.py check --need-hugo`, the long fuzz only if a reader changed).
-  - **The owner's open items:** C2 (outside monitor, CT watch), C4 (staging CAA record, registrar 2FA check), C10 (tester accounts, send `docs/tester-guide.md`), C11 (only the app's public 0.5.0 release, in Play's closed test, waiting for 12 testers; the phone import of both manager-made libraries passed 2026-11-12). C5 closed: Safari accepted as untested 2026-11-12. The owner decided on 2026-11-12 to release `v0.3.0` to production with these open, SF-22 (ruleset on `main`), HSTS step 3 not before 2026-11-17, reading the wiki's text.
+  - **Agent work left:** none unblocked. Next: HSTS step 3 from 2026-11-17 (runbook step 9); otherwise only what the owner asks or testers report.
+  - **The owner's open items:** C2 (outside monitor, CT watch), C4 (staging CAA record, registrar 2FA check), C10 (tester accounts, send `docs/tester-guide.md`), C11 (only the app's public 0.5.0 release, in Play's closed test, waiting for 12 testers; the phone import of both manager-made libraries passed 2026-11-12). C5 closed: Safari accepted as untested 2026-11-12. `v0.3.0` went to production on 2026-11-12 with these open (the owner's decision), SF-22 (ruleset on `main`), HSTS step 3 not before 2026-11-17, reading the wiki's text.
   - **Habits that held:**
     - **Trials:** a trial is version bump, then the owner commits, then the agent builds, then the owner signs, uploads and activates with `--trial`.
     - **Releases:** production gets the tested signed upload only (SR-84, runbook step 7).

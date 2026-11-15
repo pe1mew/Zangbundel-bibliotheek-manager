@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.18 |
-| **Date** | 2026-11-11 |
+| **Status** | Draft 0.19 |
+| **Date** | 2026-11-15 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
 
@@ -158,6 +158,7 @@ From `../contabo-vps-6`. These facts drive several findings.
 | SF-23 | **No incident runbook, and no tried restore.** *Found 2026-11-10.* Going back to an earlier release is written down. Taking the site offline, restoring it from scratch, and what to tell users are not. *2026-11-10: written as runbook step 11, with a signed maintenance page (`webapp/maintenance/`). The container test switches to it and back. **Closed 2026-11-10:** the owner built `maintenance-0.1.0` from its signed tag, activated it on the test instance and switched back to `manager-0.2.1`; `verify` gave `ok` afterwards.* | — | Low | SR-63, SR-93 |
 | SF-24 | **The canonical address is stated in too few places.** *Found 2026-11-10.* Only the key notice says that `https://zangbundel.nl` is the manager. The *Over* dialog, the README and the Zangbundel app do not, so users have nowhere independent to check the address. *2026-11-10: in *Over* (webappGUI GD-45) and the README, from the next release. The app's About screen and manual are the owner's, in the Zangbundel repository.* | AT-1 | Low | SR-08 |
 | SF-25 | **An unclaimed Trusted Types policy name.** *Found 2026-11-10.* The CSP allows a policy `zbm-download`, which the app never creates, because a `blob:` link is not a sink. Script already running on the page could claim that name and use it to pass HTML to a sink. The name protects nothing. *Closed in the source 2026-11-11, the owner's choice: dropped from SR-20, the nginx CSP and SC-01's expectation; live on both hosts since 2026-11-11 (SC-01 on `zangbundel.nl`: 21 of 21).* | AT-2 | Low | SR-20, SR-32 |
+| SF-26 | **Chorus repeats that double a song.** *Found 2026-11-15, from the app's assessment SP-41.* A `{chorus}` inside a chorus definition repeats the chorus it names. The app counts that repeat as part of the chorus being defined, so a song of about 1 kB can double twenty times. The manager's reader counted it only once, but nothing bounded how many lines repeats could copy. A library built for it could hold the library worker until its 20 s limit, or run the tab out of memory. *Closed in the source 2026-11-15:* the canonical line list is bounded at 32 768 lines, checked before each repeat is copied (FDS SNG-19, D-47; song format v0.29), and the song view copies no more than that. The app's other finding of that check, SP-42 (ZIP64 offsets overflowing bounds checks), does not apply here: `zip.js` refuses every ZIP64 archive (PKG-01). The long fuzz was rerun (SR-35). | AT-1 | Low | SR-33, SR-35 |
 
 ---
 
@@ -624,6 +625,7 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 - **What changes:** what the public site runs. Its exposure is the test instance's, minus basic auth: the public can now load the scripts, which run only in the visitor's browser.
 - **Going back:** `zbm-release switch zangbundel.nl placeholder-0.1.0`, after putting the earlier nginx config back.
 - **Still open from the gate:** SC-05 in Firefox, Edge and Safari; HSTS above 300 s (step 9); the registrar's two-factor authentication. |
+| Draft 0.19 | 2026-11-15 | SF-26, from the app's SP-41: chorus repeats could make a song's line list grow without a bound. Closed in the source with FDS SNG-19 (draft 0.13). The app's SP-42 does not apply, as the manager refuses ZIP64. |
 | Draft 0.18 | 2026-11-11 | SF-25 closed in the source, the owner's choice. The CSP of SR-20 lists one Trusted Types policy, `trusted-types zbm-worker`, and SR-32 and 7.3 say why a download needs none. This is a header change only (SR-91): the code never created `zbm-download`, so nothing in the page changes; the CSP becomes stricter. The container test checks it. Also SR-91, a new development tool: Hugo v0.169.0 builds the wiki (webappTDS TD-24). It is downloaded once, the zip checked against its release's SHA-256 (no attestation exists), and pinned by the SHA-256 of `hugo.exe`. It runs on the owner's computer only, and its output is committed and reviewed like source. Hugo never reaches the server and adds no script: `build.py` refuses script, inline style, event handlers and external resources in the wiki's pages as in every page, and the CSP of SR-20 applies to them. Nothing about keys or libraries changes. The wiki pages are static, read-only HTML; the manager's links to them open in a new tab. |
 | Draft 0.17 | 2026-11-10 | The implementation re-assessed (SR-91, implementationPlan M7.4), every SR against the code at `v0.2.1` and the server as running. The results are in `design/test-results/2026-11-10-sr-reassessment.md`.
 - **Met:** most requirements, each with where.

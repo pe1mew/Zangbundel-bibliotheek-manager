@@ -7,7 +7,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { canonicalize, parseSong } from '../../src/core/chordpro.js';
+import { CANONICAL_LINES_MAX, canonicalize, parseSong, songView } from '../../src/core/chordpro.js';
+import { checkSongText } from '../../src/core/validate.js';
 import { readCentralDirectory, readEntry } from '../../src/core/zip.js';
 
 const enc = new TextEncoder();
@@ -97,4 +98,53 @@ test('SR-33: a long line of spaces is trimmed in linear time', () => {
   canonicalize(enc.encode(`${'a '.repeat(1)}${' '.repeat(60000)}x${' '.repeat(60000)}\n`));
   song(`x${' \t'.repeat(30000)}\n`);
   assert.ok(performance.now() - t0 < 200, `took ${Math.round(performance.now() - t0)} ms`);
+});
+
+// song format v0.29 (FDS SNG-19, D-47; the app's proposal 2026-11-12-chorus-repeat-bound, assessment SP-41)
+const doubling = (levels, extra = 0) => ['{title: T}', '{soc}', 'a', '{eoc}',
+  ...Array.from({ length: levels }, () => ['{soc}', '{chorus}', '{chorus}', '{eoc}']).flat(),
+  ...Array.from({ length: extra }, (_, i) => `x${i}`), ''].join('\n');
+
+test('7.2 (v0.29): a {chorus} inside a chorus definition is part of that chorus', () => {
+  const s = song('{soc}\na\n{eoc}\n{soc}\n{chorus}\nb\n{eoc}\n{chorus}\n');
+  assert.deepEqual(s.lines, ['a', 'a', 'b', 'a', 'b']);
+  assert.equal(s.problems.tooLong, false);
+});
+
+test('5.5 (v0.29): the line list is at most 32 768 lines; 32 769 are refused, at the line that passes it', () => {
+  assert.equal(CANONICAL_LINES_MAX, 32768);
+  const at = song(doubling(14, 1));                                     // 2^15 - 1 + 1
+  assert.equal(at.lines.length, 32768);
+  assert.equal(at.problems.tooLong, false);
+  const over = song(doubling(14, 2));
+  assert.equal(over.problems.tooLong, true);
+  assert.equal(over.lines.length, 32768);                              // it stops at the bound
+  assert.equal(over.problems.at.tooLong.line, 4 + 14 * 4 + 2);         // the second written line
+  assert.equal(song(doubling(15)).problems.tooLong, true);               // a repeat that would pass it is not copied
+});
+
+test('5.5 (v0.29): 20 and 40 levels stop at once (the app\'s vector chorus-repeat-bound, SP-41)', () => {
+  for (const levels of [20, 40]) {
+    const t0 = performance.now();
+    const s = song(doubling(levels));
+    assert.equal(s.problems.tooLong, true);
+    assert.ok(s.lines.length <= CANONICAL_LINES_MAX);
+    assert.ok(performance.now() - t0 < 500, `${levels} levels took ${Math.round(performance.now() - t0)} ms`);
+  }
+});
+
+test('SNG-19: the finding, an Error with its line, and M-76', () => {
+  const f = checkSongText('t', doubling(20).replace('{title: T}', '{title: T}\n{meta: id t}\n{meta: language nl}'));
+  const bound = f.find((x) => x.code === 'SNG-19');
+  assert.equal(bound.severity, 'Error');
+  assert.equal(bound.params.line, 8 + 14 * 4);                         // the first {chorus} of the 15th level
+  assert.ok(f.some((x) => x.code === 'SNG-17'));                       // more than 254 lines, as the app's W004
+});
+
+test('songView (v0.29): a repeat inside a chorus definition is shown in that chorus, and bounded', () => {
+  const v = songView('{soc}\na\n{eoc}\n{soc}\n{chorus}\nb\n{eoc}\n');
+  assert.equal(v.length, 2);
+  assert.deepEqual(v[1].lines.map((l) => l.segments[0].text), ['a', 'b']);
+  const big = songView(doubling(40));
+  assert.ok(big.reduce((n, s) => n + s.lines.length, 0) <= 2 * CANONICAL_LINES_MAX);
 });

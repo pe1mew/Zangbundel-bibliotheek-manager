@@ -25,6 +25,9 @@ export const META_NAMES = new Set([...METADATA_DIRECTIVES, 'id', 'language', 'li
 export const SINGLE = new Set(['id', 'title', 'language', 'subtitle', 'sorttitle', 'copyright', 'license', 'source',
   'melody', 'variant-group', 'redistribute', 'key', 'capo', 'tempo', 'time', 'duration', 'year']);
 const SHOWN_ENVS = new Set(['verse', 'chorus', 'bridge']);
+/** 5.5 (song format v0.29): the canonical line list's hard bound, FDS SNG-19. Only chorus repeats can pass it, since a
+ *  64 KiB file cannot hold more lines written out; checked before a line or a repeat is added, so the work stays bounded. */
+export const CANONICAL_LINES_MAX = 32 * 1024;
 const CHORD = /^[A-G](#|b)?[^/\s[\]]*(\/[A-G](#|b)?)?$/;
 
 const utf8 = new TextDecoder('utf-8', { fatal: true });
@@ -118,15 +121,16 @@ function trimEndSpace(s) {
 /**
  * Parse the canonical text of a song. Returns
  * { meta: Map<name, string[]>, unknown: Set, lines: [canonical line list], problems, metaLines, unknownAt }:
- * problems has the flags malformed, envError, chorusEarly, newSong, bracket, chordName, and in
+ * problems has the flags malformed, envError, chorusEarly, newSong, bracket, chordName, tooLong, and in
  * problems.at the first place of each, { line, ... } (FDS EDT-40: the location of a message);
  * metaLines gives the line of every value of meta, unknownAt the first line of each unknown directive.
  * Line numbers count the lines of the canonical text from 1; they are the lines of the file.
+ * tooLong (SNG-19): the line list would pass CANONICAL_LINES_MAX; it stops growing there, and lines holds what came before.
  */
 export function parseSong(text) {
   const meta = new Map();
   const unknown = new Set();
-  const problems = { malformed: false, envError: false, chorusEarly: false, newSong: false, bracket: false, chordName: false, at: {} };
+  const problems = { malformed: false, envError: false, chorusEarly: false, newSong: false, bracket: false, chordName: false, tooLong: false, at: {} };
   const metaLines = new Map();                            // name -> [line of each value]
   const unknownAt = new Map();                            // unknown directive -> its first line
   let n = 0;                                              // the current line, from 1
@@ -143,6 +147,17 @@ export function parseSong(text) {
   const unknownName = (name) => {
     unknown.add(name);
     if (!unknownAt.has(name)) unknownAt.set(name, n);
+  };
+  // 5.5: add to the line list, and to the chorus being defined (7.2), unless the list would pass its hard bound
+  const add = (added) => {
+    if (problems.tooLong) return;
+    if (lines.length + added.length > CANONICAL_LINES_MAX) {
+      problems.tooLong = true;                            // SNG-19, before anything is copied
+      mark('tooLong');
+      return;
+    }
+    lines.push(...added);
+    if (chorus) chorus.lines.push(...added);
   };
 
   for (const raw of text.split('\n')) {
@@ -204,7 +219,8 @@ export function parseSong(text) {
           // takes the most recent chorus), otherwise the most recent chorus
           const labelled = value ? choruses.filter((c) => c.label === value) : [];
           const picked = labelled.length ? labelled[labelled.length - 1] : choruses[choruses.length - 1];
-          lines.push(...picked.lines);                    // 7.2: one repetition per {chorus}
+          add(picked.lines);                              // 7.2: one repetition per {chorus}; inside a chorus
+                                                          // definition it is part of that chorus (v0.29)
         }
       } else if (name === 'new_song') {
         problems.newSong = true;
@@ -219,10 +235,7 @@ export function parseSong(text) {
     }
     const shown = displayText(raw, problems, mark);
     if (shown !== '') {
-      lines.push(shown);
-      if (chorus) {
-        chorus.lines.push(shown);
-      }
+      add([shown]);
     }
   }
   if (env !== null) {
@@ -315,6 +328,7 @@ export function songView(text) {
   let section = null;                                     // the open environment's section
   let implicit = null;                                    // the implicit verse being collected (7.3)
   let verses = 0;
+  let copied = 0;                                         // lines copied into choruses by repeats (5.5 bound)
   const open = (s) => {
     if (s.kind === 'verse') s.number = ++verses;
     sections.push(s);
@@ -355,7 +369,15 @@ export function songView(text) {
         if (choruses.length) {
           const labelled = value ? choruses.filter((c) => c.label === value) : [];
           const picked = labelled.length ? labelled[labelled.length - 1] : choruses[choruses.length - 1];
-          sections.push({ kind: 'chorus', label: value || picked.label, number: null, implicit: false, repeat: true, lines: picked.lines });
+          if (env === 'chorus' && section) {
+            // 7.2 (v0.29): a repeat inside a chorus definition is part of that chorus; bounded as the line list is
+            if (copied + picked.lines.length <= CANONICAL_LINES_MAX) {
+              copied += picked.lines.length;
+              section.lines.push(...picked.lines);
+            }
+          } else {
+            sections.push({ kind: 'chorus', label: value || picked.label, number: null, implicit: false, repeat: true, lines: picked.lines });
+          }
         }
       } else if (REMARKS[name]) {
         const remark = { remark: value, style: REMARKS[name] };

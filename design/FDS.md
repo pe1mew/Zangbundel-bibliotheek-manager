@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | Functional Design Specification (FDS) |
-| **Status** | Draft 0.12 |
-| **Date** | 2026-11-08 |
+| **Status** | Draft 0.13 |
+| **Date** | 2026-11-15 |
 | **Scope** | Library package format, Editor, Songbook app import |
 
 ---
@@ -408,6 +408,7 @@ The profile's song-level errors (S-codes) make the Songbook app skip the song in
 | SNG-16 | Recommended metadata is present: lyricist or composer, copyright, license, source, tag. | Warning | M-44 | W002, W010 |
 | SNG-17 | The song stays within the recommendations of song format §5.5: title ≤ 60 characters, lyric line ≤ 120 characters, ≤ 254 lyric lines, file ≤ 8 KiB. | Warning | M-43 | W003, W004, W005, W008 |
 | SNG-18 | The `.cho` file is at most 64 KiB (§3.5). | Error | M-19 | S002 |
+| SNG-19 | The canonical line list, with every chorus repeat written out, has at most 32 768 lines (song format §5.5, v0.29). A `{chorus}` inside a chorus definition is part of that chorus (§7.2), so repeats can double a song; a reader checks the count before it copies a repeat (D-47). | Error | M-76 | S013 |
 
 ### 6.7 Set rules (SET)
 
@@ -672,6 +673,7 @@ The texts are given in English and are the reference for their translations; bot
 | M-73 | You already have a library called "{title}", but this is a different library. Add it as a separate library, or replace the one you have? |
 | M-74 | This is an older version of the library than the one you have: version {new} instead of {current}. Replace it anyway? |
 | M-75 | This library names nobody who looks after it (a name and an e-mail address or website). Save it again in the Editor. *App wording of MAN-08, added in draft 0.6* (D-42). |
+| M-76 | Line {line} of "{song}": with its chorus repeats written out the song would have more than 32 768 lines. Do not repeat a chorus inside a chorus. |
 
 ---
 
@@ -762,6 +764,7 @@ These limitations are accepted and must be stated in the user documentation.
 | D-44 | Tag labels travel in a package in the optional manifest field `tags` (§4.1), so tags and their labels work alike in every library format; the 1.1 view does not carry them, because every app that reads packages refuses an extra view field (VIEW-02). `formatVersion` stays 1: the field is optional and an app ignores unknown manifest fields. Decided by the owner on 2026-11-07, after first sunsetting tags and then retracting that: *"manager shall support labels to stay consistent over all"*; the format is written by the library session (the app repository's `design/proposals/2026-11-07-tag-labels-in-packages.md`, song format v0.26). |
 | D-45 | A signing key lives for one run of the Editor, not for one library session (EDT-02, EDT-64): it stays in memory through *Close* and *Save*, so signing several libraries needs the key loaded once, and is discarded when the Editor closes at the latest. Decided by the owner on 2026-11-07, while the web app's key group was built; the web app also forgets the key on request and after 30 minutes without input (securityAssessment SR-41, SR-46). |
 | D-46 | Two songs are the same song for SNG-10 only when title, subtitle and language are all the same, compared case-insensitively; a missing subtitle counts as the same subtitle. A library may hold a song in several languages, or in several versions told apart by their subtitles, under one title. The owner found three *Alouette* songs, in English, French and Dutch, reported as duplicates, and decided this on 2026-11-08. The comparison of title alone is withdrawn. The app shows no Warning (6.1), so its imports do not change. |
+| D-47 | The canonical line list has a hard bound of 32 768 lines (SNG-19, Error), and a `{chorus}` inside a chorus definition is part of that chorus, as the app has always read it. Without the bound, a song of a few kilobytes whose choruses repeat each other doubles at every level: 20 levels are about two million lines, and 40 ran the app out of memory (the app's assessment SP-41, its proposal `design/proposals/2026-11-12-chorus-repeat-bound.md`). The owner approved the app side on 2026-11-12, and the library session wrote it into song format v0.29 (§5.5, §7.2, S013) on 2026-11-15. 32 768 refuses no song written out, since a 64 KiB file cannot hold more lines. For the app, the line list of every song within the bound is unchanged. The Editor before draft 0.13 (manager 0.3.0 and earlier) left such a repeat out of the chorus being defined; it now reads it as the app does, so SNG-17's line count and the song view agree with the app. |
 
 Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangbundel-bibliotheek#1 (2026-11-04). Decisions D-22 to D-28 are the owner's (2026-11-04). Decisions D-29 and D-30 come from the app repository's proposal `design/proposals/2026-11-04-library-package-id-and-file-type.md`, approved by the owner; D-31 to D-33 are the owner's answers to the differences that proposal found between this specification and the app's FRD (2026-11-04). Decisions D-34 to D-39 come from the app repository's proposal `design/proposals/2026-11-06-backward-compatible-packages.md`, approved by the owner on 2026-11-06. D-40 answers a question from the app's implementation on the same day. D-41 to D-43 come from the app session on 2026-11-06: D-41 is the owner's decision on that session's assessment SP-39, and D-42 and D-43 follow from writing the app's import questions (GUI design D-88).
 
@@ -778,6 +781,7 @@ Decisions D-17 to D-21 follow the answers of the requester on issue pe1mew/Zangb
 | Draft 0.5 | 2026-11-06 | Libraries that Songbook apps before this format can read, from the app repository's proposal approved by the owner (D-34 to D-39). New §3.7: the format 1.1 view (PF-40 to PF-46), generated by the Editor, listed in the manifest. Songs move under `songs/` (§3.2, PF-10, PF-12, STR-01, new STR-11). New §6.8: view rules VIEW-01 to VIEW-03 with messages M-36 to M-38. `maintainer` required: §4.1, EDT-14, new MAN-08, M-39. `title` at most 80 characters (§4.1, EDT-10). Licence: a generated `LICENSE` in the view. EDT-52 writes the view; APP-02 recognises a library with a view as this format; APP-22 adds W013 for unsigned libraries. Limitation 9; O-04 extended. Keys: new SG-05 (raw Ed25519 keys), SG-20 refers to it, the `author.publicKey` example corrected from an X.509 wrapper to the RFC 8032 test key (D-40). D-29, D-31 and D-32 superseded in part. |
 | Draft 0.6 | 2026-11-06 | From the app session. New APP-06: a release archive, snapshot or `zangbundel.json` library with the ID of a library in this format is an unsigned copy of it; the app asks M-71 (without `{versionNote}`) or M-72, never silently (D-41, the owner's decision); a sentence below the §8.3 table points to it. New M-75, the app's wording of a MAN-08 failure (D-42). Fixed terms *signed by* and *not signed* (EDT-83, APP-21, APP-22, D-43). O-04: the first six test libraries exist in `test-libraries/`. After the app's first run of them: PF-42 made byte-exact, and an *Archive* column in §6.2 mapping PKG-01 to PKG-09 to the shared archive checks, with FDS codes reported for packages. |
 | Draft 0.7 | 2026-11-06 | O-04: 56 test libraries cover every rule of section 6 except PKG-09 and some forms of PKG-02 and PKG-03. New O-11: the readings the test libraries made where the rules leave room, to be confirmed. No rule changed. |
+| Draft 0.13 | 2026-11-15 | New SNG-19 with M-76: the canonical line list is at most 32 768 lines, and a `{chorus}` inside a chorus definition is part of that chorus (D-47, song format v0.29, profile code S013). It refuses only songs whose chorus repeats grow past the bound; no song written out is affected. O-04: test library `song-chorus-repeat-bound` added, so there are 60. |
 | Draft 0.12 | 2026-11-08 | SNG-10 compares title, subtitle and language, no longer the title alone (D-46); M-59 reworded. O-04: test library `song-title-duplicate` changed to match, and `song-title-other-language` added, so there are 59. |
 | Draft 0.11 | 2026-11-07 | A signing key may stay in memory across library sessions until the Editor closes (EDT-02, EDT-64 reworded; D-45). No package format or validation rule changed. |
 | Draft 0.10 | 2026-11-07 | Tag labels in the manifest (D-44, song format v0.26): optional field `tags` (§4.1), checked by MAN-02; EDT-26 carries them over from `zangbundel.json`; EDT-30 edits them; APP-27 shows them. The 1.1 view is unchanged; `formatVersion` stays 1. |

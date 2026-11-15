@@ -2,7 +2,7 @@
 
 Shared test libraries in the format of FDS draft 0.6, for FDS open item O-04. Every Editor implementation and the Songbook app must give each library the result in its `<case>.expected.json`.
 
-**Status:** 59 cases. Two valid libraries with sets (signed and unsigned), a valid library with tag labels (FDS draft 0.10, D-44) and at least one invalid case for every rule of FDS section 6 except PKG-09, for which see [Not covered](#not-covered). The unsigned copy of APP-06 (a `zangbundel.json` library with a package's id) is `manifest-missing`.
+**Status:** 60 cases. Two valid libraries with sets (signed and unsigned), a valid library with tag labels (FDS draft 0.10, D-44) and at least one invalid case for every rule of FDS section 6 except PKG-09, for which see [Not covered](#not-covered). The unsigned copy of APP-06 (a `zangbundel.json` library with a package's id) is `manifest-missing`.
 
 ## How the cases are made
 
@@ -10,7 +10,7 @@ Each case is the reference library with as little changed as possible: one file,
 
 Each library gives two findings that every case shares: SNG-16, a Warning, for `vader-jacob` (no recommended metadata), and SNG-07, an Info, for `fire-in-the-night` (a phase 2 timing directive). The Editor shows them; the app does not (FDS 6.1). They are absent where a Fatal rule stops everything else (the Editor does not open the library, EDT-20) and in `no-songs`, which has no songs.
 
-Where a case cannot avoid a second finding, its `expected.json` lists every finding and its `description` says why: `names-case`, `song-folder-invalid`, `license-missing` and `song-too-large`.
+Where a case cannot avoid a second finding, its `expected.json` lists every finding and its `description` says why: `names-case`, `song-folder-invalid`, `license-missing`, `song-too-large` and `song-chorus-repeat-bound`.
 
 ## The cases
 
@@ -93,6 +93,7 @@ App: the Songbook app's verdict (APP-01), with the rules that refuse it. Editor:
 | `song-value-invalid` | SNG-15 | `{meta: redistribute ja}` | Refused: SNG-15 | SNG-15 Error | Accepted; skipped (S012) |
 | `song-long-title` | SNG-17 | A title of 72 characters | Accepted, W013 | SNG-17 Warning | Accepted; W003 |
 | `song-too-large` | SNG-18 | Padded with comment lines to 65,537 bytes | Refused: SNG-18 | SNG-18 Error, SNG-17 Warning | Accepted; skipped (S002) |
+| `song-chorus-repeat-bound` | SNG-19 | 14 chorus blocks appended, each holding `{chorus}` twice, so the line list would pass 32 768 lines (song format v0.29) | Refused: SNG-19 | SNG-19 Error, SNG-17 Warning | Accepted; skipped (S013) |
 
 A skipped song is in the set Demo, so its entry in `setlists/set-2.zbs` is not found (SL101). SNG-07 and SNG-16 are covered by the shared findings of every case.
 
@@ -180,6 +181,8 @@ The FDS rules have no Editor implementation yet, and the Songbook app has not ru
 **2026-11-07:** `tag-labels` and `tag-label-invalid` added (FDS draft 0.10, D-44). The generator rerun left the other 56 libraries and their expected results byte-identical. `check_test_libraries.py`: 58 cases, 0 failed. The manager's engine gives all 58 their expected findings (`webapp/tests/conformance.test.mjs`); on the engine before the change, `tag-label-invalid` lacks its MAN-02. The app has not run the two new cases.
 
 **2026-11-08:** SNG-10 compares title, subtitle and language (FDS draft 0.12, D-46). `song-title-duplicate` now also gives `lorem-ipsum` Dutch and no subtitle, so it still repeats `vader-jacob`; `song-title-other-language` added, the same title alone. The generator, run twice, left the other 57 libraries and their expected results byte-identical, and the two changed ones identical between runs. `check_test_libraries.py`: 59 cases, 0 failed. The manager's engine gives all 59 their expected findings. Not run: the library repository's `release.py verify` for the `format_1_1` verdicts of the two cases, and the app.
+
+**2026-11-15:** `song-chorus-repeat-bound` added for SNG-19 (FDS draft 0.13, D-47; song format v0.29, S013), at the app session's request. The generator rerun left the other 59 libraries and their expected results byte-identical. `check_test_libraries.py` counts the line list with its repeats, without building it: 60 cases, 0 failed. With `--format-1-1` and the library repository at `2231965`, `release.py verify` gave every case its `format_1_1` verdict; this one skips `lorem-ipsum` with S013 at line 122, where the manager's engine also reports SNG-19. The manager's engine gives all 60 their expected findings. Not run: the app.
 
 ## The songs
 
