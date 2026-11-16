@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Fixed
+- **A language change reaches the open song editor** (issue #3, webappGUI GD-17, draft 0.38): before, it changed only after the song was applied. The editor is now drawn again in the new language with everything typed, in *Blokken* and in the code mode.
+- **A block's label explanation is no longer cut off** (issue #2): the label field grows with the free space, so "Bezeichnung (leer: automatisch)" and the other languages show whole. The Dutch placeholder of a song's licence is shortened to fit. Measured at 1024 and 1400 px in nl, en and de: no placeholder is cut off.
 - **Chorus repeats can no longer blow up a song** (FDS draft 0.13: SNG-19, M-76, D-47; song format v0.29, the app's S013; its assessment SP-41). The canonical line list is at most 32 768 lines, checked before each repeat is copied, so a song of a few kilobytes whose choruses repeat each other is refused at once. A `{chorus}` inside a chorus definition is now part of that chorus, as the app reads it, in the line list and in the song view.
 - **A shared test library for SNG-19,** `song-chorus-repeat-bound`, so there are 60 (FDS O-04). The independent checker `check_test_libraries.py` now counts the line list with its chorus repeats. All 60 pass in the checker, in the library repository's `release.py verify` for format 1.1, and in the manager's engine.
 - **The browser check sets Edge's window size itself:** headless Edge began to ignore `--window-size` and showed the narrow layout. `drive.mjs` now uses the DevTools Protocol for it, and its first step checks for 1400 × 900.

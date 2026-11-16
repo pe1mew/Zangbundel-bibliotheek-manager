@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | GUI design of the web app: screens, behaviour, look |
-| **Status** | Draft 0.37 |
-| **Date** | 2026-11-11 |
+| **Status** | Draft 0.38 |
+| **Date** | 2026-11-16 |
 | **Depends on** | `design/FDS.md` draft 0.7; the Zangbundel app's `design/guiDesign.md` v0.66 (section 9 colour reference) |
 | **Companion** | `design/webappTDS.md` (how the web app is built and deployed) |
 
@@ -244,7 +244,7 @@ The owner's answers to the open questions, and two further requests made during 
 
 **GD-16 — Deleting a song.** A song is deleted with the bin icon to the right of *Bewerken* on its row in the song list, with *Verwijderen* next to *Bewerken* above the song in view mode, or with *Lied verwijderen* in the edit footer. Each asks for confirmation (FDS M-62, *"<titel>" verwijderen? Dit kan in deze sessie niet ongedaan worden gemaakt.*). The song is removed from every set as well (EDT-32). Afterwards the neighbouring song in the list is selected, or none when the list is empty. A song that is new and not yet applied has no delete button; *Annuleren* discards it.
 
-**GD-17 — The interface follows the browser's language, and the bottom bar can change it.** On opening, the manager takes the first of the browser's preferred languages (`navigator.languages`) that it offers: Dutch, English or German (EDT-80); otherwise English (EDT-81). A language button in the bottom bar shows the current language (*NL*, *EN*, *DE*) and switches it at once, without losing work. Whether the choice is remembered for the next visit is GQ-16 (EDT-82 allows it). This replaces the proposal of GQ-10 to put the language choice in *Over*.
+**GD-17 — The interface follows the browser's language, and the bottom bar can change it.** On opening, the manager takes the first of the browser's preferred languages (`navigator.languages`) that it offers: Dutch, English or German (EDT-80); otherwise English (EDT-81). A language button in the bottom bar shows the current language (*NL*, *EN*, *DE*) and switches it at once, without losing work. *That includes a song open in the editor (issue #3, draft 0.38): it is drawn again in the new language with everything typed, in either mode.* Whether the choice is remembered for the next visit is GQ-16 (EDT-82 allows it). This replaces the proposal of GQ-10 to put the language choice in *Over*.
 
 *Amended 2026-11-08 (the owner's M5 review, F4; as the mock):* the language button opens a menu instead of going to the next language.
 - **The menu:** it opens above the button and lists every interface language in its own name (*Nederlands*, *English*, *Deutsch*), with the current one checked and focused.
@@ -450,6 +450,7 @@ The 1.1 view that the Editor now writes on every save (FDS §3.7) is not shown i
 | Draft 0.18 | 2026-11-07 | GD-37 as built in M5.4, the owner's choice: the maintainer's contact is one field *E-mail of website*, as in the mock; a value with a scheme (`https://…`) is the website, anything else the e-mail address. A library that has both shows the e-mail address, with the website under the field (*Ook: …*), so neither is dropped. Beyond the mock, from FDS EDT-13: *Andere licentie (SPDX-code)* with its own field, and an optional full licence text; the mock does not show them yet. |
 | Draft 0.19 | 2026-11-07 | GD-42 (the owner): leaving the page with changes not yet downloaded, or a new key not yet downloaded, gives the browser's question; *Openen* and *Nieuw* ask M-60 first. |
 | Draft 0.37 | 2026-11-11 | GD-21 amended (the owner, C8): sets are reordered by a drag handle and Alt+↑/↓; FDS EDT-31 is met again. Not added to the mock: the handle is the one the songs of a set already have there. GD-44 and GD-35 amended (M7.6): the explanations link to the wiki, and the Android panel's manager manual is the wiki on this site (`/wiki/<lang>/`), not a GitHub wiki. |
+| Draft 0.38 | 2026-11-16 | From a reviewer's points on the test instance (GitHub issues #2 and #3). GD-17: a language change also reaches a song open in the editor, without losing what was typed (#3). A block's label field grows with the free space in its bar, so its placeholder shows whole in nl, en and de; the Dutch placeholder of a song's licence is shortened to *leeg: die van de bibliotheek* (#2). Both are in the mock. |
 | Draft 0.36 | 2026-11-10 | GD-46 (M7.3, the accessibility pass): where the focus goes after a redraw, when a view opens, and with a notice; placeholder text `#8F8F8F`; the tabs name their panels. GD-44 amended (the owner): each field refers to its explanation, and F1 opens it from the keyboard. |
 | Draft 0.35 | 2026-11-10 | GD-45: *Over* states that only `https://zangbundel.nl` is the manager (securityAssessment SR-08, SF-24). |
 | Draft 0.34 | 2026-11-10 | GD-32: the narrow page no longer cuts off its top on a phone. |

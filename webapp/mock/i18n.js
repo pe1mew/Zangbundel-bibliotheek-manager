@@ -38,7 +38,7 @@ const STR = {
     M39: 'Vul in wie deze bibliotheek beheert (naam en e-mailadres of website) voordat je downloadt.',
     notFilled: 'niet ingevuld', libLicense: 'licentie van de bibliotheek', none: 'geen', required: 'verplicht',
     chooseLang: 'Kies de taal van het eerste couplet', phTrad: 'bijv. traditioneel', phPd: 'bijv. Public domain',
-    phLicense: 'leeg: licentie van de bibliotheek', phSource: 'waar de tekst vandaan komt', phTags: "gescheiden door komma's",
+    phLicense: 'leeg: die van de bibliotheek', phSource: 'waar de tekst vandaan komt', phTags: "gescheiden door komma's",
     idProposed: 'wordt bij toepassen voorgesteld uit de titel', textModeLeft: 'Je bewerkt nu de ChordPro-tekst; de gegevens staan daarin.',
     chooseLicense: 'Kies een licentie',
     // view

@@ -138,7 +138,7 @@ export const TEXTS = {
     severalNames: "Meerdere namen? Scheid ze met ;",
     phTrad: "bijv. traditioneel",
     phPd: "bijv. Public domain",
-    phLicense: "leeg: licentie van de bibliotheek",
+    phLicense: "leeg: die van de bibliotheek",
     phSource: "waar de tekst vandaan komt",
     phTags: "gescheiden door komma's",
     idProposed: "wordt bij toepassen voorgesteld uit de titel",

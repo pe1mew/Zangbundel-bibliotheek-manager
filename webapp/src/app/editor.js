@@ -112,15 +112,17 @@ const CODE_MAX = 64 * 1024;                               // FDS 3.5: a larger s
  * copy. state() is { mode: 'blocks', form } or { mode: 'code', text }. toText, toForm and checkCode go to
  * the worker: blocks to text ({ text } or { problem }), canonical text to blocks, the song rules over code.
  * GD-38: switching keeps every change, and switching without changes leaves the song exactly as it was.
+ * resume is another editor's snapshot(): the same song, edited as far as it was, drawn in lang (GD-17: a language
+ * change reaches the open editor at once, without losing work; issue #3).
  */
 export function createSongEditor({ lang, id, isNew = false, text: original, form: initial, title, onApply, onCancel, onDelete,
-  onMode = () => {}, toText, toForm, checkCode }) {
-  let form = structuredClone(initial);
+  onMode = () => {}, toText, toForm, checkCode, resume = null }) {
+  let form = structuredClone(resume ? resume.form : initial);
   const start = JSON.stringify(initial);
-  let mode = 'blocks';
-  let code = '';
-  let codeFrom = '';                                      // the code as the code mode opened it
-  let formAtCode = null;                                  // the blocks as they were then
+  let mode = resume ? resume.mode : 'blocks';
+  let code = resume ? resume.code : '';
+  let codeFrom = resume ? resume.codeFrom : '';           // the code as the code mode opened it
+  let formAtCode = resume ? resume.formAtCode : null;     // the blocks as they were then
   let switching = false;
   const sections = el('div', { class: 'sections' }, []);
   const problem = el('p', { class: 'blocked', role: 'alert', hidden: true }, []);
@@ -383,12 +385,20 @@ export function createSongEditor({ lang, id, isNew = false, text: original, form
         [icon('check'), t(lang, 'apply')]),
     ]),
   ]);
+  if (mode === 'code') {                                  // resumed in the code mode
+    codeArea.value = code;
+    setAttrs(codeArea, { rows: Math.max(12, code.split('\n').length + 1) });
+    body.replaceChildren(codeBody);
+    runChecks();
+  }
   markMode();
   draw();
   makeFields();
 
   return {
     node,
+    /** Everything typed so far, for an editor drawn again in another language (resume). */
+    snapshot: () => ({ mode, form: structuredClone(form), code, codeFrom, formAtCode }),
     /** What Toepassen applies, in the mode that is open (GD-38). */
     state: () => (mode === 'code' ? { mode, text: code } : { mode, form }),
     mode: () => mode,

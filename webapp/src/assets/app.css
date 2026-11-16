@@ -439,7 +439,8 @@ svg.sev-ok { fill: var(--fire-orange); }
 .kindlbl.locked { color: var(--secondary); font-weight: normal; font-size: 14px; }
 .labelin {
   min-height: 36px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: transparent;
-  color: var(--white); font: inherit; font-size: 14px; width: 200px;
+  color: var(--white); font: inherit; font-size: 14px;
+  flex: 1 1 18em; min-width: 0; max-width: 28em;          /* issue #2: room for its whole placeholder in nl, en and de */
 }
 .labelin:focus { outline: none; border-color: var(--fire-orange); }
 .editor {

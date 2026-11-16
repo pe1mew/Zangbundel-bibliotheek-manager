@@ -312,9 +312,9 @@ function start() {
     toast(isNew && songList && songList.reveal(id) ? t(lang, 'filtersCleared') : t(lang, 'applied'));
     return true;
   };
-  const makeEditor = ({ id, isNew = false, text, form, title }) => {
+  const makeEditor = ({ id, isNew = false, text, form, title, resume = null }) => {
     const lang = language.get();
-    return { id, isNew, title, token: ++editTokens, editor: createSongEditor({ lang, id, isNew, text, form, title,
+    return { id, isNew, title, text, form, token: ++editTokens, editor: createSongEditor({ lang, id, isNew, text, form, title, resume,
       onApply: () => applyEdit(), onCancel: stopEditing, onDelete: () => onDeleteSong(id, title), onMode: () => render(),
       // GD-38, EDT-33: the worker turns blocks into code and code into blocks, and checks the code as it is typed
       toText: (f) => session.unblocks(f),
@@ -618,7 +618,19 @@ function start() {
     restoreFocus(mark);
   };
   replace(root, banner, layout.app, narrow);
-  language.onChange(render);                              // GD-17: at once, without losing work
+  // GD-17: at once, without losing work; the open editor is drawn again in the new language from what was typed (#3)
+  language.onChange(() => {
+    if (editing) {
+      const { id, isNew, text, form } = editing;
+      const title = isNew ? t(language.get(), 'newSongTitle') : editing.title;
+      const scroll = layout.centre.scrollTop;
+      editing = makeEditor({ id, isNew, text, form, title, resume: editing.editor.snapshot() });
+      render();
+      layout.centre.scrollTop = scroll;
+      return;
+    }
+    render();
+  });
   session.onChange(render);
   // GD-42: leaving the page with changes not yet downloaded, or a new key not yet downloaded, asks first
   // and so does an open song editor with changes not yet applied (GD-36): it is listened for while the editor is open
