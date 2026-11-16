@@ -313,6 +313,9 @@ h3 { font-size: 16px; color: var(--secondary); text-transform: uppercase; letter
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { border: 1px solid var(--grey); color: var(--secondary); border-radius: 999px; padding: 2px 10px; font-size: 13px; }
 .songid { font-family: ui-monospace, Consolas, monospace; font-size: 13px; color: var(--secondary); }
+/* GQ-22 (issue #5): the song ID with its Make-from-title button */
+.idrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.idrow .idbtn { padding: 2px 6px; font-size: 13px; }
 
 /* ---- Centre: view mode ---- */
 .view { max-width: 720px; margin: 0 auto; padding: 32px 40px 64px; }

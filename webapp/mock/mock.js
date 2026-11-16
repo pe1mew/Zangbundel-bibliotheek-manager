@@ -100,7 +100,7 @@ function signedLibrary() {
 
 // ---- State ----
 Object.assign(S, {
-  screen: 'splash', lib: null, sel: null, view: 'song', mode: 'view', draft: null, textMode: false, textDraft: '',
+  screen: 'splash', unsaved: new Set(), lib: null, sel: null, view: 'song', mode: 'view', draft: null, textMode: false, textDraft: '',
   dirty: false, tab: 'songs', openSet: null, key: null, splashTimer: null,
 });
 const selSong = () => (S.lib && S.sel ? S.lib.songs.find((s) => s.id === S.sel) : null);
@@ -440,8 +440,18 @@ function leftEdit(d) {
     ${inp('copyright', t('fCopyright'), false, t('phPd'))}${inp('license', t('fLicense'), false, t('phLicense'))}
     ${inp('source', t('fSource'), false, t('phSource'))}
     <div class="field">${labelRow('tags', t('fTags'), 'in-tags')}<input id="in-tags" data-field="tags" value="${esc(Array.isArray(d.tags) ? d.tags.join(', ') : d.tags)}" placeholder="${esc(t('phTags'))}">${helpText('tags')}</div>
-    <div class="field">${labelRow('id', t('fSongId'))}<div class="songid">${d.id ? esc(d.id) : esc(t('idProposed'))}</div>${helpText('id')}</div>
+    <div class="field">${labelRow('id', t('fSongId'))}${idField(d)}${helpText('id')}</div>
     <p class="muted small"><span class="req">*</span> ${t('required')}</p></div>`;
+}
+
+// GQ-22 (issue #5): while the ID is the Editor's own proposal and the library has not been downloaded with the
+// song, a button makes it again from the title. The new ID is taken on Toepassen; sets that name the song follow.
+function idField(d) {
+  if (!d.id) return `<div class="songid">${esc(t('idProposed'))}</div>`;
+  const offer = S.unsaved.has(d.id);
+  const now = d.newId || d.id;
+  return `<div class="idrow"><span class="songid">${esc(now)}</span>${offer ? `<button type="button" class="btn btn-text idbtn" data-act="idfromtitle">${icon('edit')}${esc(t('idFromTitle'))}</button>${gd('GQ-22')}` : ''}</div>
+    ${d.newId ? `<div class="muted small">${esc(t('idWas', { old: d.id }))}</div>` : ''}`;
 }
 
 function renderCentre() {
@@ -713,7 +723,7 @@ function wireSet() {
 
 // ---- Apply (GD-09, GD-20, GD-25) ----
 const slug = (x) => String(x).normalize('NFD').replace(/\p{M}+/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'lied';
-function uniqueId(base) { let id = base, n = 2; while (S.lib.songs.some((s) => s.id === id)) id = `${base}-${n++}`; return id; }
+function uniqueId(base, self = null) { let id = base, n = 2; while (S.lib.songs.some((s) => s.id === id && s.id !== self)) id = `${base}-${n++}`; return id; }
 const normTags = (v) => (Array.isArray(v) ? v : String(v || '').split(',')).map((x) => x.trim()).filter(Boolean);
 function syncLeft() {
   document.querySelectorAll('[data-field]').forEach((el) => { S.draft[el.dataset.field] = el.dataset.field === 'tags' ? normTags(el.value) : el.value; });
@@ -737,8 +747,17 @@ function apply() {
     return;
   }
   const isNew = !d.id;
-  if (isNew) { d.id = uniqueId(slug(d.title || 'lied')); S.lib.songs.push(clone(d)); }
-  else { const k = S.lib.songs.findIndex((s) => s.id === d.id); S.lib.songs[k] = clone(d); }
+  if (isNew) { d.id = uniqueId(slug(d.title || 'lied')); S.lib.songs.push(clone(d)); S.unsaved.add(d.id); }
+  else {
+    const k = S.lib.songs.findIndex((s) => s.id === d.id);
+    if (d.newId && d.newId !== d.id) {                    // GQ-22: the ID made again from the title
+      const old = d.id; d.id = d.newId;
+      S.lib.sets.forEach((st) => { st.songs = st.songs.map((x) => (x === old ? d.id : x)); });
+      S.unsaved.delete(old); S.unsaved.add(d.id);
+    }
+    delete d.newId;
+    S.lib.songs[k] = clone(d);
+  }
   S.sel = d.id; S.view = 'song'; S.mode = 'view'; S.draft = null; S.dirty = true;
   let cleared = false;
   if (!visibleSongs().some((x) => x.id === d.id)) { S.filter = DEFAULT_FILTER(); cleared = true; }   // GD-25
@@ -977,7 +996,7 @@ function startEdit(id) {
   if (first) first.focus();
 }
 function resetSession(lib) {
-  Object.assign(S, { lib, sel: null, view: 'song', mode: 'view', draft: null, textMode: false, dirty: false, tab: 'songs', openSet: null, filter: DEFAULT_FILTER() });
+  Object.assign(S, { unsaved: new Set(), lib, sel: null, view: 'song', mode: 'view', draft: null, textMode: false, dirty: false, tab: 'songs', openSet: null, filter: DEFAULT_FILTER() });
 }
 function goHome() { S.screen = 'home'; resetSession(null); render(); }
 function loadSample(signed) {
@@ -1036,6 +1055,15 @@ document.addEventListener('click', (e) => {
     case 'newset': setNameDialog(null); return;
     case 'cancel': S.mode = 'view'; S.draft = null; S.textMode = false; if (S.sel && !selSong()) S.sel = null; render(); return;
     case 'apply': apply(); return;
+    case 'idfromtitle': {                                   // GQ-22
+      syncLeft();
+      const d = S.draft;
+      if (!String(d.title || '').trim()) { toast(t('idNeedsTitle')); const f = $('in-title'); if (f) f.focus(); return; }
+      const id = uniqueId(slug(d.title), d.id);
+      if (id === (d.newId || d.id)) { toast(t('idSame')); return; }
+      d.newId = id === d.id ? undefined : id;
+      renderLeft(); toast(t('idMade', { id })); return;
+    }
     default: break;
   }
   if (d.delsong) {                                      // GD-16, M-62
@@ -1109,14 +1137,14 @@ function dialogAction(d, tgt) {
     case 'download': {
       const sign = $('dl-sign');
       if (sign && sign.checked && S.key) S.lib.signed = { name: S.key.name, fp: S.key.fp };
-      S.lib.version = +tgt.dataset.v; S.dirty = false; closeDialog(); render();
+      S.lib.version = +tgt.dataset.v; S.dirty = false; S.unsaved.clear(); closeDialog(); render();
       toast(t('downloaded', { file: tgt.dataset.file })); return;
     }
     case 'copy': copyDialog(); return;
     case 'docopy': {
       const title = $('cp-title').value.trim() || S.lib.title;
       Object.assign(S.lib, { id: crypto.randomUUID ? crypto.randomUUID() : 'copy', title, version: 1, signed: null });
-      S.dirty = false; closeDialog(); render();
+      S.dirty = false; S.unsaved.clear(); closeDialog(); render();
       toast(t('copyDone', { t: title }) + ' · ' + t('downloaded', { file: `${slug(title)}-v1.zbl` })); return;
     }
     case 'delsong': {

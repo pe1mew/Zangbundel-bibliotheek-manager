@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Added
+- **A design for issue #5 in the mock:** *Maak uit titel* (*Make from title*) beside the song ID in the editor makes the ID again from the title, while the ID is the manager's own proposal and the library has not yet been downloaded with the song; sets that name the song follow (webappGUI draft 0.39, GQ-22). Not yet in the web app: it waits for the owner's look and an FDS change to EDT-36.
+
 ## [0.3.1] - 2026-11-16
 
 A bug-fix release of the manager on `zangbundel.nl`, tried on `test.zangbundel.nl` as `0.3.1-dev.1`. The song editor follows a language change (issue #3), the label explanation is no longer cut off (issue #2), and chorus repeats are bounded as the app bounds them (FDS SNG-19), so the manager and the app read a nested `{chorus}` the same way again (D-47). The gate is in `design/test-results/2026-11-16-release-gate-0.3.1.md`.
