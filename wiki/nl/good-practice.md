@@ -10,7 +10,7 @@ De manager bewaart niets: als je de pagina sluit, is je werk weg. Download de bi
 
 ## Lied-ID's {#song-ids}
 
-Elk lied krijgt bij **Toepassen** een lied-ID, voorgesteld uit de titel. Daarna verandert het niet meer, ook niet als je de titel aanpast, want setlijsten in de app verwijzen ernaar. Kies daarom bij een nieuw lied meteen een goede titel.
+Elk lied krijgt bij **Toepassen** een lied-ID, voorgesteld uit de titel. Daarna verandert het niet meer, ook niet als je de titel aanpast, want setlijsten in de app verwijzen ernaar. Kies daarom bij een nieuw lied meteen een goede titel. Vergeten? Tot de eerste download maakt **Maak uit titel** de lied-ID opnieuw.
 
 ## Titels {#titles}
 

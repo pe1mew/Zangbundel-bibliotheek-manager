@@ -5,7 +5,7 @@
 // and keys to the crypto worker (SR-30, SR-40); only data comes back, never a private key. Nothing is
 // kept after the page closes (EDT-02, EDT-64).
 
-import { libraryFileName } from '../core/names.js';
+import { isSongId, libraryFileName } from '../core/names.js';
 import { fingerprint } from '../core/fingerprint.js';
 import { KEY_FILE_MAX } from '../core/keyfile.js';
 
@@ -17,12 +17,14 @@ const sameKey = (a, b) => a instanceof Uint8Array && b instanceof Uint8Array && 
 
 /**
  * client: the library worker's client; crypto: the crypto worker's client (crypto-client.js), or
- * stand-ins in tests. State: { library, songs, findings, converted, dirty, busy, key, authorFingerprint }
+ * stand-ins in tests. State: { library, songs, findings, converted, dirty, busy, key, authorFingerprint, proposed }
  * where key is { name, fingerprint, publicKey, needsExport } of the key in memory, or null;
  * needsExport: a key made in this session whose key file has not been downloaded yet.
+ * proposed: the song IDs the Editor proposed in this session that no saved library holds yet; they may be
+ * proposed again from the title (FDS EDT-36, D-48; webappGUI GD-47). A save empties it.
  */
 export function createSession({ client, crypto = null, now = () => new Date() }) {
-  let state = { library: null, songs: [], findings: null, converted: null, dirty: false, busy: false, key: null, authorFingerprint: null,
+  let state = { library: null, songs: [], findings: null, converted: null, dirty: false, busy: false, key: null, authorFingerprint: null, proposed: [],
     generation: 0 };                                   // + 1 whenever another library, or a fresh copy of it, takes the screen
   const listeners = new Set();
   const set = (next) => {
@@ -82,7 +84,7 @@ export function createSession({ client, crypto = null, now = () => new Date() })
           return { ok: false, findings: fatal.length ? fatal : (r.findings || []).filter((f) => f.severity === 'Error') };
         }
         set({ generation: state.generation + 1, library: r.library, songs: r.songs || [], findings: r.findings, converted: r.converted || null, dirty: false,
-          authorFingerprint: await authorOf(r.library) });
+          proposed: (r.converted && r.converted.proposed) || [], authorFingerprint: await authorOf(r.library) });
         return { ok: true, converted: r.converted || null };
       } finally {
         set({ busy: false });
@@ -92,12 +94,15 @@ export function createSession({ client, crypto = null, now = () => new Date() })
     /** EDT-10 to EDT-12: a new, empty library; its licence and maintainer come before the first save. */
     async create(title, description) {
       const library = await client.request('new', { title, description: description || undefined, now: now() });
-      set({ generation: state.generation + 1, library, songs: [], findings: [], converted: null, dirty: false, authorFingerprint: null });
+      set({ generation: state.generation + 1, library, songs: [], findings: [], converted: null, dirty: false, authorFingerprint: null, proposed: [] });
       await recheck();
       return library;
     },
 
     recheck,
+
+    /** GD-47, D-48: whether song id's ID may still be made again from its title. */
+    canRemakeId: (id) => Boolean(state.library) && !isReadOnly() && state.proposed.includes(id),
 
     /**
      * EDT-13, EDT-14, EDT-30: change library fields (title, description, license, maintainer); a value
@@ -121,10 +126,23 @@ export function createSession({ client, crypto = null, now = () => new Date() })
      * GD-09, GD-20 (M5.3): the song id takes text, canonical from the block form or the code mode. It is
      * applied also with an Error; the findings follow (EDT-42) and the library has changes not yet
      * downloaded. A read-only library is not changed (EDT-23). Returns true when applied.
+     * newId (GD-47, D-48): the song gets that ID instead, in its {meta: id}, in its place among the songs and
+     * in every set that names it; only for an ID this session proposed (canRemakeId) and a free, valid new one.
      */
-    async updateSong(id, text) {
+    async updateSong(id, text, newId = null) {
       const lib = state.library;
       if (!lib || isReadOnly() || typeof text !== 'string' || !lib.songs.has(id)) return false;
+      if (newId !== null && newId !== id) {
+        if (!state.proposed.includes(id) || !isSongId(newId) || lib.songs.has(newId)) return false;
+        const r = await client.request('setSongId', { text, songId: newId });
+        if (typeof r.text !== 'string' || state.library !== lib) return false;
+        const library = { ...lib, songs: new Map([...lib.songs].map(([k, v]) => (k === id ? [newId, r.text] : [k, v]))),
+          rawSongs: new Map(lib.rawSongs || []), sets: lib.sets.map((s) => ({ ...s, songs: s.songs.map((x) => (x === id ? newId : x)) })) };
+        library.rawSongs.delete(id);
+        set({ library, proposed: state.proposed.map((x) => (x === id ? newId : x)), dirty: true });
+        await recheck();
+        return true;
+      }
       if (lib.songs.get(id) === text) return true;        // nothing changed: no change to download (EDT-51)
       const library = { ...lib, songs: new Map(lib.songs), rawSongs: new Map(lib.rawSongs || []) };
       library.songs.set(id, text);
@@ -163,13 +181,16 @@ export function createSession({ client, crypto = null, now = () => new Date() })
       return true;
     },
 
-    /** EDT-32: a song added to the library under id (from adoptSong or importSong). Returns true when added. */
-    async addSong(id, text) {
+    /**
+     * EDT-32: a song added to the library under id (from adoptSong or importSong). proposed: its ID was
+     * proposed by the Editor (their result's proposed; GD-47). Returns true when added.
+     */
+    async addSong(id, text, proposed = false) {
       const lib = state.library;
       if (!lib || isReadOnly() || typeof text !== 'string' || lib.songs.has(id)) return false;
       const library = { ...lib, songs: new Map(lib.songs) };
       library.songs.set(id, text);
-      set({ library, dirty: true });
+      set({ library, dirty: true, ...(proposed ? { proposed: [...state.proposed, id] } : {}) });
       await recheck();
       return true;
     },
@@ -219,7 +240,7 @@ export function createSession({ client, crypto = null, now = () => new Date() })
         sets: lib.sets.map((s) => ({ ...s, songs: s.songs.filter((x) => x !== id) })) };
       library.songs.delete(id);
       library.rawSongs.delete(id);
-      set({ library, songs: state.songs.filter((s) => s.id !== id), dirty: true });
+      set({ library, songs: state.songs.filter((s) => s.id !== id), dirty: true, proposed: state.proposed.filter((x) => x !== id) });
       await recheck();
       return true;
     },
@@ -314,8 +335,9 @@ export function createSession({ client, crypto = null, now = () => new Date() })
       const copy = r.bytes.slice();
       const o = await client.request('open', { bytes: copy }, [copy.buffer]);
       if (o.library) {
+        // EDT-36: saved, the song IDs are fixed now (GD-47)
         set({ generation: state.generation + 1, library: o.library, songs: o.songs || state.songs, findings: o.findings, converted: null, dirty: false,
-          authorFingerprint: await authorOf(o.library) });
+          proposed: [], authorFingerprint: await authorOf(o.library) });
       }
       return { ok: true, bytes: r.bytes, fileName: r.fileName, version: r.version, findings: r.findings };
     },
@@ -330,7 +352,7 @@ export function createSession({ client, crypto = null, now = () => new Date() })
 
     /** EDT-01, EDT-03: close the session. With changes not yet downloaded, the caller asks M-60 first. */
     close() {
-      set({ generation: state.generation + 1, library: null, songs: [], findings: null, converted: null, dirty: false, authorFingerprint: null });
+      set({ generation: state.generation + 1, library: null, songs: [], findings: null, converted: null, dirty: false, authorFingerprint: null, proposed: [] });
     },
   };
 }

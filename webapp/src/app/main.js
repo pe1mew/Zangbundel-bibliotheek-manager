@@ -35,6 +35,7 @@ import { closeConfirm, convertedDialog, copyDialog, deleteSetConfirm, deleteSong
   savedDialog } from './library-ui.js';
 import { KEY_MIME, LIBRARY_MIME, offerDownload } from './download.js';
 import { VERSION } from './version.js';
+import { proposeSongId } from '../core/names.js';
 
 const SPLASH_MS = 3000;   // GD-27
 // SR-81: the test instance's banner is fixed and Dutch, in every interface language.
@@ -297,13 +298,19 @@ function start() {
     if (isNew) {
       // EDT-32, EDT-36: a new song is taken in by the worker, which proposes its ID from its title
       const added = await session.adoptSong(r.text);
-      if (!(await session.addSong(added.id, added.text))) {
+      if (!(await session.addSong(added.id, added.text, added.proposed))) {
         editor.showProblem(t(lang, 'applyProblem'));
         return false;
       }
       id = added.id;
     } else {
-      await session.updateSong(id, r.text);
+      // GD-47: an ID made again from the title (Maak uit titel) is taken here, with the song's text
+      const newId = editor.newId();
+      if (!(await session.updateSong(id, r.text, newId))) {
+        editor.showProblem(t(lang, 'applyProblem'));
+        return false;
+      }
+      if (newId) id = newId;
     }
     editing = null;
     selected = id;
@@ -314,7 +321,10 @@ function start() {
   };
   const makeEditor = ({ id, isNew = false, text, form, title, resume = null }) => {
     const lang = language.get();
-    return { id, isNew, title, text, form, token: ++editTokens, editor: createSongEditor({ lang, id, isNew, text, form, title, resume,
+    // GD-47, D-48: an ID this session proposed, not yet saved, may be made again from the title (unique among the others)
+    const remakeId = !isNew && session.canRemakeId(id)
+      ? (songTitle) => proposeSongId(songTitle, [...session.get().library.songs.keys()].filter((k) => k !== id)) : null;
+    return { id, isNew, title, text, form, token: ++editTokens, editor: createSongEditor({ lang, id, isNew, text, form, title, resume, remakeId,
       onApply: () => applyEdit(), onCancel: stopEditing, onDelete: () => onDeleteSong(id, title), onMode: () => render(),
       // GD-38, EDT-33: the worker turns blocks into code and code into blocks, and checks the code as it is typed
       toText: (f) => session.unblocks(f),
@@ -349,7 +359,7 @@ function start() {
       importFailedDialog(lang, file.name, r.problem);
       return;
     }
-    if (!(await session.addSong(r.id, r.text))) return;
+    if (!(await session.addSong(r.id, r.text, r.proposed))) return;
     selected = r.id;
     render();
     toast(songList && songList.reveal(r.id) ? t(lang, 'filtersCleared') : t(lang, 'songImported', { file: file.name }));

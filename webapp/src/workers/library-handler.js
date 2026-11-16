@@ -3,7 +3,7 @@
 // (securityAssessment SR-30; implementationPlan M2.8). library-worker.js wires it to messages.
 //
 // Request  { id, op, payload }            op: 'validate' | 'open' | 'check' | 'save' | 'copy' | 'new' | 'song' | 'blocks' | 'unblocks' | 'songCheck' | 'canonical'
-//                                          | 'addSong' | 'importSong'
+//                                          | 'addSong' | 'importSong' | 'setSongId'
 // Response { id, ok: true, result }  or  { id, ok: false, error }
 //
 // Every library byte is read here, never on the main thread. Results are structured data only
@@ -48,19 +48,29 @@ export function songDetails(text) {
   };
 }
 
+/** EDT-36: text (canonical) with exactly one {meta: id}, id. */
+const withId = (canonical, id) => fromBlocks(setMeta(toBlocks(canonical), 'id', [id]));
+
 /**
  * EDT-32, EDT-36 (M5.3d): a new or imported song taken into a library whose song IDs are taken: it keeps
  * a valid {meta: id} of its own when that is free, otherwise its ID is proposed from its title, and the
- * song gets exactly that {meta: id}. text is made canonical first (EDT-57). Returns { id, text }.
+ * song gets exactly that {meta: id}. text is made canonical first (EDT-57). Returns { id, text, proposed },
+ * proposed true when the ID was proposed here (it may then be proposed again until the first save, D-48).
  */
 export function adoptSong(text, taken) {
   const canonical = canonicalize(new TextEncoder().encode(String(text))).text;
   const song = parseSong(canonical);
   const ids = song.meta.get('id') || [];
   const own = ids.length === 1 && isSongId(ids[0]) && !taken.includes(ids[0]) ? ids[0] : null;
-  if (own) return { id: own, text: canonical };
+  if (own) return { id: own, text: canonical, proposed: false };
   const id = proposeSongId((song.meta.get('title') || [''])[0], taken);
-  return { id, text: fromBlocks(setMeta(toBlocks(canonical), 'id', [id])) };
+  return { id, text: withId(canonical, id), proposed: true };
+}
+
+/** GD-47, D-48: a song's text under a new song ID (its {meta: id} rewritten); { text } or { problem }. */
+export function setSongId(text, id) {
+  if (!isSongId(id)) return { problem: 'not a song ID' };
+  return { text: withId(canonicalize(new TextEncoder().encode(String(text))).text, id) };
 }
 
 /** EDT-32: a .cho file to import: text of at most 64 KiB without control characters (SNG-18, SNG-01). */
@@ -143,6 +153,8 @@ export async function handleMessage(message) {
         return { id, ok: true, result: adoptSong(payload.text, payload.taken || []) };
       case 'importSong':                              // M5.3d, EDT-32: a .cho file taken in
         return { id, ok: true, result: importSong(payload.bytes, payload.taken || [], payload.name) };
+      case 'setSongId':                               // GD-47, D-48: the ID made again from the title
+        return { id, ok: true, result: setSongId(payload.text, payload.songId) };
       case 'songCheck':                               // M5.3b, EDT-33: the song rules while typing in the code mode
         return { id, ok: true, result: { findings: checkSongText(payload.id, payload.text) } };
       case 'canonical':                               // M5.3b, EDT-57: typed code as it will be stored

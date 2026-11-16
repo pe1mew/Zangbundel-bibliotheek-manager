@@ -147,6 +147,7 @@ export function convertZip(bytes, { now = new Date(), libraryId = crypto.randomU
   const rawSongs = new Map();
   const byText = new Map();                              // canonical text -> id: identical songs are stored once
   const duplicates = [];
+  const proposed = [];                                   // EDT-36, D-48: IDs this conversion proposed, not taken over
   const setMembers = new Map();                          // set folder -> [{ folder, id }]
   for (const path of choPaths) {
     const bytesOfSong = read(path);
@@ -165,6 +166,7 @@ export function convertZip(bytes, { now = new Date(), libraryId = crypto.randomU
           : proposeSongId(parsed && (parsed.meta.get('title') || [])[0] ? parsed.meta.get('title')[0] : stem);
       id = unique(wanted, songs);
       if (id !== wanted) duplicates.push(path);
+      if (!(own && isSongId(own)) && !(fromRepo && isSongId(stem))) proposed.push(id);
       if (text !== null) {
         songs.set(id, canonicalize(new TextEncoder().encode(withSongId(text, id))).text);
         byText.set(text, id);
@@ -241,5 +243,5 @@ export function convertZip(bytes, { now = new Date(), libraryId = crypto.randomU
     isNew: true,
     opened: null,
   };
-  return { library, report: { kind, songs: songs.size, sets: sets.length, leftOut, duplicates, unresolved, tagsLeftOut } };
+  return { library, report: { kind, songs: songs.size, sets: sets.length, leftOut, duplicates, unresolved, tagsLeftOut, proposed } };
 }

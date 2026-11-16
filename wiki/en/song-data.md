@@ -40,4 +40,4 @@ Keywords to filter on, such as kampvuur, welpen or kerst. Separate them with com
 
 ## Song ID {#song-id}
 
-The song’s fixed identifier. It is proposed from the title when the song is applied, and never changes after that, not even when the title does: setlists in the app refer to it.
+The song’s fixed identifier. It is proposed from the title when the song is applied. Until you download the library with the song, **Make from title** makes it again from the title, for example when a song imported without a title got the song ID `lied`. Sets with the song follow. After that it never changes, not even when the title does: setlists in the app refer to it.

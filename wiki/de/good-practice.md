@@ -10,7 +10,7 @@ Die Verwaltung speichert nichts: Wenn du die Seite schließt, ist deine Arbeit w
 
 ## Lied-IDs {#song-ids}
 
-Jedes Lied bekommt beim **Übernehmen** eine Lied-ID, vorgeschlagen aus dem Titel. Danach ändert sie sich nicht mehr, auch nicht, wenn du den Titel änderst, denn Setlisten in der App verweisen darauf. Gib einem neuen Lied deshalb gleich einen guten Titel.
+Jedes Lied bekommt beim **Übernehmen** eine Lied-ID, vorgeschlagen aus dem Titel. Danach ändert sie sich nicht mehr, auch nicht, wenn du den Titel änderst, denn Setlisten in der App verweisen darauf. Gib einem neuen Lied deshalb gleich einen guten Titel. Vergessen? Bis zum ersten Herunterladen bildet **Aus Titel bilden** die Lied-ID neu.
 
 ## Titel {#titles}
 

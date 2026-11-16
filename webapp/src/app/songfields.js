@@ -2,7 +2,8 @@
 // The song's fields in the left bar while it is edited in *Blokken* (webappGUI GD-05; FDS EDT-34;
 // implementationPlan M5.3c): title and language (required), words, music, copyright, licence, source
 // and tags, each reading and writing its directive in the song through the block form (blockmeta.js
-// setMeta), so the fields and the song stay one. The song ID is shown, never edited (EDT-34, EDT-36).
+// setMeta), so the fields and the song stay one. The song ID is shown, never typed (EDT-34, EDT-36); until the
+// library is first saved with the song, an ID the Editor proposed can be made again from the title (GD-47, D-48).
 // A field is applied on leaving it; while typing it only marks what the song rules will report
 // (SNG-02, SNG-11, SNG-15), which Controle and the code mode then show by the engine's own rules.
 
@@ -67,13 +68,15 @@ export function fieldAdvice(lang, name, values) {
 }
 
 /**
- * createSongFields({ lang, id, getForm(), setForm(form) }) → { node }. The fields read the form when
- * built; each change writes its field with setMeta and hands the new form back.
+ * createSongFields({ lang, id, getForm(), setForm(form), idRemake }) → { node }. The fields read the form when
+ * built; each change writes its field with setMeta and hands the new form back. idRemake, or null:
+ * { pending() → the ID made so far or null, set(id or null), propose(title) → ID } for *Maak uit titel* (GD-47).
  */
-export function createSongFields({ lang, id, getForm, setForm }) {
+export function createSongFields({ lang, id, getForm, setForm, idRemake = null }) {
   const form = getForm();
   const boxes = {};
   const errors = {};
+  const inputs = {};
   // a field's own error, else its advice (a recommended field still empty), else nothing
   const mark = (name, message) => {
     const advice = message ? null : fieldAdvice(lang, name, (n) => metaValues(getForm(), n));
@@ -110,6 +113,7 @@ export function createSongFields({ lang, id, getForm, setForm }) {
       'aria-required': name === 'title' ? 'true' : null }, []);
     listen(i, 'input', () => clean(i));
     listen(i, 'change', () => write(name, valuesOf(name, i.value)));
+    inputs[name] = i;
     return i;
   };
 
@@ -136,6 +140,35 @@ export function createSongFields({ lang, id, getForm, setForm }) {
   listen(code, 'input', () => clean(code));
   listen(code, 'change', () => write('language', code.value.trim() ? [code.value.trim()] : []));
 
+  // GD-47, D-48: the song ID, and while it may be made again, Maak uit titel with what it did
+  function idControls() {
+    const value = el('span', { class: 'value fp' }, []);
+    const note = el('div', { class: 'muted small', role: 'status' }, []);
+    const draw = (message) => {
+      const made = idRemake ? idRemake.pending() : null;
+      value.replaceChildren(made || id);
+      note.replaceChildren(...(message ? [message] : made ? [t(lang, 'idWas', { old: id })] : []));
+    };
+    const make = () => {
+      const title = metaValues(getForm(), 'title')[0];
+      if (!title) {
+        draw(t(lang, 'idNeedsTitle'));
+        inputs.title.focus();
+        return;
+      }
+      const next = idRemake.propose(title);
+      if (next === (idRemake.pending() || id)) {
+        draw(t(lang, 'idSame'));
+        return;
+      }
+      idRemake.set(next === id ? null : next);
+      draw();
+    };
+    draw();
+    return [el('div', { class: 'idrow' }, [value, idRemake
+      ? el('button', { type: 'button', class: 'btn btn-text idbtn', on: { click: make } }, [icon('edit'), t(lang, 'idFromTitle')]) : null]), note];
+  }
+
   const node = el('div', { class: 'libform songfields' }, [
     el('h3', {}, [t(lang, 'songData')]),
     box('title', t(lang, 'fTitle'), input('title'), true),
@@ -146,9 +179,9 @@ export function createSongFields({ lang, id, getForm, setForm }) {
     box('license', t(lang, 'fLicense'), input('license', t(lang, 'phLicense'))),
     box('source', t(lang, 'fSource'), input('source', t(lang, 'phSource'))),
     box('tag', t(lang, 'fTags'), input('tag', t(lang, 'phTags'))),
-    // EDT-36: a new song's ID is proposed from its title when it is applied
+    // EDT-36: a new song's ID is proposed from its title when it is applied; GD-47: Maak uit titel
     ((help) => el('div', { class: 'field' }, [help.row,
-      id ? el('div', { class: 'value fp' }, [id]) : el('div', { class: 'value none' }, [t(lang, 'idProposed')]), help.panel]))(
+      ...(id ? idControls() : [el('div', { class: 'value none' }, [t(lang, 'idProposed')])]), help.panel]))(
       fieldHelp(lang, 'id', t(lang, 'fSongId'), el('div', { class: 'flabel' }, [t(lang, 'fSongId')]))),
     el('p', { class: 'muted small' }, [el('span', { class: 'req' }, ['*']), ' ', t(lang, 'required')]),
   ]);

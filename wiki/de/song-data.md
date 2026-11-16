@@ -40,4 +40,4 @@ Stichwörter zum Filtern, etwa kampvuur, welpen oder kerst. Trenne sie mit Komma
 
 ## Lied-ID {#song-id}
 
-Die feste Kennung des Liedes. Sie wird beim Übernehmen aus dem Titel vorgeschlagen und ändert sich danach nicht mehr, auch nicht mit dem Titel: Setlists in der App verweisen darauf.
+Die feste Kennung des Liedes. Sie wird beim Übernehmen aus dem Titel vorgeschlagen. Bis du die Bibliothek mit dem Lied herunterlädst, bildet **Aus Titel bilden** sie neu aus dem Titel, etwa wenn ein ohne Titel importiertes Lied die Lied-ID `lied` bekam. Sets mit dem Lied gehen mit. Danach ändert sie sich nicht mehr, auch nicht mit dem Titel: Setlists in der App verweisen darauf.

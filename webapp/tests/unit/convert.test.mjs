@@ -75,6 +75,7 @@ test('EDT-26: a release archive keeps its song IDs; setlist entries of other lib
   assert.deepEqual(library.sets, [{ name: 'Kamp', songs: ['vader-jacob', 'lorem-ipsum'] }]);
   assert.deepEqual(converted.unresolved.map((u) => u.entry), ['anders/iets', 'Onbekend lied']);
   assert.deepEqual(converted.leftOut, ['README.md']);           // M-42
+  assert.deepEqual(converted.proposed, []);                    // D-48: a repository song's IDs came with it
   assert.equal(library.title, 'Voorbeeld');
   assert.equal(library.description, 'Een voorbeeld.');
   assert.deepEqual(errors(findings), []);
@@ -96,6 +97,8 @@ test('EDT-25: folders of song files; set folders, a song stored once in two sets
   assert.equal(converted.kind, 'files');
   assert.equal(library.title, 'Mijn bundel');
   assert.deepEqual(converted.leftOut, ['notities.txt']);
+  // D-48, GD-47: the IDs proposed here (no valid {meta: id} of their own) may be proposed again until the first save
+  assert.deepEqual(converted.proposed.slice().sort(), ['fire-in-the-night', 'fire-in-the-night-2', 'vader-jacob']);
   assert.deepEqual([...library.songs.keys()].sort(), ['fire-in-the-night', 'fire-in-the-night-2', 'lorem-ipsum', 'vader-jacob', 'vuur-in-de-nacht']);
   assert.deepEqual(library.sets, [
     { name: 'Avond', songs: ['vuur-in-de-nacht', 'lorem-ipsum'] },        // alphabetical song folders: vuur, zz-lorem

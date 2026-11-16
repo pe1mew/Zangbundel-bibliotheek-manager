@@ -114,10 +114,13 @@ const CODE_MAX = 64 * 1024;                               // FDS 3.5: a larger s
  * GD-38: switching keeps every change, and switching without changes leaves the song exactly as it was.
  * resume is another editor's snapshot(): the same song, edited as far as it was, drawn in lang (GD-17: a language
  * change reaches the open editor at once, without losing work; issue #3).
+ * remakeId(title) → ID, given only while the song's ID may be made again from its title (GD-47, D-48): the fields
+ * then offer *Maak uit titel*, and newId() is the ID it made, for Toepassen.
  */
 export function createSongEditor({ lang, id, isNew = false, text: original, form: initial, title, onApply, onCancel, onDelete,
-  onMode = () => {}, toText, toForm, checkCode, resume = null }) {
+  onMode = () => {}, toText, toForm, checkCode, resume = null, remakeId = null }) {
   let form = structuredClone(resume ? resume.form : initial);
+  let newId = resume ? resume.newId || null : null;        // GD-47: the ID Maak uit titel made, taken on Toepassen
   const start = JSON.stringify(initial);
   let mode = resume ? resume.mode : 'blocks';
   let code = resume ? resume.code : '';
@@ -261,7 +264,8 @@ export function createSongEditor({ lang, id, isNew = false, text: original, form
   // GD-05, EDT-34: the song's fields write into the same form; no redraw of the blocks is needed for that
   let fields = null;
   const makeFields = () => {
-    fields = createSongFields({ lang, id, getForm: () => form, setForm: (next) => { form = next; } });
+    fields = createSongFields({ lang, id, getForm: () => form, setForm: (next) => { form = next; },
+      idRemake: remakeId && id ? { pending: () => newId, set: (next) => { newId = next; }, propose: remakeId } : null });
   };
 
   const showProblem = (text) => {
@@ -398,7 +402,9 @@ export function createSongEditor({ lang, id, isNew = false, text: original, form
   return {
     node,
     /** Everything typed so far, for an editor drawn again in another language (resume). */
-    snapshot: () => ({ mode, form: structuredClone(form), code, codeFrom, formAtCode }),
+    snapshot: () => ({ mode, form: structuredClone(form), code, codeFrom, formAtCode, newId }),
+    /** GD-47: the song's new ID from Maak uit titel, or null: applied with the song. */
+    newId: () => newId,
     /** What Toepassen applies, in the mode that is open (GD-38). */
     state: () => (mode === 'code' ? { mode, text: code } : { mode, form }),
     mode: () => mode,
@@ -406,7 +412,7 @@ export function createSongEditor({ lang, id, isNew = false, text: original, form
     currentTitle: () => (mode === 'blocks' ? metaValues(form, 'title')[0] || null : null),
     fieldsNode: () => fields.node,
     /** GD-36: whether there is anything to apply or throw away. */
-    changed: () => (mode === 'code' ? !sameCode(code, original) : JSON.stringify(form) !== start),
+    changed: () => newId !== null || (mode === 'code' ? !sameCode(code, original) : JSON.stringify(form) !== start),
     /** What the worker could not write: shown above the song. */
     showProblem,
     /**

@@ -10,7 +10,7 @@ The manager keeps nothing: when you close the page, your work is gone. So downlo
 
 ## Song IDs {#song-ids}
 
-Each song gets a song ID on **Apply**, proposed from its title. After that it never changes, not even when you change the title, because setlists in the app refer to it. So give a new song a good title from the start.
+Each song gets a song ID on **Apply**, proposed from its title. After that it never changes, not even when you change the title, because setlists in the app refer to it. So give a new song a good title from the start. Forgot? Until the first download, **Make from title** makes the song ID again.
 
 ## Titles {#titles}
 

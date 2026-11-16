@@ -40,4 +40,4 @@ Trefwoorden om op te filteren, zoals kampvuur, welpen of kerst. Scheid ze met ko
 
 ## Lied-ID {#song-id}
 
-Het vaste kenmerk van het lied. Het wordt bij het toepassen voorgesteld uit de titel en verandert daarna niet meer, ook niet als de titel verandert: setlists in de app verwijzen ernaar.
+Het vaste kenmerk van het lied. Het wordt bij het toepassen voorgesteld uit de titel. Tot je de bibliotheek met het lied downloadt, kun je het met **Maak uit titel** opnieuw uit de titel laten maken, bijvoorbeeld als een geïmporteerd lied zonder titel de lied-ID `lied` kreeg. Sets met het lied gaan mee. Daarna verandert het niet meer, ook niet als de titel verandert: setlists in de app verwijzen ernaar.

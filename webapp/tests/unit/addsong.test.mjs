@@ -35,11 +35,11 @@ test('EDT-36, song format 3.2: the ID is proposed from the title, unique with a 
 
 test('EDT-36: a new song gets its ID and {meta: id}; a free valid ID of its own is kept, a taken one replaced', () => {
   const plain = adoptSong('{title: Kampvuurlied}\n{meta: language nl}\n\nla\n', ['vader-jacob']);
-  assert.deepEqual(plain, { id: 'kampvuurlied', text: '{title: Kampvuurlied}\n{meta: language nl}\n{meta: id kampvuurlied}\n\nla\n' });
+  assert.deepEqual(plain, { id: 'kampvuurlied', text: '{title: Kampvuurlied}\n{meta: language nl}\n{meta: id kampvuurlied}\n\nla\n', proposed: true });
   const own = adoptSong('{title: X}\n{meta: id mijn-lied}\nla\n', []);
-  assert.deepEqual(own, { id: 'mijn-lied', text: '{title: X}\n{meta: id mijn-lied}\nla\n' });
+  assert.deepEqual(own, { id: 'mijn-lied', text: '{title: X}\n{meta: id mijn-lied}\nla\n', proposed: false });
   const clash = adoptSong('{title: Vader Jacob}\n{meta: id vader-jacob}\nla\n', ['vader-jacob']);
-  assert.deepEqual(clash, { id: 'vader-jacob-2', text: '{title: Vader Jacob}\n{meta: id vader-jacob-2}\nla\n' });
+  assert.deepEqual(clash, { id: 'vader-jacob-2', text: '{title: Vader Jacob}\n{meta: id vader-jacob-2}\nla\n', proposed: true });
   const twice = adoptSong('{title: Y}\n{meta: id a}\n{meta: id b}\nla\n', []);
   assert.equal(twice.text, '{title: Y}\n{meta: id y}\nla\n');                    // two IDs: one, from the title
   assert.equal(adoptSong('{title: Z}  \r\nla\t\r\n\r\n', []).text, '{title: Z}\n{meta: id z}\nla\n');   // canonical
@@ -50,7 +50,7 @@ test('EDT-32: an imported .cho must be text of at most 64 KiB', () => {
   assert.deepEqual(importSong(Uint8Array.of(0xff, 0xfe), [], 'kapot.cho').problem, { code: 'SNG-01', severity: 'Error', params: { song: 'kapot' } });
   assert.equal(importSong(enc('{title: A}\nla\u0007\n'), [], 'a.cho').problem.code, 'SNG-01');
   assert.deepEqual(importSong(enc('﻿{title: Uit een bestand}\r\nla\r\n'), [], 'x.cho'),
-    { id: 'uit-een-bestand', text: '{title: Uit een bestand}\n{meta: id uit-een-bestand}\nla\n' });
+    { id: 'uit-een-bestand', text: '{title: Uit een bestand}\n{meta: id uit-een-bestand}\nla\n', proposed: true });
 });
 
 test('EDT-32: a new song from an empty verse to a saved library, with a unique ID and no song errors', async () => {
