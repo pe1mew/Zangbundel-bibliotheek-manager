@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **Version `0.3.2-dev.2`** for the second trial towards 0.3.2 on the test instance: the language button keeps its place (issue #1).
 - **Version `0.3.2-dev.1`** for the first trial towards 0.3.2 on the test instance: *Maak uit titel* (issue #5).
 
 ### Added
