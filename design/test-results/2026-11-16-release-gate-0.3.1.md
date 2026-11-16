@@ -32,8 +32,10 @@ These checks ran on the working tree with `version.js` at `0.3.1`. The browser c
 
 | Check | Result | How |
 |---|---|---|
-| Release build | *To do.* | `build.py build --src webapp/src --name manager --version 0.3.1`, with no `--allow-dirty`, twice |
-| SC-08 SRI | *To do.* | Recomputed from `dist/manager-0.3.1` |
-| SC-03, SC-05, SC-06 on the release | *To do.* | `drive.mjs all dist/manager-0.3.1` |
-| SC-09 manifest | *To do.* | `zbm-release verify` on contabo6 |
-| SC-01 headers | *To do (test instance: owner).* | `check_headers.py test.zangbundel.nl --auth remko --app`; `check_headers.py zangbundel.nl --app` |
+| Release build | **Passed.** `dist/manager-0.3.1`, 30 files, from commit `ffbc781` with the signed tag `v0.3.1` (good signature). `source_dirty: false`. Built twice: every file was byte-identical (SR-10). The bundle is `assets/main.cc102e790c87.js`. | `build.py build --src webapp/src --name manager --version 0.3.1`, with no `--allow-dirty`, twice |
+| SC-08 SRI | **Passed.** 21 integrity attributes in the release's pages, all matching their files. | Recomputed from `dist/manager-0.3.1` |
+| SC-03, SC-05, SC-06 on the release | **Passed in Edge 157 and Firefox 160,** 15 of 15 steps each. | `drive.mjs all dist/manager-0.3.1` |
+| SC-09 manifest | **Passed.** `zbm-release verify` gives `ok` for `test.zangbundel.nl manager-0.3.1 (30 files)` and `zangbundel.nl manager-0.3.1 (30 files)`. Both hosts run the one upload, `upload-20261116T182747Z-1268346.tar`, whose SHA-256 `b9f575f0…21bd` equals the pack's. | `zbm-release verify` on contabo6 |
+| SC-01 headers | **Passed on both hosts.** Test instance: 19 of 19 (the owner, 2026-11-16). Production: 21 of 21 (the agent, 2026-11-16). Production serves `assets/main.cc102e790c87.js`, the release's bundle. `/wiki/nl/` and `/wiki/de/good-practice/` answer 200. | `check_headers.py test.zangbundel.nl --auth remko --app`; `check_headers.py zangbundel.nl --app` |
+
+**Released 2026-11-16, as SR-84 says:** the owner activated the upload on `test.zangbundel.nl` first, and after its checks activated the same upload on `zangbundel.nl`.

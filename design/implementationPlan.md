@@ -1084,12 +1084,13 @@ The manager went live as `v0.2.0`/`v0.2.1` before M7 was done (the owner's decis
   - **The gate passed:** SC-01 to SC-13 (`design/test-results/2026-11-12-release-gate-0.3.0.md`). SC-01 gave 19 of 19 on test and 21 of 21 on production. `zbm-release verify` gives `ok` on both.
   - **Not covered:** Safari, accepted as untested by the owner.
   - **Left for M7's exit:** C2, C4, C10 and the app's public 0.5.0 release (C11). Then M8's criteria, including HSTS step 3 from 2026-11-17.
+- **`v0.3.1` released (2026-11-16):** the fixes for issues #2 and #3 and SNG-19, tried as `0.3.1-dev.1` and looked at by the owner. The full gate passed (`design/test-results/2026-11-16-release-gate-0.3.1.md`); both hosts run the one upload, and `zbm-release verify` gives `ok`. Production and the test instance serve `manager-0.3.1`.
 - **After `v0.3.0`: chorus repeats bounded (2026-11-15), at the app session's request** (song format v0.29; the app's SP-41 and S013):
   - **The spec:** FDS draft 0.13 adds SNG-19 (Error, M-76, D-47). securityAssessment draft 0.19 adds SF-26, closed in the source.
   - **The reader:** `core/chordpro.js` bounds the canonical line list at 32 768 lines, checked before each repeat is copied. A `{chorus}` inside a chorus definition is part of that chorus, in the line list and in the song view.
   - **The checks:** `node --test` 409 of 409. `test_engine_bundle.py` 59 of 59. The app's vector `chorus-repeat-bound` gives SNG-19, SNG-16 and SNG-17, the app's S013, W002 and W004.
   - **Fuzz (SR-35, SC-11):** 20,000 libraries and 2,000 ChordPro songs, 0 failures. The slowest input took 267 ms; memory peaked at 365 MB.
-  - **Live:** not yet. It reaches `zangbundel.nl` with the next release.
+  - **Live:** since `v0.3.1` (2026-11-16).
   - **For that import test:** two libraries made by the manager's own engine (`core/library.js` `saveLibrary`, as the web app saves), each a copy of `valid-unsigned` with a new library ID. Both are in `dist/c11/` (not in git). `Manager-test (niet ondertekend)-v1.zbl` is unsigned. `Manager-test (testsleutel)-v1.zbl` is signed with the public RFC 8032 test key, so the app should show the key's fingerprint `21FE-31DF-A154-A261`. The manager's validator gives only SNG-07 Info and SNG-16 Warning, as for the test library.
 - **C12, dry run (2026-11-11):** the agent's gate checks on dev.4 passed (`design/test-results/2026-11-11-pre-gate-0.3.0-dev.4.md`): SC-02 to SC-04 and SC-06 to SC-13. SC-01 on the test instance with the new CSP gave 19 of 19, run by the owner. Left: SC-05 in the other browsers (C5), and the CAA leftover (C4). C12 reruns everything on `v0.3.0`.
 - **Trial `0.3.0-dev.5` on the test instance (2026-11-11):** built from commit `090b84c` and adds disabled round buttons that look disabled. 30 files. It is live, and `zbm-release verify` gives `ok`. Production stays at `0.2.1`.
