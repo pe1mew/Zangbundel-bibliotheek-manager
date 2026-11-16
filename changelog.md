@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+- **Version `0.3.1-dev.1`** for the first trial towards 0.3.1 on the test instance: the editor follows a language change (#3), labels fit (#2), and chorus repeats are bounded (SNG-19).
+
 ### Fixed
 - **A language change reaches the open song editor** (issue #3, webappGUI GD-17, draft 0.38): before, it changed only after the song was applied. The editor is now drawn again in the new language with everything typed, in *Blokken* and in the code mode.
 - **A block's label explanation is no longer cut off** (issue #2): the label field grows with the free space, so "Bezeichnung (leer: automatisch)" and the other languages show whole. The Dutch placeholder of a song's licence is shortened to fit. Measured at 1024 and 1400 px in nl, en and de: no placeholder is cut off.
