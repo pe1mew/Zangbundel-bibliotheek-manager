@@ -255,7 +255,7 @@ svg.inl { width: 18px; height: 18px; fill: var(--secondary); flex: none; }
 .btn:focus-visible, .iconbtn:focus-visible, .navbtn:focus-visible, .tile:focus-visible { outline: 3px solid var(--sky-blue); outline-offset: 2px; }
 
 /* ---- Bottom bar (GD-04; its groups come with M4.4) ---- */
-.bottom { display: flex; align-items: center; justify-content: center; gap: 8px; overflow-x: auto; }
+.bottom { display: flex; align-items: center; justify-content: flex-start; gap: 8px; overflow-x: auto; }   /* centred by GD-48's auto margins */
 .navbtn {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   min-width: 84px; height: 64px; border: none; border-radius: 12px; padding: 0 6px; background: none; cursor: pointer;
@@ -270,6 +270,13 @@ svg.inl { width: 18px; height: 18px; fill: var(--secondary); flex: none; }
   position: absolute; top: 8px; right: 30px; width: 10px; height: 10px; border-radius: 50%; background: var(--fire-orange);
 }
 .nav-sep { width: 1px; height: 40px; background: var(--line); margin: 0 6px; flex: none; }
+/* GD-48 (issue #1): the language button keeps its place in every language: last, at the bar's right end, with a
+   fixed width; the rest stays centred in the space left of it (the two auto margins share it). Where the bar is
+   wider than the window and scrolls, the button stays at the window's right edge, over the bar's own background,
+   and the bar starts at its left end, so its first control can be reached. */
+.bottom > :first-child { margin-left: auto; }
+.bottom > .langbtn { margin-left: auto; width: 84px; flex: none; position: sticky; right: 0; z-index: 1; background: var(--sheet); }
+.bottom > .langbtn:hover:not(:disabled) { background: linear-gradient(rgba(255, 255, 255, .10), rgba(255, 255, 255, .10)), var(--sheet); }
 .navgroup { position: relative; display: flex; gap: 4px; }
 .navgroup.keys { padding-bottom: 12px; }
 .navgroup-label {

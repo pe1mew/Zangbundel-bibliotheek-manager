@@ -65,14 +65,15 @@ test('GD-04, GD-14: the bottom bar draws every group; buttons that wait for M5/M
   const items = bottomBar({ lang: 'nl', onLanguage: () => calls.push('lang'), onAndroid: () => calls.push('android'), onAbout: () => calls.push('about'),
     onOpen: () => calls.push('open'), onNew: () => calls.push('new'), onClose: () => calls.push('close') });
   const buttons = items.flatMap((n) => [...walk(n)]).filter((n) => n.tag === 'button');
-  assert.equal(buttons.length, 13);                  // 5 library, Controle, 4 key, Android, language, Over
+  assert.equal(buttons.length, 13);                  // 5 library, Controle, 4 key, Android, Over, language
   const waiting = buttons.filter((b) => 'disabled' in b.attrs);
   assert.equal(waiting.length, 8);                  // edit, download and close (no library), Controle, 4 key buttons
   for (const b of waiting) assert.ok(b.attrs.title && b.attrs.title.includes(':'), b.attrs.title);
   const working = buttons.filter((b) => !('disabled' in b.attrs));
   working.forEach((b) => b.listeners.click());
-  assert.deepEqual(calls, ['open', 'new', 'android', 'lang', 'about']);
-  assert.match(working[3].attrs['aria-label'], /^Taal: Nederlands/);
+  assert.deepEqual(calls, ['open', 'new', 'android', 'about', 'lang']);   // GD-48: the language button last
+  assert.match(working[4].attrs['aria-label'], /^Taal: Nederlands/);
+  assert.match(buttons[buttons.length - 1].attrs.class, /langbtn/);
   const open = bottomBar({ lang: 'nl', hasLibrary: true, findings: [], onClose: () => {}, onCheck: () => {} }).flatMap((n) => [...walk(n)]).filter((n) => n.tag === 'button');
   assert.equal(open.filter((b) => 'disabled' in b.attrs).length, 5);   // with a library: Downloaden, Sluiten and Controle work
   assert.ok(items.flatMap((n) => [...walk(n)]).some((n) => n.text === 'geen sleutel'));   // GD-14: no key yet

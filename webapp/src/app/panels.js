@@ -130,9 +130,10 @@ export function bottomBar({ lang, onLanguage, onAndroid, onAbout, onCheck, onOpe
     ]),
     sep(),
     navButton('android', t(lang, 'android'), { onClick: onAndroid }),
-    // GD-17 (F4): the button opens the language menu (langmenu.js)
+    navButton('about', t(lang, 'about'), { onClick: onAbout }),
+    // GD-17 (F4): the button opens the language menu (langmenu.js). GD-48 (issue #1): it comes last, and the CSS
+    // keeps it at the bar's right end with a fixed width, so it does not move when the labels change language
     navButton('lang', t(lang, 'languageCode'), { onClick: onLanguage, title: t(lang, 'languageSwitch', { name: t(lang, 'languageName') }),
       ariaLabel: t(lang, 'languageSwitch', { name: t(lang, 'languageName') }), extraClass: 'langbtn', popup: 'menu' }),
-    navButton('about', t(lang, 'about'), { onClick: onAbout }),
   ];
 }

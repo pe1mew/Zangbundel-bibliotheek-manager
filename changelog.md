@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ### Added
 - ***Maak uit titel* at the song ID** (issue #5; FDS draft 0.14: EDT-36, D-48; webappGUI draft 0.40, GD-47): in the editor's song data, a button makes the song ID again from the title, while the ID is the manager's own proposal (a new, imported or converted song) and the library has not yet been downloaded with the song. *Toepassen* writes it as `{meta: id}` and renames the song in its sets; after a download the ID is fixed, as before. The ⓘ help and the wiki (*Liedgegevens*, *Goede gewoonten*) say so in nl, en and de.
 - **The mock** got the same button first (webappGUI draft 0.39, GQ-22).
+- **The language button keeps its place** (issue #1; webappGUI draft 0.42, GD-48): it is the last control of the bottom bar, at its right end with a fixed width, and stays at the window's edge when the bar scrolls; its menu opens right-aligned above it. Before, it moved by up to 76 px between Dutch, English and German, and its menu with it. The mock got it first (draft 0.41, GQ-23).
 
 ## [0.3.1] - 2026-11-16
 

@@ -410,6 +410,12 @@ body.nobadges .gq { display: none; }
 .bottom { overflow-x: auto; justify-content: safe center; }
 .navbtn { min-width: 84px; font-size: 12px; }
 .langbtn { min-width: 64px; font-weight: 600; }
+/* GQ-23 (issue #1): the language button keeps its place in every language: last, flush right, fixed width;
+   the rest of the bar stays centred in the space left of it */
+.bottom > :first-child { margin-left: auto; }
+.bottom > .langbtn { margin-left: auto; width: 72px; min-width: 72px; flex: none; }
+/* in a window where the bar scrolls, the button stays at the window's right edge */
+.bottom > .langbtn { position: sticky; right: 0; z-index: 1; background: var(--sheet); }
 .ckcount { position: absolute; top: 4px; right: 14px; display: flex; gap: 3px; }
 .ckcount b { font-size: 11px; line-height: 16px; min-width: 16px; padding: 0 4px; border-radius: 8px; color: #000; }
 .ckcount b.e { background: var(--fire-orange); }

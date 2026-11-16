@@ -53,9 +53,9 @@ export function toggleLanguageMenu(lang, button, onPick) {
   }
 
   document.body.append(menu);
-  // above the button, inside the window
+  // above the button, right-aligned with it (GD-48: so every language keeps its place), inside the window
   const r = button.getBoundingClientRect();
-  setVar(menu, '--mx', `${Math.max(8, Math.min(globalThis.innerWidth - menu.offsetWidth - 8, r.left))}px`);
+  setVar(menu, '--mx', `${Math.max(8, Math.min(globalThis.innerWidth - menu.offsetWidth - 8, r.right - menu.offsetWidth))}px`);
   setVar(menu, '--my', `${Math.max(8, r.top - menu.offsetHeight - 6)}px`);
   setAttrs(button, { 'aria-expanded': 'true' });
   open = { close };

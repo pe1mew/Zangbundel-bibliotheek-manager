@@ -66,7 +66,7 @@ test('GD-17 (F4): the menu lists each language in its own name, the current one 
   assert.deepEqual(items.map((i) => i.attrs['aria-checked']), ['false', 'true', 'false']);
   assert.equal(doc.activeElement, items[1]);
   assert.equal(button.attrs['aria-expanded'], 'true');
-  assert.equal(m.vars['--mx'], '812px');                            // kept inside the window: 1000 - 180 - 8
+  assert.equal(m.vars['--mx'], '780px');                            // GD-48: right-aligned with the button: 960 - 180
   assert.equal(m.vars['--my'], '544px');                            // above the button: 700 - 150 - 6
   m.fire('keydown', { key: 'ArrowDown' });
   assert.equal(doc.activeElement, items[2]);

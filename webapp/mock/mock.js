@@ -223,8 +223,8 @@ function renderBottom() {
     </span>
     <span class="nav-sep"></span>
     <button class="navbtn" data-act="android">${icon('android')}${t('android')}</button>
-    <button class="navbtn langbtn" data-act="lang" aria-haspopup="true" title="${esc(t('language'))}">${icon('lang')}${S.lang.toUpperCase()}</button>
-    <button class="navbtn" data-act="about">${icon('about')}${t('about')}</button>`;
+    <button class="navbtn" data-act="about">${icon('about')}${t('about')}</button>
+    <button class="navbtn langbtn" data-act="lang" aria-haspopup="true" title="${esc(t('language'))}">${icon('lang')}${S.lang.toUpperCase()} ${gd('GQ-23')}</button>`;   // GQ-23: last, at the bar's right end
 }
 
 function renderRight() {
@@ -870,7 +870,7 @@ function langMenu(btn) {                                  // GD-17
   m.innerHTML = `<div class="muted small" style="padding:4px 12px">${t('language')} ${gd('GD-17')}</div>` + Object.keys(STR).map((l) =>
     `<button role="menuitemradio" aria-checked="${l === S.lang}" data-setlang="${l}">${l === S.lang ? icon('check') : '<span class="sp"></span>'}${LANG_LABEL[l]}</button>`).join('');
   document.body.appendChild(m);
-  m.style.left = Math.min(window.innerWidth - m.offsetWidth - 8, r.left) + 'px';
+  m.style.left = Math.max(8, Math.min(window.innerWidth - m.offsetWidth - 8, r.right - m.offsetWidth)) + 'px';   // GQ-23: right-aligned with the button
   m.style.top = (r.top - m.offsetHeight - 6) + 'px';
   m.querySelector('[aria-checked="true"]').focus();
 }
