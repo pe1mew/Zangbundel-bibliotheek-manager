@@ -32,8 +32,10 @@ These checks ran on the working tree with `version.js` at `0.3.2`. The browser c
 
 | Check | Result | How |
 |---|---|---|
-| Release build | *To do.* | `build.py build --src webapp/src --name manager --version 0.3.2`, with no `--allow-dirty`, twice |
-| SC-08 SRI | *To do.* | Recomputed from `dist/manager-0.3.2` |
-| SC-03, SC-05, SC-06 on the release | *To do.* | `drive.mjs all dist/manager-0.3.2` |
-| SC-09 manifest | *To do.* | `zbm-release verify` on contabo6 |
-| SC-01 headers | *To do (test instance: owner).* | `check_headers.py test.zangbundel.nl --auth remko --app --hsts-min 2592000`; `check_headers.py zangbundel.nl --app --hsts-min 2592000` |
+| Release build | **Passed.** `dist/manager-0.3.2`, 30 files, from commit `39bf5d5` with the signed tag `v0.3.2` (good signature). `source_dirty: false`. Built twice: every file was byte-identical (SR-10). The bundle is `assets/main.060749815791.js`. | `build.py build --src webapp/src --name manager --version 0.3.2`, with no `--allow-dirty`, twice |
+| SC-08 SRI | **Passed.** 21 integrity attributes in the release's pages, all matching their files. | Recomputed from `dist/manager-0.3.2` |
+| SC-03, SC-05, SC-06 on the release | **Passed in Edge 157 and Firefox 160,** 15 of 15 steps each. | `drive.mjs all dist/manager-0.3.2` |
+| SC-09 manifest | **Passed.** `zbm-release verify` gives `ok` for `test.zangbundel.nl manager-0.3.2 (30 files)` and `zangbundel.nl manager-0.3.2 (30 files)`. Both hosts run the one upload, `upload-20261117T190249Z-1634008.tar`, whose SHA-256 `4cdc9797…c3e3` equals the pack's. The first upload was refused because 20 processed uploads were still waiting; the owner cleared staging first (`webapp/server/README.md`, *Clearing staging*). | `zbm-release verify` on contabo6 |
+| SC-01 headers | **Passed on both hosts,** with `--hsts-min 2592000`. Test instance: 19 of 19 (the owner, 2026-11-17). Production: 21 of 21 (the agent, 2026-11-17). Production serves `assets/main.060749815791.js`, the release's bundle. `/wiki/nl/` and `/wiki/de/good-practice/` answer 200. | `check_headers.py test.zangbundel.nl --auth remko --app --hsts-min 2592000`; `check_headers.py zangbundel.nl --app --hsts-min 2592000` |
+
+**Released 2026-11-17, as SR-84 says:** the owner activated the upload on `test.zangbundel.nl` first, and after its checks activated the same upload on `zangbundel.nl`.
