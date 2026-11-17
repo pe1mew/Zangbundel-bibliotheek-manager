@@ -338,7 +338,7 @@ Uptime Kuma runs on contabo6 itself, so it cannot see the host go down. Add from
 |---|---|---|
 | 1 | 300 (5 minutes) | start |
 | 2 | 604800 (1 week) | a day without problems on both hosts. *In the source 2026-11-10, after three clean days at 300.* |
-| 3 | 2592000 (1 month) | a week |
+| 3 | 2592000 (1 month) | a week. *In the source 2026-11-17, after a week at one week; no other name exists under `zangbundel.nl` (NXDOMAIN, no wildcard).* |
 | 4 | 31536000 (1 year) | a month |
 | 5 | add `; preload`, submit at hstspreload.org | three months at one year (SQ-03) |
 

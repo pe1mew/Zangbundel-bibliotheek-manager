@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Document** | Security and privacy assessment of the web app's design, with the requirements and implementation rules for the final implementation |
-| **Status** | Draft 0.19 |
-| **Date** | 2026-11-15 |
+| **Status** | Draft 0.20 |
+| **Date** | 2026-11-17 |
 | **Depends on** | `design/FDS.md` draft 0.7, `design/webappGUI.md` draft 0.12, `design/webappTDS.md` draft 0.14 |
 | **Scope** | The site `zangbundel.nl` and its test instance, the web app's code and libraries, the browser session, the host contabo6, the domain, the deployment, and the data the manager handles |
 
@@ -625,6 +625,7 @@ The GDPR points (IP addresses as personal data, purpose and retention of server 
 - **What changes:** what the public site runs. Its exposure is the test instance's, minus basic auth: the public can now load the scripts, which run only in the visitor's browser.
 - **Going back:** `zbm-release switch zangbundel.nl placeholder-0.1.0`, after putting the earlier nginx config back.
 - **Still open from the gate:** SC-05 in Firefox, Edge and Safari; HSTS above 300 s (step 9); the registrar's two-factor authentication. |
+| Draft 0.20 | 2026-11-17 | SR-02, HSTS ramp step 3: `max-age` one month (2592000) on both hosts, a week after step 2. Repeated for this header change (SR-91): it adds no request, file or dependency. What a longer `max-age` risks is a browser that refuses the site while HTTPS is broken; both certificates renew automatically and are valid until 2027-02-05, both hosts redirect HTTP to HTTPS, and no other name exists under `zangbundel.nl`, so `includeSubDomains` locks out nothing. |
 | Draft 0.19 | 2026-11-15 | SF-26, from the app's SP-41: chorus repeats could make a song's line list grow without a bound. Closed in the source with FDS SNG-19 (draft 0.13). The app's SP-42 does not apply, as the manager refuses ZIP64. |
 | Draft 0.18 | 2026-11-11 | SF-25 closed in the source, the owner's choice. The CSP of SR-20 lists one Trusted Types policy, `trusted-types zbm-worker`, and SR-32 and 7.3 say why a download needs none. This is a header change only (SR-91): the code never created `zbm-download`, so nothing in the page changes; the CSP becomes stricter. The container test checks it. Also SR-91, a new development tool: Hugo v0.169.0 builds the wiki (webappTDS TD-24). It is downloaded once, the zip checked against its release's SHA-256 (no attestation exists), and pinned by the SHA-256 of `hugo.exe`. It runs on the owner's computer only, and its output is committed and reviewed like source. Hugo never reaches the server and adds no script: `build.py` refuses script, inline style, event handlers and external resources in the wiki's pages as in every page, and the CSP of SR-20 applies to them. Nothing about keys or libraries changes. The wiki pages are static, read-only HTML; the manager's links to them open in a new tab. |
 | Draft 0.17 | 2026-11-10 | The implementation re-assessed (SR-91, implementationPlan M7.4), every SR against the code at `v0.2.1` and the server as running. The results are in `design/test-results/2026-11-10-sr-reassessment.md`.

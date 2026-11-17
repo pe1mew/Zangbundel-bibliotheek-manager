@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [Unreleased]
 
 ### Changed
+- **HSTS ramp step 3** (securityAssessment draft 0.20, SR-02): `max-age` one month (2592000) instead of one week, on both hosts. Step 4, one year, from 2026-12-17.
 - **Version `0.3.2-dev.2`** for the second trial towards 0.3.2 on the test instance: the language button keeps its place (issue #1).
 - **Version `0.3.2-dev.1`** for the first trial towards 0.3.2 on the test instance: *Maak uit titel* (issue #5).
 
