@@ -6,7 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-17
+
+A feature release of the manager on `zangbundel.nl`, from a reviewer's points on the test instance, tried there as `0.3.2-dev.1` and `-dev.2`. The language button keeps its place in every language (issue #1), and a song's ID can be made again from its title until the library is first downloaded with the song (issue #5, FDS draft 0.14). HSTS went to one month on both hosts the same day. The gate is in `design/test-results/2026-11-17-release-gate-0.3.2.md`.
+
 ### Changed
+- **Version `0.3.2`.**
 - **HSTS ramp step 3** (securityAssessment draft 0.20, SR-02): `max-age` one month (2592000) instead of one week, on both hosts. Step 4, one year, from 2026-12-17.
 - **Version `0.3.2-dev.2`** for the second trial towards 0.3.2 on the test instance: the language button keeps its place (issue #1).
 - **Version `0.3.2-dev.1`** for the first trial towards 0.3.2 on the test instance: *Maak uit titel* (issue #5).
